@@ -30,6 +30,10 @@ def create_session(session_in: schemas.SessionCreate, db: Session = Depends(get_
         battery_efficiency_discharge=session_in.battery_efficiency_discharge,
         penalty_price=session_in.penalty_price,
         base_demand_mw=session_in.base_demand_mw,
+        max_wind_mw=session_in.max_wind_mw,
+        max_solar_mw=session_in.max_solar_mw,
+        max_demand_mw=session_in.max_demand_mw,
+        forecast_error_margin=session_in.forecast_error_margin,
         status="pending"
     )
     db.add(db_session)
@@ -49,3 +53,43 @@ def delete_session(session_id: int, admin_id: str, db: Session = Depends(get_db)
     db.delete(session)
     db.commit()
     return None
+
+from app.services.market import get_day_seed, generate_supply_curve, calculate_clearing_price
+
+@router.get("/{session_id}/round/{round_id}/forecast", response_model=schemas.ForecastingResponse)
+def get_round_forecast(session_id: int, round_id: int, db: Session = Depends(get_db)):
+    """Provides a price and profile forecast for the round with ~15% error margin."""
+    session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Calculate which day from seed data to use
+    day_to_use = str(session.start_day + round_id - 1)
+    day_data = get_day_seed(day_to_use)
+    
+    if not day_data:
+        raise HTTPException(status_code=404, detail="Seed data for this round not found")
+
+    forecasts = []
+    for hour_info in day_data:
+        # Calculate base predicted price (Bots only)
+        base_demand = session.base_demand_mw * hour_info.get("demand_forecast_profile", 0.5)
+        bot_supply = generate_supply_curve(hour_info, session)
+        
+        # Calculate clearing price
+        predicted_price, _, _ = calculate_clearing_price(bot_supply, [], base_demand)
+        
+        # Add dynamic random error based on session settings
+        margin = session.forecast_error_margin
+        error_margin = random.uniform(1.0 - margin, 1.0 + margin)
+        predicted_price = round(predicted_price * error_margin, 2)
+
+        forecasts.append(schemas.HourlyForecast(
+            hour=hour_info["hour"],
+            predicted_price=predicted_price,
+            wind_profile=hour_info.get("wind_planned_profile", 0.0),
+            solar_profile=hour_info.get("solar_planned_profile", 0.0),
+            demand_profile=hour_info.get("demand_forecast_profile", 0.0)
+        ))
+
+    return schemas.ForecastingResponse(round_id=round_id, forecast=forecasts)

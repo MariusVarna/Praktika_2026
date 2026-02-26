@@ -18,47 +18,39 @@ def get_day_seed(day: int) -> List[Dict]:
 import random
 
 def generate_supply_curve(hour_data: dict, session) -> List[dict]:
-    """Generates a granular supply curve with ~200 bots/tiers for smoothness."""
+    """Generates a granular supply curve with realistic volatility (Steeper steps)."""
     wind = hour_data.get('wind_planned_profile', 0)
     solar = hour_data.get('solar_planned_profile', 0)
     
-    # Use session multipliers if available, else defaults
     max_wind = getattr(session, 'max_wind_mw', 1000.0)
     max_solar = getattr(session, 'max_solar_mw', 1000.0)
     
-    total_supply_mw = (wind * max_wind) + (solar * max_solar)
-    
     curve = []
-    num_bots = 200
-    vol_per_bot = total_supply_mw / num_bots if total_supply_mw > 0 else 0
     
-    if vol_per_bot <= 0:
-        return []
+    # 1. Baseload (Small but cheap, 500MW)
+    baseload_mw = 500.0
+    for i in range(10):
+        curve.append({"volume": baseload_mw/10, "price": 10.0 + i, "bid_id": f"base_{i}"})
 
-    for i in range(num_bots):
-        # Create a smooth price curve from -10 to 200
-        # 0-25% (Cheap): -10 to 10
-        # 25-75% (Avg): 10 to 80
-        # 75-100% (Exp): 80 to 200
-        progress = i / num_bots
-        if progress < 0.25:
-            # Linear map 0..0.25 to -10..10
-            base_price = -10 + (progress / 0.25) * 20
-        elif progress < 0.75:
-            # Linear map 0.25..0.75 to 10..80
-            base_price = 10 + ((progress - 0.25) / 0.5) * 70
-        else:
-            # Linear map 0.75..1.0 to 80..200
-            base_price = 80 + ((progress - 0.75) / 0.25) * 120
-        
-        # Add micro-variation (jitter) for uniqueness
-        price = base_price + random.uniform(-0.05, 0.05)
-        
-        curve.append({
-            "volume": vol_per_bot,
-            "price": round(price, 2),
-            "bid_id": f"system_gen_{i}"
-        })
+    # 2. Renewables (The price-setters when weather is good)
+    total_renew_mw = (wind * max_wind) + (solar * max_solar)
+    num_renew = 100
+    if total_renew_mw > 0:
+        v_per_bot = total_renew_mw / num_renew
+        for i in range(num_renew):
+            # Prices can go negative or stay low
+            price = -20.0 + (i / num_renew) * 70.0
+            curve.append({"volume": v_per_bot, "price": round(price + random.uniform(-0.1, 0.1), 2), "bid_id": f"renew_{i}"})
+
+    # 3. Peak Plants (Gas, expensive, 2000MW)
+    # These set the price when renewables are low
+    peak_mw = 2500.0
+    num_peak = 100
+    v_per_peak = peak_mw / num_peak
+    for i in range(num_peak):
+        # Steep curve from 60 to 400
+        price = 60.0 + (i / num_peak)**2 * 350.0  # Exponential increase for peaks
+        curve.append({"volume": v_per_peak, "price": round(price + random.uniform(-0.1, 0.1), 2), "bid_id": f"peak_{i}"})
     
     return curve
 

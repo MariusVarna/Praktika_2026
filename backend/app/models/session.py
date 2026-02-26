@@ -13,6 +13,7 @@ class Session(Base):
     # Settings
     start_day = Column(Integer, default=1) # The seed profile day to start on
     pro_rata_enabled = Column(Boolean, default=True)
+    forecast_error_margin = Column(Float, default=0.15)
     battery_max_mwh = Column(Float, default=100.0)
     battery_initial_mwh = Column(Float, default=50.0)
     battery_efficiency_charge = Column(Float, default=0.9)
@@ -20,7 +21,10 @@ class Session(Base):
     penalty_price = Column(Float, default=10.0)
     
     # Demands and Supplies Params
-    base_demand_mw = Column(Float, default=2.0)
+    base_demand_mw = Column(Float, default=3000.0)
+    max_wind_mw = Column(Float, default=1000.0)
+    max_solar_mw = Column(Float, default=1000.0)
+    max_demand_mw = Column(Float, default=3000.0)
     
     users = relationship("User", back_populates="session")
     rounds = relationship("Round", back_populates="session")

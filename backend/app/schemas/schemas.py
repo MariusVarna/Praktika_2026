@@ -59,7 +59,11 @@ class SessionCreate(BaseModel):
     battery_efficiency_charge: Optional[float] = 0.9
     battery_efficiency_discharge: Optional[float] = 0.9
     penalty_price: Optional[float] = 10.0
-    base_demand_mw: Optional[float] = 2.0
+    base_demand_mw: Optional[float] = 3000.0
+    max_wind_mw: Optional[float] = 1000.0
+    max_solar_mw: Optional[float] = 1000.0
+    max_demand_mw: Optional[float] = 3000.0
+    forecast_error_margin: Optional[float] = 0.15
 
 class SessionResponse(SessionCreate):
     id: int
@@ -70,8 +74,17 @@ class SessionResponse(SessionCreate):
 
 # --- Market Results ---
 class MarketResultResponse(BaseModel):
-    hour: int
     clearing_price: float
     total_volume_cleared: float
-
     model_config = ConfigDict(from_attributes=True)
+
+class HourlyForecast(BaseModel):
+    hour: int
+    predicted_price: float
+    wind_profile: float
+    solar_profile: float
+    demand_profile: float
+
+class ForecastingResponse(BaseModel):
+    round_id: int
+    forecast: List[HourlyForecast]
