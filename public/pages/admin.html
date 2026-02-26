@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />	
+<style>
+  :root {
+    --primary: #2f4a75;
+    --primary-dark: #24395b;
+    --background: #f4f5f7;
+    --white: #ffffff;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body {
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--primary);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .menu-btn {
+    font-size: 24px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .header-icon {
+    width: 28px;
+    height: 28px;
+    background: white;
+    border-radius: 50%;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 70px;
+    width: 250px;
+    height: calc(100vh - 70px);
+    background: var(--primary);
+    color: white;
+    padding: 20px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    overflow-y: auto;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar h3 {
+    margin-bottom: 20px;
+  }
+
+  .sidebar p {
+    padding: 12px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .sidebar p:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .overlay {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 70px);
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 150;
+  }
+
+  .overlay.active {
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    background: white;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: var(--primary);
+    color: white;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: var(--primary-dark);
+  }
+
+  .tab-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .tab-content {
+    display: none;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .form-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .form-group.full {
+    grid-template-columns: 1fr;
+  }
+
+  label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    color: #333;
+  }
+
+  .pin-display {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--primary);
+    margin: 10px 0;
+    padding: 10px;
+    background: #f0f4f8;
+    border-radius: 6px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--primary);
+    padding: 10px 8px;
+  }
+
+  .footer-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .footer-btn {
+    flex: 1;
+    margin: 0 5px;
+    background: white;
+    border: none;
+    border-radius: 14px;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+
+  .footer-btn:active {
+    transform: scale(0.96);
+  }
+
+  .icon {
+    font-size: 22px;
+    margin-bottom: 2px;
+    color: var(--primary);
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--primary);
+  }
+
+  @media (max-width: 768px) {
+    .form-group {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <div class="header-icon"></div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <h3>Menu</h3>
+  <p onclick="navigateTo('/pages/join.html')">Join Game</p>
+  <p onclick="navigateTo('/pages/lobby.html')">Lobby</p>
+  <p onclick="navigateTo('/pages/game.html')">Game</p>
+  <p onclick="navigateTo('/pages/help.html')">Help</p>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<main>
+  <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+    <h2 style="color: var(--primary);">Admin Control Panel</h2>
+  </div>
+
+  <!-- TAB NAVIGATION -->
+  <div class="tab-buttons">
+    <button class="tab-btn active" onclick="switchTab('create')">Create Session</button>
+    <button class="tab-btn" onclick="switchTab('active')">Active Sessions</button>
+    <button class="tab-btn" onclick="switchTab('history')">Session History</button>
+  </div>
+
+  <!-- CREATE SESSION TAB -->
+  <div id="create" class="tab-content active">
+    <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+      <h3 style="color: var(--primary); margin-bottom: 15px;">Create New Game Session</h3>
+
+      <div class="form-group full">
+        <label>Game Name</label>
+        <input type="text" id="gameName" placeholder="e.g., Power Trading Q1 2026">
+      </div>
+
+      <div class="form-group">
+        <div>
+          <label>Starting Day (Offset)</label>
+          <input type="number" id="startDay" placeholder="1" value="1" min="1">
+        </div>
+        <div>
+          <label>Number of Rounds</label>
+          <input type="number" id="numRounds" placeholder="5" value="5" min="1" max="10">
+        </div>
+      </div>
+
+      <h4 style="color: var(--primary); margin-top: 20px; margin-bottom: 15px;">Player Parameters</h4>
+
+      <div class="form-group">
+        <div>
+          <label>Max Power (MW)</label>
+          <input type="number" id="maxPower" placeholder="100" value="100" min="1">
+        </div>
+        <div>
+          <label>Bandwidth (MW)</label>
+          <input type="number" id="bandwidth" placeholder="50" value="50" min="1">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div>
+          <label>Efficiency (%)</label>
+          <input type="number" id="efficiency" placeholder="85" value="85" min="1" max="100">
+        </div>
+        <div>
+          <label>Penalty Price ($/MWh)</label>
+          <input type="number" id="penaltyPrice" placeholder="150" value="150" min="1">
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <button onclick="createSession()" style="width: 100%;">Create Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE SESSIONS TAB -->
+  <div id="active" class="tab-content">
+    <div id="activeSessions">
+      <div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">
+        No active sessions
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSION HISTORY TAB -->
+  <div id="history" class="tab-content">
+    <div id="sessionHistory">
+      <div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">
+        No completed sessions
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-buttons">
+    <button class="footer-btn" id="homeBtn">
+      <span class="material-symbols-outlined icon">home</span>
+      <span class="label">Home</span>
+    </button>
+
+    <button class="footer-btn" id="helpBtn">
+      <span class="material-symbols-outlined icon">help</span>
+      <span class="label">Help</span>
+    </button>
+
+    <button class="footer-btn" id="feedbackBtn">
+      <span class="material-symbols-outlined icon">feedback</span>
+      <span class="label">Feedback</span>
+    </button>
+
+    <button class="footer-btn" id="settingsBtn">
+      <span class="material-symbols-outlined icon">settings</span>
+      <span class="label">Settings</span>
+    </button>
+  </div>
+</footer>
+
+<script src="/assets/js/sidebar.js"></script>
+<script src="/assets/js/footer-nav.js"></script>
+<script>
+  let activeSessions = [];
+  let sessionHistory = [];
+
+  function navigateTo(path) {
+    window.location.href = path;
+  }
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active');
+    });
+
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  function createSession() {
+    const gameName = document.getElementById('gameName').value.trim();
+    const startDay = parseInt(document.getElementById('startDay').value);
+    const numRounds = parseInt(document.getElementById('numRounds').value);
+    const maxPower = parseInt(document.getElementById('maxPower').value);
+    const bandwidth = parseInt(document.getElementById('bandwidth').value);
+    const efficiency = parseInt(document.getElementById('efficiency').value);
+    const penaltyPrice = parseInt(document.getElementById('penaltyPrice').value);
+
+    if (!gameName) {
+      alert('Please enter a game name');
+      return;
+    }
+
+    const pin = Math.random().toString().substr(2, 6);
+
+    const session = {
+      id: Date.now(),
+      pin: pin,
+      name: gameName,
+      status: 'waiting',
+      startDay,
+      numRounds,
+      maxPower,
+      bandwidth,
+      efficiency,
+      penaltyPrice,
+      createdAt: new Date().toLocaleString(),
+      players: [],
+      currentRound: 0,
+      betsOpen: false
+    };
+
+    activeSessions.push(session);
+    document.getElementById('gameName').value = '';
+
+    alert(`Session created! PIN: ${pin}`);
+    switchTab('active');
+    renderActiveSessions();
+  }
+
+  function renderActiveSessions() {
+    const container = document.getElementById('activeSessions');
+
+    if (activeSessions.length === 0) {
+      container.innerHTML = '<div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">No active sessions</div>';
+      return;
+    }
+
+    container.innerHTML = activeSessions.map(session => `
+      <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+          <div>
+            <h4 style="color: var(--primary); margin-bottom: 5px;">${session.name}</h4>
+            <p style="font-size: 13px; color: #666;">Created: ${session.createdAt}</p>
+          </div>
+          <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">Round ${session.currentRound}/${session.numRounds}</span>
+        </div>
+        <div class="pin-display">${session.pin}</div>
+        <p style="margin-bottom: 15px;"><strong>Players:</strong> ${session.players.length} | <strong>Status:</strong> ${session.status.toUpperCase()}</p>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="startSession(${session.id})" style="flex: 1; padding: 8px; font-size: 12px;">Start</button>
+          <button onclick="toggleBets(${session.id})" style="flex: 1; padding: 8px; font-size: 12px;">${session.betsOpen ? 'Close Bets' : 'Open Bets'}</button>
+          <button onclick="deleteSession(${session.id})" style="flex: 1; padding: 8px; font-size: 12px; background: #f44336;">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function startSession(sessionId) {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (session) {
+      session.status = 'active';
+      session.currentRound = 1;
+      renderActiveSessions();
+    }
+  }
+
+  function toggleBets(sessionId) {
+    const session = activeSessions.find(s => s.id === sessionId);
+    if (session) {
+      session.betsOpen = !session.betsOpen;
+      renderActiveSessions();
+    }
+  }
+
+  function deleteSession(sessionId) {
+    if (confirm('Are you sure?')) {
+      activeSessions = activeSessions.filter(s => s.id !== sessionId);
+      renderActiveSessions();
+    }
+  }
+</script>
+
+</body>
+</html>

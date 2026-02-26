@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Help</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />	
+<style>
+  :root {
+    --primary: #2f4a75;
+    --primary-dark: #24395b;
+    --background: #f4f5f7;
+    --white: #ffffff;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body {
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--primary);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .menu-btn {
+    font-size: 24px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .header-icon {
+    width: 28px;
+    height: 28px;
+    background: white;
+    border-radius: 50%;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 70px;
+    width: 250px;
+    height: calc(100vh - 70px);
+    background: var(--primary);
+    color: white;
+    padding: 20px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    overflow-y: auto;
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .sidebar h3 {
+    margin-bottom: 20px;
+  }
+
+  .sidebar p {
+    padding: 12px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .sidebar p:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .overlay {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 70px);
+    background: rgba(0, 0, 0, 0);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 150;
+  }
+
+  .overlay.active {
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--primary);
+    padding: 10px 8px;
+  }
+
+  .footer-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .footer-btn {
+    flex: 1;
+    margin: 0 5px;
+    background: white;
+    border: none;
+    border-radius: 14px;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.15s ease;
+  }
+
+  .footer-btn:active {
+    transform: scale(0.96);
+  }
+
+  .icon {
+    font-size: 22px;
+    margin-bottom: 2px;
+    color: var(--primary);
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--primary);
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <div class="header-icon"></div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <h3>Menu</h3>
+  <p onclick="navigateTo('/pages/join.html')">Join Game</p>
+  <p onclick="navigateTo('/pages/game.html')">Game</p>
+  <p onclick="navigateTo('/pages/admin.html')">Admin</p>
+  <p onclick="navigateTo('/pages/settings.html')">Settings</p>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<main>
+  <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+    <h2 style="color: var(--primary); margin-bottom: 10px;">Help & Support</h2>
+  </div>
+
+  <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+    <h3 style="color: var(--primary); margin-bottom: 15px;">How to Join a Game</h3>
+    <p style="margin-bottom: 10px;">1. On the main page, enter the 6-digit PIN code provided by the game administrator</p>
+    <p style="margin-bottom: 10px;">2. Tap "Join Game" to enter the lobby</p>
+    <p style="margin-bottom: 10px;">3. Wait for the game to start and all players to join</p>
+    <p>4. Follow the on-screen instructions during gameplay</p>
+  </div>
+
+  <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
+    <h3 style="color: var(--primary); margin-bottom: 15px;">Game Rules</h3>
+    <p style="margin-bottom: 10px;"><strong>Bidding:</strong> Place bids on power plant outputs during the bidding window</p>
+    <p style="margin-bottom: 10px;"><strong>Scoring:</strong> Earn points based on your bid accuracy and efficiency</p>
+    <p style="margin-bottom: 10px;"><strong>Rounds:</strong> The game consists of multiple rounds across different time periods</p>
+    <p><strong>Winner:</strong> Highest score at the end of all rounds wins</p>
+  </div>
+
+  <div style="background:white; border-radius:10px; padding: 20px;">
+    <h3 style="color: var(--primary); margin-bottom: 15px;">Troubleshooting</h3>
+    <p style="margin-bottom: 10px;"><strong>Invalid PIN?</strong> Check the PIN provided by the administrator. PINs are 6 digits.</p>
+    <p style="margin-bottom: 10px;"><strong>Can't join?</strong> The game session may have ended. Ask the administrator for a new PIN.</p>
+    <p><strong>Lost connection?</strong> Refresh the page to reconnect to your current game.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-buttons">
+    <button class="footer-btn" id="homeBtn">
+      <span class="material-symbols-outlined icon">home</span>
+      <span class="label">Home</span>
+    </button>
+
+    <button class="footer-btn" id="helpBtn">
+      <span class="material-symbols-outlined icon">help</span>
+      <span class="label">Help</span>
+    </button>
+
+    <button class="footer-btn" id="feedbackBtn">
+      <span class="material-symbols-outlined icon">feedback</span>
+      <span class="label">Feedback</span>
+    </button>
+
+    <button class="footer-btn" id="settingsBtn">
+      <span class="material-symbols-outlined icon">settings</span>
+      <span class="label">Settings</span>
+    </button>
+  </div>
+</footer>
+
+<script src="/assets/js/sidebar.js"></script>
+<script src="/assets/js/footer-nav.js"></script>
+<script>
+  function navigateTo(path) {
+    window.location.href = path;
+  }
+</script>
+
+</body>
+</html>

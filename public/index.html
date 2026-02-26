@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Join Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />	
+<style>
+  :root {
+    --primary: #2f4a75;
+    --primary-dark: #24395b;
+    --background: #f4f5f7;
+    --white: #ffffff;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  body {
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--primary);
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .logo-placeholder {
+    width: 100px;
+    height: 30px;
+    background: #e5e5e5;
+    border-radius: 8px;
+  }
+
+  .header-icon {
+    width: 28px;
+    height: 28px;
+    background: white;
+    border-radius: 50%;
+  }
+
+  /* MAIN CONTENT */
+  main {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  input {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    margin-bottom: 15px;
+    background: white;
+  }
+
+  button.join-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button.join-btn:hover {
+    background: var(--primary-dark);
+  }
+
+  footer {
+  background: var(--primary);
+  padding: 10px 8px;
+}
+
+.footer-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.footer-btn {
+  flex: 1;
+  margin: 0 5px;
+  background: white;
+  border: none;
+  border-radius: 14px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.footer-btn:active {
+  transform: scale(0.96);
+}
+
+.icon {
+  font-size: 22px;
+  margin-bottom: 2px;
+  color: var(--primary);
+}
+
+.label {
+  font-size: 11px;
+  color: var(--primary);
+}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo-placeholder"></div>
+  <div class="header-icon"></div>
+</header>
+
+<main>
+  <div class="card">
+    <input id="pinInput" type="text" placeholder="Enter PIN Code" maxlength="6" />
+    <button class="join-btn" id="joinBtn">Join Lobby</button>
+  </div>
+</main>
+
+<footer>
+    <div class="footer-buttons">
+
+        <button class="footer-btn" id="loginBtn">
+            <span class="material-symbols-outlined icon">key</span>
+            <span class="label">Login</span>
+        </button>
+
+        <button class="footer-btn" id="helpBtn">
+            <span class="material-symbols-outlined icon">help</span>
+            <span class="label">Help</span>
+        </button>
+
+        <button class="footer-btn" id="messagesBtn">
+            <span class="material-symbols-outlined icon">chat_bubble</span>
+            <span class="label">Messages</span>
+        </button>
+
+        <button class="footer-btn" id="settingsBtn">
+            <span class="material-symbols-outlined icon">settings</span>
+            <span class="label">Settings</span>
+        </button>
+
+    </div>
+</footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_jlGDWJfm7jb0dtccWe693JBjXCLM5gw",
+    authDomain: "prak2026-eb951.firebaseapp.com",
+    projectId: "prak2026-eb951",
+    appId: "1:450531092276:web:ab932493d4d3040ac8a761"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  document.getElementById("joinBtn").addEventListener("click", async () => {
+    const pin = document.getElementById("pinInput").value.trim();
+    if (!pin) {
+      alert("Please enter a PIN");
+      return;
+    }
+    const gameRef = doc(db, "games", pin);
+    const gameSnap = await getDoc(gameRef);
+    if (gameSnap.exists()) {
+      window.location.href = `/pages/lobby.html?pin=${pin}`;
+    } else {
+      alert("Invalid PIN");
+    }
+  });
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        window.location.href = "../public/pages/lobby.html";
+    });
+
+    document.getElementById("helpBtn").addEventListener("click", () => {
+        window.location.href = "../public/pages/game.html";
+    });
+
+    document.getElementById("messagesBtn").addEventListener("click", () => {
+        window.location.href = "../public/pages/blank.html";
+    });
+
+    document.getElementById("settingsBtn").addEventListener("click", () => {
+        window.location.href = "../public/pages/game.html";
+    });
+
+</script>
+
+</body>
+</html>
