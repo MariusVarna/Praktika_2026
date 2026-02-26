@@ -15,27 +15,51 @@ def get_day_seed(day: int) -> List[Dict]:
     # Default fallback if day not found
     return []
 
+import random
+
 def generate_supply_curve(hour_data: dict, session) -> List[dict]:
-    """Generates the supply curve bots/tiers based on config."""
-    # Based on Plan: 50% avg price, 25% cheap, 25% expensive
+    """Generates a granular supply curve with ~200 bots/tiers for smoothness."""
     wind = hour_data.get('wind_planned_profile', 0)
     solar = hour_data.get('solar_planned_profile', 0)
     
-    total_supply_mw = (wind + solar) # Base MW calculation based on profile (assuming profile is absolute MW or we apply a multiplier, user said "max poreikis 3000 megawwatt dauginam is valandinio poreikio")
-    # Actually user said Qmax * profile. So if profile is already percentage, we multiply by max.
-    # For now, let's treat the profile value as the actual MWh or MW.
+    # Use session multipliers if available, else defaults
+    max_wind = getattr(session, 'max_wind_mw', 1000.0)
+    max_solar = getattr(session, 'max_solar_mw', 1000.0)
     
-    # We will split it into 3 bot tiers for simplicity
-    v_cheap = total_supply_mw * 0.25
-    v_avg = total_supply_mw * 0.50
-    v_exp = total_supply_mw * 0.25
+    total_supply_mw = (wind * max_wind) + (solar * max_solar)
     
-    # Arbitrary prices for now, these could be admin configurable too
-    curve = [
-        {"volume": v_cheap, "price": -5.0}, # Subsidized
-        {"volume": v_avg, "price": 40.0},   # Average
-        {"volume": v_exp, "price": 120.0},  # Expensive
-    ]
+    curve = []
+    num_bots = 200
+    vol_per_bot = total_supply_mw / num_bots if total_supply_mw > 0 else 0
+    
+    if vol_per_bot <= 0:
+        return []
+
+    for i in range(num_bots):
+        # Create a smooth price curve from -10 to 200
+        # 0-25% (Cheap): -10 to 10
+        # 25-75% (Avg): 10 to 80
+        # 75-100% (Exp): 80 to 200
+        progress = i / num_bots
+        if progress < 0.25:
+            # Linear map 0..0.25 to -10..10
+            base_price = -10 + (progress / 0.25) * 20
+        elif progress < 0.75:
+            # Linear map 0.25..0.75 to 10..80
+            base_price = 10 + ((progress - 0.25) / 0.5) * 70
+        else:
+            # Linear map 0.75..1.0 to 80..200
+            base_price = 80 + ((progress - 0.75) / 0.25) * 120
+        
+        # Add micro-variation (jitter) for uniqueness
+        price = base_price + random.uniform(-0.05, 0.05)
+        
+        curve.append({
+            "volume": vol_per_bot,
+            "price": round(price, 2),
+            "bid_id": f"system_gen_{i}"
+        })
+    
     return curve
 
 def calculate_clearing_price(supply_curve: List[Dict], demand_curve: List[Dict], base_demand_mw: float):
@@ -54,7 +78,24 @@ def calculate_clearing_price(supply_curve: List[Dict], demand_curve: List[Dict],
             "bid_id": s.get("bid_id", f"bot_s_{i}")
         })
     
-    prepared_demand = [{"volume": base_demand_mw, "price": 9999.0, "bid_id": "base_demand"}]
+    prepared_demand = []
+    # 80% is inelastic (critical demand), price at infinity
+    inelastic_vol = base_demand_mw * 0.8
+    prepared_demand.append({"volume": inelastic_vol, "price": 9999.0, "bid_id": "base_demand_critical"})
+    
+    # 20% is elastic (smart demand), split into 50 small bots with decreasing prices
+    elastic_vol_total = base_demand_mw * 0.2
+    num_demand_bots = 50
+    v_per_d_bot = elastic_vol_total / num_demand_bots
+    for i in range(num_demand_bots):
+        # Price drops from 200 down to 30
+        price = 200 - (i / num_demand_bots) * 170 + random.uniform(-0.1, 0.1)
+        prepared_demand.append({
+            "volume": v_per_d_bot,
+            "price": round(price, 2),
+            "bid_id": f"system_demand_{i}"
+        })
+
     for i, d in enumerate(demand_curve):
         prepared_demand.append({
             "volume": d["volume"],
