@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pandas
+openpyxl
+websockets
+httpx
+pytest
+pytest-asyncio
