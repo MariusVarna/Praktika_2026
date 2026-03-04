@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
+      background-attachment: fixed;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      flex-shrink: 0;
+      z-index: 50;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .app-name {
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .header-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .header-icon:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 70px;
+      width: 280px;
+      height: calc(100vh - 70px);
+      background: white;
+      border-right: 1px solid #e0d9cc;
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.active {
+      transform: translateX(0);
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0d9cc;
+      background: #fafaf8;
+    }
+
+    .sidebar-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2f4a75;
+      letter-spacing: 0.3px;
+    }
+
+    .sidebar-item {
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #555;
+      font-weight: 500;
+      font-size: 15px;
+      border-left: 3px solid transparent;
+      user-select: none;
+    }
+
+    .sidebar-item:hover {
+      background: #f5f1e8;
+      color: #2f4a75;
+      border-left-color: #2f4a75;
+      padding-left: 24px;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      width: 100%;
+      height: calc(100vh - 70px);
+      background: rgba(0, 0, 0, 0);
+      z-index: 99;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    .overlay.active {
+      background: rgba(0, 0, 0, 0.4);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow-y: auto;
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e8dfd4;
+    }
+
+    .card h2 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #2f4a75;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2f4a75;
+      margin-bottom: 12px;
+      margin-top: 15px;
+    }
+
+    .card h3:first-child {
+      margin-top: 0;
+    }
+
+    .score-display {
+      font-size: 48px;
+      font-weight: 700;
+      color: #2f4a75;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .rank-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #e8dfd4;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-label {
+      color: #666;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .stat-value {
+      color: #2f4a75;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e8dfd4;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2f4a75 0%, #1f3a55 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .comparison-table thead {
+      background: #f5f1e8;
+      border-bottom: 2px solid #e0d9cc;
+    }
+
+    .comparison-table th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: #2f4a75;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .comparison-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e8dfd4;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .comparison-table tbody tr:hover {
+      background: #fafaf8;
+    }
+
+    .comparison-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(47, 74, 117, 0.25);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #2f4a75;
+      border: 2px solid #2f4a75;
+    }
+
+    .btn-secondary:hover {
+      background: #f5f1e8;
+    }
+
+    .medal {
+      font-size: 32px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    @media (max-width: 480px) {
+      main {
+        padding: 15px;
+        gap: 15px;
+      }
+
+      .card {
+        padding: 16px;
+        border-radius: 14px;
+      }
+
+      .score-display {
+        font-size: 36px;
+      }
+
+      .btn-group {
+        flex-direction: column;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #d4cec2;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #c0baaf;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-left">
+    <button class="menu-btn" id="menuBtn">☰</button>
+    <div class="app-name">Pavadinimas</div>
+  </div>
+  <div class="header-icon">U</div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>Navigation</h2>
+  </div>
+  <div class="sidebar-menu">
+    <div class="sidebar-item" onclick="navigateTo('/pages/join.html')">Pin kodas</div>
+    <div class="sidebar-item" onclick="navigateTo('/pages/game.html')">Žinynas</div>
+    <div class="sidebar-item" onclick="navigateTo('/pages/results.html')">Rezultatai</div>
+    <div class="sidebar-item" onclick="navigateTo('/pages/settings.html')">Parinkty</div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<main>
+  <!-- FINAL SCORE -->
+  <div class="card">
+    <h2>Game Results</h2>
+    <div class="medal" id="medal">🏆</div>
+    <div class="score-display" id="finalScore">2,450</div>
+    <div class="rank-badge" id="rankBadge">Rank: 1st Place</div>
+    <p style="text-align: center; color: #666; font-size: 14px; margin-top: 10px;">Out of 6 players</p>
+  </div>
+
+  <!-- PERFORMANCE SUMMARY -->
+  <div class="card">
+    <h3>Performance Summary</h3>
+    
+    <div class="stat-row">
+      <span class="stat-label">Total Score</span>
+      <span class="stat-value" id="totalScoreStat">2,450</span>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-label">Average Round Score</span>
+      <span class="stat-value" id="avgScore">490</span>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-label">Best Round</span>
+      <span class="stat-value" id="bestRound">Round 2 (650)</span>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-label">Worst Round</span>
+      <span class="stat-value" id="worstRound">Round 4 (380)</span>
+    </div>
+
+    <div class="stat-row">
+      <span class="stat-label">Accuracy</span>
+      <span class="stat-value" id="accuracy">87.5%</span>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <span class="stat-label">Score Consistency</span>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 75%;"></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 15px;">
+      <span class="stat-label">Efficiency Rating</span>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 82%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUND BY ROUND BREAKDOWN -->
+  <div class="card">
+    <h3>Round by Round Breakdown</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>Your Score</th>
+          <th>Avg Score</th>
+          <th>Rank</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td style="color: #2f4a75; font-weight: 600;">450</td>
+          <td>420</td>
+          <td>2nd</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td style="color: #2f4a75; font-weight: 600;">650</td>
+          <td>480</td>
+          <td>1st</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td style="color: #2f4a75; font-weight: 600;">520</td>
+          <td>510</td>
+          <td>2nd</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td style="color: #2f4a75; font-weight: 600;">380</td>
+          <td>450</td>
+          <td>5th</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td style="color: #2f4a75; font-weight: 600;">450</td>
+          <td>440</td>
+          <td>3rd</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="card">
+    <h3>Final Leaderboard</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: #f0f4f8;">
+          <td style="font-weight: 600; color: #2f4a75;">1st</td>
+          <td style="font-weight: 600; color: #2f4a75;">You</td>
+          <td style="font-weight: 600; color: #2f4a75;">2,450</td>
+        </tr>
+        <tr>
+          <td>2nd</td>
+          <td>Player 2</td>
+          <td>2,320</td>
+        </tr>
+        <tr>
+          <td>3rd</td>
+          <td>Player 3</td>
+          <td>2,180</td>
+        </tr>
+        <tr>
+          <td>4th</td>
+          <td>Player 4</td>
+          <td>2,050</td>
+        </tr>
+        <tr>
+          <td>5th</td>
+          <td>Player 5</td>
+          <td>1,920</td>
+        </tr>
+        <tr>
+          <td>6th</td>
+          <td>Player 6</td>
+          <td>1,750</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="card">
+    <div class="btn-group">
+      <button class="btn" onclick="playAgain()">Play Again</button>
+      <button class="btn btn-secondary" onclick="navigateTo('/pages/join.html')">Main Menu</button>
+    </div>
+  </div>
+</main>
+
+<script>
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
+  });
+
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+  });
+
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('active') && 
+        !sidebar.contains(e.target) && 
+        !menuBtn.contains(e.target)) {
+      sidebar.classList.remove('active');
+      overlay.classList.remove('active');
+    }
+  });
+
+  // Update medal based on rank
+  const rank = 1; // Change this based on actual rank
+  const medals = {
+    1: '🥇',
+    2: '🥈',
+    3: '🥉'
+  };
+  document.getElementById('medal').textContent = medals[rank] || '✓';
+
+  function playAgain() {
+    window.location.href = '/pages/join.html';
+  }
+
+  function navigateTo(path) {
+    window.location.href = path;
+  }
+
+  // Example: Update results from Python backend
+  // Call this function with data from your Python backend
+  function updateResults(data) {
+    document.getElementById('finalScore').textContent = data.finalScore.toLocaleString();
+    document.getElementById('rankBadge').textContent = `Rank: ${data.rank}${getOrdinalSuffix(data.rank)} Place`;
+    document.getElementById('totalScoreStat').textContent = data.finalScore.toLocaleString();
+    document.getElementById('avgScore').textContent = data.avgScore;
+    document.getElementById('bestRound').textContent = data.bestRound;
+    document.getElementById('worstRound').textContent = data.worstRound;
+    document.getElementById('accuracy').textContent = data.accuracy + '%';
+  }
+
+  function getOrdinalSuffix(num) {
+    const j = num % 10;
+    const k = num % 100;
+    if (j === 1 && k !== 11) return 'st';
+    if (j === 2 && k !== 12) return 'nd';
+    if (j === 3 && k !== 13) return 'rd';
+    return 'th';
+  }
+
+  // Example call:
+  // updateResults({
+  //   finalScore: 2450,
+  //   rank: 1,
+  //   avgScore: 490,
+  //   bestRound: 'Round 2 (650)',
+  //   worstRound: 'Round 4 (380)',
+  //   accuracy: 87.5
+  // });
+</script>
+
+</body>
+</html>
