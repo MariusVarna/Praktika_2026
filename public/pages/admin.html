@@ -1,497 +1,613 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Admin Panel</title>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />	
-<style>
-  :root {
-    --primary: #2f4a75;
-    --primary-dark: #24395b;
-    --background: #f4f5f7;
-    --white: #ffffff;
-  }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administravimo skydelis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: Arial, Helvetica, sans-serif;
-  }
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
 
-  body {
-    background: var(--background);
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
+            background-attachment: fixed;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
 
-  /* HEADER */
-  header {
-    background: var(--primary);
-    height: 70px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-  }
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
+                background-size: 50px 50px;
+                pointer-events: none;
+                z-index: 0;
+            }
 
-  .menu-btn {
-    font-size: 24px;
-    color: white;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-  }
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
 
-  .header-icon {
-    width: 28px;
-    height: 28px;
-    background: white;
-    border-radius: 50%;
-  }
+        header {
+            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            z-index: 50;
+        }
 
-  /* SIDEBAR */
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 70px;
-    width: 250px;
-    height: calc(100vh - 70px);
-    background: var(--primary);
-    color: white;
-    padding: 20px;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    z-index: 200;
-    overflow-y: auto;
-  }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-  .sidebar.active {
-    transform: translateX(0);
-  }
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
 
-  .sidebar h3 {
-    margin-bottom: 20px;
-  }
+            .menu-btn:hover {
+                background: rgba(255,255,255,0.1);
+            }
 
-  .sidebar p {
-    padding: 12px 10px;
-    cursor: pointer;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    transition: all 0.2s ease;
-  }
+        .logo {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
 
-  .sidebar p:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
+        .header-right {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
 
-  .overlay {
-    position: fixed;
-    top: 70px;
-    left: 0;
-    width: 100%;
-    height: calc(100vh - 70px);
-    background: rgba(0, 0, 0, 0);
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.3s ease;
-    z-index: 150;
-  }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 280px;
+            height: calc(100vh - 70px);
+            background: white;
+            border-right: 1px solid #e0d9cc;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        }
 
-  .overlay.active {
-    background: rgba(0, 0, 0, 0.5);
-    opacity: 1;
-    pointer-events: all;
-  }
+            .sidebar.active {
+                transform: translateX(0);
+            }
 
-  /* MAIN CONTENT */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 20px;
-    overflow-y: auto;
-  }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0d9cc;
+            background: #fafaf8;
+        }
 
-  input, select {
-    width: 100%;
-    padding: 12px 15px;
-    font-size: 16px;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-    margin-bottom: 15px;
-    background: white;
-    font-family: Arial, Helvetica, sans-serif;
-  }
+            .sidebar-header h2 {
+                font-size: 18px;
+                font-weight: 600;
+                color: #2f4a75;
+            }
 
-  button {
-    padding: 12px 20px;
-    font-size: 16px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    background: var(--primary);
-    color: white;
-    transition: 0.2s;
-  }
+        .sidebar-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #555;
+            font-weight: 500;
+            font-size: 15px;
+            border-left: 3px solid transparent;
+        }
 
-  button:hover {
-    background: var(--primary-dark);
-  }
+            .sidebar-item:hover {
+                background: #f5f1e8;
+                color: #2f4a75;
+                border-left-color: #2f4a75;
+                padding-left: 24px;
+            }
 
-  .tab-buttons {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid #ddd;
-  }
+        .overlay {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 70px);
+            background: rgba(0,0,0,0);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
 
-  .tab-btn {
-    padding: 12px 20px;
-    background: none;
-    border: none;
-    color: #666;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-  }
+            .overlay.active {
+                background: rgba(0,0,0,0.4);
+                opacity: 1;
+                pointer-events: all;
+            }
 
-  .tab-btn.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
-  }
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            gap: 15px;
+        }
 
-  .tab-content {
-    display: none;
-  }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e8dfd4;
+        }
 
-  .tab-content.active {
-    display: block;
-  }
+            .card h2 {
+                font-size: 24px;
+                font-weight: 600;
+                color: #2f4a75;
+                margin-bottom: 15px;
+            }
 
-  .form-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
-  }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0d9cc;
+        }
 
-  .form-group.full {
-    grid-template-columns: 1fr;
-  }
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s ease;
+        }
 
-  label {
-    font-weight: 600;
-    margin-bottom: 5px;
-    display: block;
-    color: #333;
-  }
+            .tab-btn.active {
+                color: #2f4a75;
+                border-bottom-color: #2f4a75;
+            }
 
-  .pin-display {
-    font-size: 20px;
-    font-weight: bold;
-    color: var(--primary);
-    margin: 10px 0;
-    padding: 10px;
-    background: #f0f4f8;
-    border-radius: 6px;
-    text-align: center;
-    font-family: 'Courier New', monospace;
-  }
+        .tab-content {
+            display: none;
+        }
 
-  /* FOOTER */
-  footer {
-    background: var(--primary);
-    padding: 10px 8px;
-  }
+            .tab-content.active {
+                display: block;
+            }
 
-  .footer-buttons {
-    display: flex;
-    justify-content: space-between;
-  }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
 
-  .footer-btn {
-    flex: 1;
-    margin: 0 5px;
-    background: white;
-    border: none;
-    border-radius: 14px;
-    padding: 6px 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.15s ease;
-  }
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #d4cec2;
+            border-radius: 10px;
+            background: #fafaf8;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
 
-  .footer-btn:active {
-    transform: scale(0.96);
-  }
+            input:focus, select:focus {
+                outline: none;
+                border-color: #2f4a75;
+                background: #fff;
+                box-shadow: 0 0 0 3px rgba(47, 74, 117, 0.1);
+            }
 
-  .icon {
-    font-size: 22px;
-    margin-bottom: 2px;
-    color: var(--primary);
-  }
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
 
-  .label {
-    font-size: 11px;
-    color: var(--primary);
-  }
+            .form-group.full {
+                grid-template-columns: 1fr;
+            }
 
-  @media (max-width: 768px) {
-    .form-group {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(47,74,117,0.2);
+            }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+            .btn-danger:hover {
+                box-shadow: 0 4px 12px rgba(231,76,60,0.2);
+            }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+            .btn-group button {
+                flex: 1;
+            }
+
+        .session-item {
+            background: #f9f7f3;
+            border: 1px solid #e0d9cc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .session-title {
+            font-weight: 600;
+            color: #2f4a75;
+        }
+
+        .session-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pin-display {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2f4a75;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 4px;
+            text-align: center;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f0f4f8;
+            border-radius: 10px;
+            border: 2px solid #d4cec2;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e8dfd4;
+            font-size: 14px;
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #2f4a75;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .form-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
 </head>
-
 <body>
-
-<header>
-  <button class="menu-btn" id="menuBtn">☰</button>
-  <div class="header-icon"></div>
-</header>
-
-<div class="sidebar" id="sidebar">
-  <h3>Menu</h3>
-  <p onclick="navigateTo('/pages/join.html')">Join Game</p>
-  <p onclick="navigateTo('/pages/lobby.html')">Lobby</p>
-  <p onclick="navigateTo('/pages/game.html')">Game</p>
-  <p onclick="navigateTo('/pages/help.html')">Help</p>
-</div>
-
-<div class="overlay" id="overlay"></div>
-
-<main>
-  <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
-    <h2 style="color: var(--primary);">Admin Control Panel</h2>
-  </div>
-
-  <!-- TAB NAVIGATION -->
-  <div class="tab-buttons">
-    <button class="tab-btn active" onclick="switchTab('create')">Create Session</button>
-    <button class="tab-btn" onclick="switchTab('active')">Active Sessions</button>
-    <button class="tab-btn" onclick="switchTab('history')">Session History</button>
-  </div>
-
-  <!-- CREATE SESSION TAB -->
-  <div id="create" class="tab-content active">
-    <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
-      <h3 style="color: var(--primary); margin-bottom: 15px;">Create New Game Session</h3>
-
-      <div class="form-group full">
-        <label>Game Name</label>
-        <input type="text" id="gameName" placeholder="e.g., Power Trading Q1 2026">
-      </div>
-
-      <div class="form-group">
-        <div>
-          <label>Starting Day (Offset)</label>
-          <input type="number" id="startDay" placeholder="1" value="1" min="1">
+    <header>
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="logo">Pavadinimas</div>
         </div>
-        <div>
-          <label>Number of Rounds</label>
-          <input type="number" id="numRounds" placeholder="5" value="5" min="1" max="10">
-        </div>
-      </div>
+        <div class="header-right">A</div>
+    </header>
 
-      <h4 style="color: var(--primary); margin-top: 20px; margin-bottom: 15px;">Player Parameters</h4>
-
-      <div class="form-group">
-        <div>
-          <label>Max Power (MW)</label>
-          <input type="number" id="maxPower" placeholder="100" value="100" min="1">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header"><h2>Navigacija</h2></div>
+        <div class="sidebar-menu">
+            <div class="sidebar-item" onclick="navigateTo('../pages/join.html')">PIN Kodas</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/help.html')">Žinynas</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/settings.html')">Nustatymai</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/review.html')">Atsiliepimai</div>
         </div>
-        <div>
-          <label>Bandwidth (MW)</label>
-          <input type="number" id="bandwidth" placeholder="50" value="50" min="1">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <div>
-          <label>Efficiency (%)</label>
-          <input type="number" id="efficiency" placeholder="85" value="85" min="1" max="100">
-        </div>
-        <div>
-          <label>Penalty Price ($/MWh)</label>
-          <input type="number" id="penaltyPrice" placeholder="150" value="150" min="1">
-        </div>
-      </div>
-
-      <div class="form-group full">
-        <button onclick="createSession()" style="width: 100%;">Create Session</button>
-      </div>
     </div>
-  </div>
 
-  <!-- ACTIVE SESSIONS TAB -->
-  <div id="active" class="tab-content">
-    <div id="activeSessions">
-      <div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">
-        No active sessions
-      </div>
-    </div>
-  </div>
+    <div class="overlay" id="overlay"></div>
 
-  <!-- SESSION HISTORY TAB -->
-  <div id="history" class="tab-content">
-    <div id="sessionHistory">
-      <div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">
-        No completed sessions
-      </div>
-    </div>
-  </div>
-</main>
+    <main>
+        <div class="card"><h2>Administravimo Skydelis</h2></div>
 
-<footer>
-  <div class="footer-buttons">
-    <button class="footer-btn" id="homeBtn">
-      <span class="material-symbols-outlined icon">home</span>
-      <span class="label">Home</span>
-    </button>
-
-    <button class="footer-btn" id="helpBtn">
-      <span class="material-symbols-outlined icon">help</span>
-      <span class="label">Help</span>
-    </button>
-
-    <button class="footer-btn" id="feedbackBtn">
-      <span class="material-symbols-outlined icon">feedback</span>
-      <span class="label">Feedback</span>
-    </button>
-
-    <button class="footer-btn" id="settingsBtn">
-      <span class="material-symbols-outlined icon">settings</span>
-      <span class="label">Settings</span>
-    </button>
-  </div>
-</footer>
-
-<script src="/assets/js/sidebar.js"></script>
-<script src="/assets/js/footer-nav.js"></script>
-<script>
-  let activeSessions = [];
-  let sessionHistory = [];
-
-  function navigateTo(path) {
-    window.location.href = path;
-  }
-
-  function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
-
-    document.getElementById(tabName).classList.add('active');
-    event.target.classList.add('active');
-  }
-
-  function createSession() {
-    const gameName = document.getElementById('gameName').value.trim();
-    const startDay = parseInt(document.getElementById('startDay').value);
-    const numRounds = parseInt(document.getElementById('numRounds').value);
-    const maxPower = parseInt(document.getElementById('maxPower').value);
-    const bandwidth = parseInt(document.getElementById('bandwidth').value);
-    const efficiency = parseInt(document.getElementById('efficiency').value);
-    const penaltyPrice = parseInt(document.getElementById('penaltyPrice').value);
-
-    if (!gameName) {
-      alert('Please enter a game name');
-      return;
-    }
-
-    const pin = Math.random().toString().substr(2, 6);
-
-    const session = {
-      id: Date.now(),
-      pin: pin,
-      name: gameName,
-      status: 'waiting',
-      startDay,
-      numRounds,
-      maxPower,
-      bandwidth,
-      efficiency,
-      penaltyPrice,
-      createdAt: new Date().toLocaleString(),
-      players: [],
-      currentRound: 0,
-      betsOpen: false
-    };
-
-    activeSessions.push(session);
-    document.getElementById('gameName').value = '';
-
-    alert(`Session created! PIN: ${pin}`);
-    switchTab('active');
-    renderActiveSessions();
-  }
-
-  function renderActiveSessions() {
-    const container = document.getElementById('activeSessions');
-
-    if (activeSessions.length === 0) {
-      container.innerHTML = '<div style="background:white; border-radius:10px; padding: 20px; text-align: center; color: #666;">No active sessions</div>';
-      return;
-    }
-
-    container.innerHTML = activeSessions.map(session => `
-      <div style="background:white; border-radius:10px; padding: 20px; margin-bottom: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-          <div>
-            <h4 style="color: var(--primary); margin-bottom: 5px;">${session.name}</h4>
-            <p style="font-size: 13px; color: #666;">Created: ${session.createdAt}</p>
-          </div>
-          <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px;">Round ${session.currentRound}/${session.numRounds}</span>
+        <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchTab('create', event)">Sukurti Sesiją</button>
+            <button class="tab-btn" onclick="switchTab('active', event)">Aktyvios Sesijos</button>
+            <button class="tab-btn" onclick="switchTab('previous', event)">Ankstesnės Sesijos</button>
         </div>
-        <div class="pin-display">${session.pin}</div>
-        <p style="margin-bottom: 15px;"><strong>Players:</strong> ${session.players.length} | <strong>Status:</strong> ${session.status.toUpperCase()}</p>
-        <div style="display: flex; gap: 8px;">
-          <button onclick="startSession(${session.id})" style="flex: 1; padding: 8px; font-size: 12px;">Start</button>
-          <button onclick="toggleBets(${session.id})" style="flex: 1; padding: 8px; font-size: 12px;">${session.betsOpen ? 'Close Bets' : 'Open Bets'}</button>
-          <button onclick="deleteSession(${session.id})" style="flex: 1; padding: 8px; font-size: 12px; background: #f44336;">Delete</button>
+
+        <div id="create" class="tab-content active">
+            <div class="card">
+                <h3>Sukurti Naują Žaidimo Sesiją</h3>
+                <div class="form-group full">
+                    <label>Žaidimo Pavadinimas</label>
+                    <input type="text" id="gameName" placeholder="pvz., Elektros Prekyba Q1 2026">
+                </div>
+                <div class="form-group">
+                    <div><label>Pradžios Diena</label><input type="number" id="startDay" value="1" min="1"></div>
+                    <div><label>Raundų Skaičius</label><input type="number" id="numRounds" value="5" min="1" max="10"></div>
+                </div>
+                <h4>Žaidėjo Parametrai</h4>
+                <div class="form-group">
+                    <div><label>Maks. Galia (MW)</label><input type="number" id="maxPower" value="100" min="1"></div>
+                    <div><label>Pralaidumas (MW)</label><input type="number" id="bandwidth" value="50" min="1"></div>
+                </div>
+                <div class="form-group">
+                    <div><label>Efektyvumas (%)</label><input type="number" id="efficiency" value="85" min="1" max="100"></div>
+                    <div><label>Bauda ($/MWh)</label><input type="number" id="penaltyPrice" value="150" min="1"></div>
+                </div>
+                <button class="btn" onclick="createSession()">Sukurti Sesiją</button>
+            </div>
         </div>
-      </div>
-    `).join('');
-  }
 
-  function startSession(sessionId) {
-    const session = activeSessions.find(s => s.id === sessionId);
-    if (session) {
-      session.status = 'active';
-      session.currentRound = 1;
-      renderActiveSessions();
-    }
-  }
+        <div id="active" class="tab-content">
+            <div id="activeSessions">
+                <div class="card" style="text-align:center;color:#999;">Nėra aktyvių sesijų</div>
+            </div>
+        </div>
 
-  function toggleBets(sessionId) {
-    const session = activeSessions.find(s => s.id === sessionId);
-    if (session) {
-      session.betsOpen = !session.betsOpen;
-      renderActiveSessions();
-    }
-  }
+        <div id="previous" class="tab-content">
+            <div id="previousSessions">
+                <div class="card" style="text-align:center;color:#999;">Nėra ankstesnių sesijų</div>
+            </div>
+        </div>
+    </main>
 
-  function deleteSession(sessionId) {
-    if (confirm('Are you sure?')) {
-      activeSessions = activeSessions.filter(s => s.id !== sessionId);
-      renderActiveSessions();
-    }
-  }
-</script>
+    <script>
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
 
+        menuBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        document.addEventListener('click', e => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+
+        let activeSessions = [];
+        let previousSessions = [];
+
+        function navigateTo(path) { window.location.href = path; }
+
+        function switchTab(tabName, e) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            if (e) e.currentTarget.classList.add('active');
+        }
+
+        function createSession() {
+            const gameName = document.getElementById('gameName').value.trim();
+            if (!gameName) { alert('Įveskite žaidimo pavadinimą'); return; }
+            const pin = Math.random().toString().substr(2, 6);
+            const session = {
+                id: Date.now(),
+                pin,
+                gameName,
+                status: 'waiting',
+                startDay: parseInt(document.getElementById('startDay').value),
+                numRounds: parseInt(document.getElementById('numRounds').value),
+                maxPower: parseInt(document.getElementById('maxPower').value),
+                bandwidth: parseInt(document.getElementById('bandwidth').value),
+                efficiency: parseInt(document.getElementById('efficiency').value),
+                penaltyPrice: parseInt(document.getElementById('penaltyPrice').value),
+                createdAt: new Date().toLocaleString(),
+                players: [],
+                currentRound: 0,
+                betsOpen: false,
+                transactions: []
+            };
+            activeSessions.push(session);
+            document.getElementById('gameName').value = '';
+            alert(`Sesija sukurta! PIN: ${pin}`);
+            switchTab('active');
+            renderActiveSessions();
+        }
+
+        function renderActiveSessions() {
+            const container = document.getElementById('activeSessions');
+            if (activeSessions.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align:center;color:#999;">Nėra aktyvių sesijų</div>';
+                return;
+            }
+            container.innerHTML = activeSessions.map(s => `
+                <div class="session-item">
+                    <div class="session-header">
+                        <div>
+                            <div class="session-title">${s.gameName}</div>
+                            <div style="font-size:12px;color:#999;margin-top:4px;">Sukurta: ${s.createdAt}</div>
+                        </div>
+                        <div class="session-badge">Runda ${s.currentRound}/${s.numRounds}</div>
+                    </div>
+                    <div class="pin-display">${s.pin}</div>
+                    <h4 style="margin:12px 0 8px;">Sesijos Parametrai</h4>
+                    <div class="stat-row"><span class="stat-label">Pradžios Diena</span><span class="stat-value">${s.startDay}</span></div>
+                    <div class="stat-row"><span class="stat-label">Pralaidumas (MW)</span><span class="stat-value">${s.bandwidth}</span></div>
+                    <div class="stat-row"><span class="stat-label">Maks. Galia (MW)</span><span class="stat-value">${s.maxPower}</span></div>
+                    <div class="stat-row"><span class="stat-label">Efektyvumas (%)</span><span class="stat-value">${s.efficiency}</span></div>
+                    <div class="stat-row"><span class="stat-label">Bauda ($/MWh)</span><span class="stat-value">${s.penaltyPrice}</span></div>
+                    <p style="margin-top:12px;font-size:13px;"><span style="color:#666;">Žaidėjai:</span> <span style="color:#2f4a75;font-weight:600;">${s.players.length}</span></p>
+                    <div class="btn-group">
+                        <button class="btn btn-small" onclick="startSession(${s.id})">Pradėti</button>
+                        <button class="btn btn-small" onclick="openSession(${s.id},'active')">Atidaryti</button>
+                        <button class="btn btn-small btn-danger" onclick="archiveSession(${s.id})">Archyvuoti</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPreviousSessions() {
+            const container = document.getElementById('previousSessions');
+            if (previousSessions.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align:center;color:#999;">Nėra ankstesnių sesijų</div>';
+                return;
+            }
+            container.innerHTML = previousSessions.map(s => `
+                <div class="session-item">
+                    <div class="session-header">
+                        <div>
+                            <div class="session-title">${s.gameName}</div>
+                            <div style="font-size:12px;color:#999;margin-top:4px;">Užbaigta: ${s.completedAt}</div>
+                        </div>
+                        <div class="session-badge">${s.numRounds} rundų</div>
+                    </div>
+                    <div class="pin-display">${s.pin}</div>
+                    <div class="btn-group">
+                        <button class="btn btn-small" onclick="openSession(${s.id},'previous')">Peržiūrėti</button>
+                        <button class="btn btn-small btn-danger" onclick="deletePreviousSession(${s.id})">Ištrinti</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startSession(id) {
+            const s = activeSessions.find(x => x.id === id);
+            if (s) { s.status = 'active'; s.currentRound = 1; renderActiveSessions(); }
+        }
+
+        function archiveSession(id) {
+            const index = activeSessions.findIndex(x => x.id === id);
+            if (index !== -1) {
+                const session = activeSessions[index];
+                session.completedAt = new Date().toLocaleString();
+                previousSessions.push(session);
+                activeSessions.splice(index, 1);
+                renderActiveSessions();
+                renderPreviousSessions();
+                alert('Sesija archyvuota');
+            }
+        }
+
+        function deletePreviousSession(id) {
+            if (confirm('Ištrinti šią ankstesnę sesiją visam laikui?')) {
+                previousSessions = previousSessions.filter(x => x.id !== id);
+                renderPreviousSessions();
+            }
+        }
+
+        function openSession(id, type) {
+            const session = type === 'active' ? activeSessions.find(s => s.id === id) : previousSessions.find(s => s.id === id);
+            if (!session) return;
+            localStorage.setItem('selectedSession', JSON.stringify(session));
+            localStorage.setItem('sessionType', type);
+            window.location.href = '../pages/session-view.html';
+        }
+    </script>
 </body>
 </html>

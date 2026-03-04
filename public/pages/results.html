@@ -403,15 +403,15 @@
 </header>
 
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <h2>Navigation</h2>
-  </div>
-  <div class="sidebar-menu">
-    <div class="sidebar-item" onclick="navigateTo('/pages/join.html')">Pin kodas</div>
-    <div class="sidebar-item" onclick="navigateTo('/pages/game.html')">Žinynas</div>
-    <div class="sidebar-item" onclick="navigateTo('/pages/results.html')">Rezultatai</div>
-    <div class="sidebar-item" onclick="navigateTo('/pages/settings.html')">Parinkty</div>
-  </div>
+    <div class="sidebar-header">
+        <h2>Navigation</h2>
+    </div>
+    <div class="sidebar-menu">
+        <div class="sidebar-item" onclick="navigateTo('../pages/join.html')">Pin kodas</div>
+        <div class="sidebar-item" onclick="navigateTo('../pages/help.html')">Žinynas</div>
+        <div class="sidebar-item" onclick="navigateTo('../pages/settings.html')">Parinktys</div>
+        <div class="sidebar-item" onclick="navigateTo('../pages/review.html')">Atsiliepimai</div>
+    </div>
 </div>
 
 <div class="overlay" id="overlay"></div>
@@ -420,7 +420,6 @@
   <!-- FINAL SCORE -->
   <div class="card">
     <h2>Game Results</h2>
-    <div class="medal" id="medal">🏆</div>
     <div class="score-display" id="finalScore">2,450</div>
     <div class="rank-badge" id="rankBadge">Rank: 1st Place</div>
     <p style="text-align: center; color: #666; font-size: 14px; margin-top: 10px;">Out of 6 players</p>
@@ -436,17 +435,17 @@
     </div>
 
     <div class="stat-row">
-      <span class="stat-label">Average Round Score</span>
+      <span class="stat-label">Average Day Score</span>
       <span class="stat-value" id="avgScore">490</span>
     </div>
 
     <div class="stat-row">
-      <span class="stat-label">Best Round</span>
+      <span class="stat-label">Best Day</span>
       <span class="stat-value" id="bestRound">Round 2 (650)</span>
     </div>
 
     <div class="stat-row">
-      <span class="stat-label">Worst Round</span>
+      <span class="stat-label">Worst Day</span>
       <span class="stat-value" id="worstRound">Round 4 (380)</span>
     </div>
 
@@ -472,11 +471,11 @@
 
   <!-- ROUND BY ROUND BREAKDOWN -->
   <div class="card">
-    <h3>Round by Round Breakdown</h3>
+    <h3>Performance by Day Breakdown</h3>
     <table class="comparison-table">
       <thead>
         <tr>
-          <th>Round</th>
+          <th>Day</th>
           <th>Your Score</th>
           <th>Avg Score</th>
           <th>Rank</th>
@@ -567,7 +566,7 @@
   <div class="card">
     <div class="btn-group">
       <button class="btn" onclick="playAgain()">Play Again</button>
-      <button class="btn btn-secondary" onclick="navigateTo('/pages/join.html')">Main Menu</button>
+      <button class="btn btn-secondary" onclick="navigateTo('../pages/join.html')">Main Menu</button>
     </div>
   </div>
 </main>
@@ -611,8 +610,8 @@
     }
   });
 
-  // Update medal based on rank
-  const rank = 1; // Change this based on actual rank
+  // Medal icons, update medal based on rank
+  const rank = 1; // Change this based on actual rank later, todo
   const medals = {
     1: '🥇',
     2: '🥈',
@@ -628,8 +627,8 @@
     window.location.href = path;
   }
 
-  // Example: Update results from Python backend
-  // Call this function with data from your Python backend
+  // Update results from Python backend
+  // Call this function with data from Python backend later, todo
   function updateResults(data) {
     document.getElementById('finalScore').textContent = data.finalScore.toLocaleString();
     document.getElementById('rankBadge').textContent = `Rank: ${data.rank}${getOrdinalSuffix(data.rank)} Place`;

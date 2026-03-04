@@ -1,0 +1,535 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leave a Review</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
+            background-attachment: fixed;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
+                background-size: 50px 50px;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
+
+        header {
+            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+
+            .menu-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+        .app-name {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+            .header-icon:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 280px;
+            height: calc(100vh - 70px);
+            background: white;
+            border-right: 1px solid #e0d9cc;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+        }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0d9cc;
+            background: #fafaf8;
+        }
+
+            .sidebar-header h2 {
+                font-size: 18px;
+                font-weight: 600;
+                color: #2f4a75;
+                letter-spacing: 0.3px;
+            }
+
+        .sidebar-item {
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #555;
+            font-weight: 500;
+            font-size: 15px;
+            border-left: 3px solid transparent;
+            user-select: none;
+        }
+
+            .sidebar-item:hover {
+                background: #f5f1e8;
+                color: #2f4a75;
+                border-left-color: #2f4a75;
+                padding-left: 24px;
+            }
+
+        .overlay {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 70px);
+            background: rgba(0, 0, 0, 0);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+            .overlay.active {
+                background: rgba(0, 0, 0, 0.4);
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8dfd4;
+        }
+
+            .card h2 {
+                font-size: 24px;
+                font-weight: 600;
+                color: #2f4a75;
+                margin-bottom: 15px;
+            }
+
+            .card h3 {
+                font-size: 16px;
+                font-weight: 600;
+                color: #2f4a75;
+                margin-bottom: 12px;
+            }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #d4cec2;
+            border-radius: 10px;
+            background: #fafaf8;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            input:focus, textarea:focus, select:focus {
+                outline: none;
+                border-color: #2f4a75;
+                background: #fff;
+                box-shadow: 0 0 0 3px rgba(47, 74, 117, 0.1);
+            }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(47, 74, 117, 0.25);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+        .btn-outline {
+            background: transparent;
+            color: #2f4a75;
+            border: 2px solid #2f4a75;
+            box-shadow: none;
+        }
+
+            .btn-outline:hover {
+                background: rgba(47, 74, 117, 0.05);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(47, 74, 117, 0.15);
+            }
+
+        .rating-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .rating-item {
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            padding: 12px 8px;
+            border: 2px solid #d4cec2;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: #fafaf8;
+        }
+
+            .rating-item:hover {
+                border-color: #2f4a75;
+                background: #fff;
+            }
+
+            .rating-item.selected {
+                border-color: #2f4a75;
+                background: #e6f0fa;
+            }
+
+        .rating-emoji {
+            font-size: 24px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .rating-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            cursor: pointer;
+            color: #555;
+            font-weight: 500;
+        }
+
+            .checkbox-label input {
+                width: auto;
+                margin-right: 12px;
+                margin-bottom: 0;
+                cursor: pointer;
+            }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+            .button-group .btn {
+                flex: 1;
+            }
+
+        @media (max-width: 480px) {
+            main {
+                padding: 15px;
+                gap: 15px;
+            }
+
+            .card {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .rating-container {
+                flex-wrap: wrap;
+            }
+
+            .rating-item {
+                min-width: 80px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="app-name">Pavadinimas</div>
+        </div>
+        <div class="header-icon">U</div>
+    </header>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Navigation</h2>
+        </div>
+        <div class="sidebar-menu">
+            <div class="sidebar-item" onclick="navigateTo('../pages/join.html')">Pin kodas</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/help.html')">Žinynas</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/settings.html')">Parinktys</div>
+            <div class="sidebar-item" onclick="navigateTo('../pages/review.html')">Atsiliepimai</div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <main>
+        <div class="card">
+            <h3>How would you rate your experience?</h3>
+
+            <div class="rating-container" id="ratingContainer">
+                <div class="rating-item" data-rating="1">
+                    <span class="rating-emoji">🌟</span>
+                    <span class="rating-label">Poor</span>
+                </div>
+                <div class="rating-item" data-rating="2">
+                    <span class="rating-emoji">🌟🌟</span>
+                    <span class="rating-label">Fair</span>
+                </div>
+                <div class="rating-item" data-rating="3">
+                    <span class="rating-emoji">🌟🌟🌟</span>
+                    <span class="rating-label">Good</span>
+                </div>
+                <div class="rating-item" data-rating="4">
+                    <span class="rating-emoji">🌟🌟🌟🌟</span>
+                    <span class="rating-label">Very Good</span>
+                </div>
+                <div class="rating-item" data-rating="5">
+                    <span class="rating-emoji">🌟🌟🌟🌟🌟</span>
+                    <span class="rating-label">Excellent</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Your Feedback</h3>
+            <label>What did you like most?</label>
+            <select id="likeSelect">
+                <option value="" disabled selected>Select an option</option>
+                <option value="gameplay">Gameplay & Mechanics</option>
+                <option value="design">Visual Design & Theme</option>
+                <option value="features">Features & Tools</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label>Your Review</label>
+            <textarea id="reviewInput" placeholder="Tell us about your experience... What did you enjoy? What could be improved?"></textarea>
+        </div>
+
+        <div class="card">
+            <h3>Submit Review</h3>
+            <div class="button-group">
+                <button class="btn" id="submitBtn">Submit Review</button>
+                <button class="btn btn-outline" id="resetBtn">Reset Form</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+
+        function navigateTo(path) {
+            window.location.href = path;
+        }
+
+        // Rating selection
+        const ratingItems = document.querySelectorAll('.rating-item');
+        let selectedRating = 0;
+
+        ratingItems.forEach(item => {
+            item.addEventListener('click', () => {
+                ratingItems.forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                selectedRating = item.getAttribute('data-rating');
+            });
+        });
+
+        // Reset form
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('likeSelect').value = '';
+            document.getElementById('reviewInput').value = '';
+
+            ratingItems.forEach(i => i.classList.remove('selected'));
+            selectedRating = 0;
+        });
+
+        // Submit review (simulated)
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            if (!selectedRating) {
+                alert('Please select a rating');
+                return;
+            }
+
+            const likedMost = document.getElementById('likeSelect').value;
+            const review = document.getElementById('reviewInput').value;
+
+            const reviewData = {
+                rating: selectedRating,
+                likedMost: likedMost || 'Not specified',
+                review: review || 'No review text'
+            };
+
+            // Show success message (simulated submission)
+            alert('Thank you for your review!\n\n' +
+                `Rating: ${'🌟'.repeat(selectedRating)}\n` +
+                `Liked most: ${reviewData.likedMost}\n` +
+                `Review: ${reviewData.review.substring(0, 50)}${reviewData.review.length > 50 ? '...' : ''}`);
+
+            // Reset form after submission
+            document.getElementById('resetBtn').click();
+        });
+    </script>
+
+</body>
+</html>

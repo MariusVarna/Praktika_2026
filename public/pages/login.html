@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pavadinimas - Join Game</title>
+    <title>Admin Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <style>
         * {
@@ -28,7 +28,6 @@
             position: relative;
         }
 
-            /* Hexagon pattern background */
             body::before {
                 content: '';
                 position: fixed;
@@ -47,7 +46,6 @@
                 z-index: 1;
             }
 
-        /* ============ HEADER ============ */
         header {
             background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
             height: 70px;
@@ -66,6 +64,25 @@
             gap: 15px;
         }
 
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .back-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+
         .app-name {
             color: white;
             font-size: 18px;
@@ -83,16 +100,8 @@
             justify-content: center;
             color: white;
             font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s ease;
-            text-decoration: none;
         }
 
-            .header-icon:hover {
-                background: rgba(255, 255, 255, 0.3);
-            }
-
-        /* ============ MAIN CONTENT ============ */
         main {
             flex: 1;
             display: flex;
@@ -142,16 +151,13 @@
             width: 100%;
             padding: 14px 16px;
             font-size: 16px;
-            text-align: center;
-            letter-spacing: 2px;
             border: 2px solid #d4cec2;
             border-radius: 10px;
             background: #fafaf8;
             color: #333;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             transition: all 0.3s ease;
             font-weight: 500;
-            font-family: 'Courier New', monospace;
         }
 
             input:focus {
@@ -163,7 +169,6 @@
 
             input::placeholder {
                 color: #aaa;
-                letter-spacing: 1px;
             }
 
         .btn {
@@ -180,6 +185,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 12px rgba(47, 74, 117, 0.2);
+            margin-bottom: 15px;
         }
 
             .btn:hover {
@@ -191,59 +197,56 @@
                 transform: translateY(0);
             }
 
-        /* ============ FOOTER ============ */
-        footer {
-            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-            padding: 12px 8px;
-            display: flex;
-            flex-shrink: 0;
-            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-            z-index: 50;
+        .btn-outline {
+            background: transparent;
+            color: #2f4a75;
+            border: 2px solid #2f4a75;
+            box-shadow: none;
         }
 
-        .footer-buttons {
-            display: flex;
-            gap: 6px;
-            width: 100%;
-        }
-
-        .footer-btn {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            border-radius: 12px;
-            padding: 10px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-            min-height: 65px;
-            color: white;
-        }
-
-            .footer-btn:hover {
-                background: rgba(255, 255, 255, 0.25);
+            .btn-outline:hover {
+                background: rgba(47, 74, 117, 0.05);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(47, 74, 117, 0.15);
             }
 
-            .footer-btn:active {
-                background: rgba(255, 255, 255, 0.2);
-                transform: scale(0.96);
+        .demo-credentials {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f1e8;
+            border-radius: 10px;
+            text-align: left;
+            border: 1px dashed #2f4a75;
+        }
+
+            .demo-credentials p {
+                margin-bottom: 8px;
+                font-size: 13px;
+                color: #555;
             }
 
-        .footer-icon {
-            font-size: 22px;
-            margin-bottom: 3px;
+            .demo-credentials code {
+                display: block;
+                padding: 8px;
+                background: #fff;
+                border-radius: 6px;
+                border: 1px solid #d4cec2;
+                font-family: monospace;
+                color: #2f4a75;
+            }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 13px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            text-align: left;
+            display: none;
         }
 
-        .footer-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
+            .error-message.visible {
+                display: block;
+            }
 
         @media (max-width: 480px) {
             .card {
@@ -285,112 +288,106 @@
 </head>
 
 <body>
-
     <header>
         <div class="header-left">
+            <button class="back-btn" id="backBtn" title="Go Back">←</button>
             <div class="app-name">Pavadinimas</div>
         </div>
-        <div class="header-icon" id="userIcon" title="Admin Login">U</div>
+        <div class="header-icon">A</div>
     </header>
 
     <main>
         <div class="card">
-            <h1>Sesijos PIN kodas</h1>
-            <p>Įveskite 6 skaitmenų PIN kodą, kuris suteiktas žaidimo administratoriaus</p>
-
-            <label>Pin kodas</label>
-            <input id="pinInput"
+            <h1>Prisijunkite </h1>
+            <label>Slapyvardis</label>
+            <input id="usernameInput"
                    type="text"
-                   placeholder="000000"
-                   maxlength="6"
-                   inputmode="numeric"
+                   placeholder="Įveskite slapyvardį"
                    autocomplete="off" />
-            <button class="btn" id="joinBtn">Prisijungti</button>
+
+            <label>Slaptažodis</label>
+            <input id="passwordInput"
+                   type="password"
+                   placeholder="#&%$^@" />
+
+            <div class="error-message" id="errorMessage">Invalid username or password</div>
+
+            <button class="btn" id="loginBtn">Prisijungti</button>
+            <button class="btn btn-outline" id="cancelBtn">Atšaukti</button>
+
+            <div class="demo-credentials">
+                <p><strong>demo:</strong></p>
+                <code>Slapyvardis: admin</code>
+                <code style="margin-top: 5px;">Slaptažodis: admin123</code>
+            </div>
         </div>
     </main>
 
-    <footer>
-        <div class="footer-buttons">
-            <button class="footer-btn" id="homeBtn" title="Home">
-                <span class="material-symbols-outlined footer-icon">home</span>
-                <span class="footer-label">Pin kodas</span>
-            </button>
-
-            <button class="footer-btn" id="helpBtn" title="Help">
-                <span class="material-symbols-outlined footer-icon">sports_esports</span>
-                <span class="footer-label">Žinynas</span>
-            </button>
-            <button class="footer-btn" id="reviewBtn" title="Review">
-                <span class="material-symbols-outlined footer-icon">chat</span>
-                <span class="footer-label">Atsiliepimai</span>
-            </button>
-            <button class="footer-btn" id="settingsBtn" title="Settings">
-                <span class="material-symbols-outlined footer-icon">settings</span>
-                <span class="footer-label">Parinktys</span>
-            </button>
-        </div>
-    </footer>
-
     <script>
-        document.getElementById('userIcon').addEventListener('click', () => {
-            window.location.href = '../pages/login.html';
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.history.back();
         });
 
-        document.getElementById('joinBtn').addEventListener('click', async () => {
-            const pin = document.getElementById('pinInput').value.trim();
-            if (!pin || pin.length !== 6 || !/^\d+$/.test(pin)) {
-                alert('Please enter a valid 6-digit PIN (numbers only)');
-                return;
-            }
-
-            try {
-                window.location.href = `../pages/game.html?pin=${pin}`;
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error connecting to server.');
-            }
+        // Cancel button
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            window.history.back();
         });
 
-        document.getElementById('pinInput').addEventListener('keypress', (e) => {
-            // Allow only numbers
-            const charCode = e.which ? e.which : e.keyCode;
-            if (charCode < 48 || charCode > 57) {
-                e.preventDefault();
-            }
+        // Login functionality
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const errorElement = document.getElementById('errorMessage');
 
+            // Simple hardcoded validation for demo
+            if (username === 'admin' && password === 'admin123') {
+                // Successful login
+                errorElement.classList.remove('visible');
+
+                // need to set a session token here
+                // For demo, just redirect to admin dashboard
+                alert('Login successful! Redirecting to admin panel...');
+                window.location.href = '../pages/admin.html';
+            } else {
+                // Failed login
+                errorElement.classList.add('visible');
+                // Shake animation for error
+                const card = document.querySelector('.card');
+                card.style.animation = 'shake 0.5s ease';
+                setTimeout(() => {
+                    card.style.animation = '';
+                }, 500);
+            }
+        });
+        // Enter key press
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                document.getElementById('joinBtn').click();
+                document.getElementById('loginBtn').click();
             }
         });
-
-        // Restrict to numbers only and enforce maxlength
-        document.getElementById('pinInput').addEventListener('input', (e) => {
-            let value = e.target.value;
-            // Remove any non-digit characters
-            value = value.replace(/\D/g, '');
-            // Limit to 6 digits
-            if (value.length > 6) {
-                value = value.slice(0, 6);
+        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('passwordInput').focus();
             }
-            e.target.value = value;
         });
-
-        document.getElementById('homeBtn').addEventListener('click', () => {
-            window.location.href = '../pages/join.html';
+        // Clear error when typing
+        document.getElementById('usernameInput').addEventListener('input', () => {
+            document.getElementById('errorMessage').classList.remove('visible');
         });
-
-        document.getElementById('reviewBtn').addEventListener('click', () => {
-            window.location.href = '../pages/review.html';
+        document.getElementById('passwordInput').addEventListener('input', () => {
+            document.getElementById('errorMessage').classList.remove('visible');
         });
-
-        document.getElementById('helpBtn').addEventListener('click', () => {
-            window.location.href = '../pages/help.html';
-        });
-
-        document.getElementById('settingsBtn').addEventListener('click', () => {
-            window.location.href = '../pages/settings.html';
-        });
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
-
 </body>
 </html>
