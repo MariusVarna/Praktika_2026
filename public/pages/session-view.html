@@ -1,436 +1,238 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="lt">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Session View - 30 Column Supply Stack</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            position: relative;
-        }
-
-            body::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
-                background-size: 50px 50px;
-                pointer-events: none;
-                z-index: 0;
-            }
-
-            body > * {
-                position: relative;
-                z-index: 1;
-            }
-
-        header {
-            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            color: white;
-        }
-
-        .logo {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .btn {
-            padding: 10px 16px;
-            background: white;
-            color: #2f4a75;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        main {
-            flex: 1;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            overflow-y: auto;
-        }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid #e8dfd4;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-        }
-
-            .card h2 {
-                margin-bottom: 16px;
-                color: #2f4a75;
-            }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e8dfd4;
-        }
-
-            .stat-row:last-child {
-                border-bottom: none;
-            }
-
-        .stat-label {
-            color: #666;
-        }
-
-        .stat-value {
-            font-weight: 600;
-            color: #2f4a75;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .day-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-
-            .day-buttons button {
-                padding: 8px 14px;
-                border-radius: 8px;
-                border: 1px solid #e0d9cc;
-                background: #f9f7f3;
-                cursor: pointer;
-                font-weight: 600;
-                transition: 0.2s;
-            }
-
-                .day-buttons button:hover {
-                    background: #2f4a75;
-                    color: white;
-                }
-
-        .list-item {
-            background: #f9f7f3;
-            border: 1px solid #e0d9cc;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-        }
-
-        .order-note {
-            text-align: center;
-            color: #2f4a75;
-            font-size: 0.9rem;
-            margin-top: 10px;
-            font-style: italic;
-            background: #f0ebe0;
-            padding: 8px;
-            border-radius: 8px;
-        }
-
-        .legend-container {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-            padding: 10px;
-            background: #f9f7f3;
-            border-radius: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .stats-panel {
-            display: flex;
-            justify-content: space-between;
-            background: #e8dfd4;
-            padding: 10px 16px;
-            border-radius: 12px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-            color: #2f4a75;
-            font-weight: 500;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-            margin: 20px 0;
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sesijos peržiūra</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{width:100%;min-height:100%;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);color:#333;display:flex;flex-direction:column;min-height:100vh;position:relative;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
+    body>*{position:relative;z-index:1;}
+    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;color:white;}
+    .logo{font-size:16px;font-weight:700;}
+    .btn-back{padding:8px 14px;background:rgba(255,255,255,.2);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;transition:background .2s;}
+    .btn-back:hover{background:rgba(255,255,255,.3);}
+    main{flex:1;padding:20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
+    .card{background:white;border-radius:14px;padding:18px;border:1px solid #e8dfd4;box-shadow:0 3px 10px rgba(0,0,0,.07);}
+    .card h2{font-size:17px;font-weight:700;color:#2f4a75;margin-bottom:14px;}
+    .card h3{font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:10px;}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+    @media(max-width:600px){.grid-2{grid-template-columns:1fr;}}
+    .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0ebe0;font-size:13px;}
+    .stat-row:last-child{border-bottom:none;}
+    .stat-label{color:#777;}
+    .stat-val{color:#2f4a75;font-weight:600;}
+    table{width:100%;border-collapse:collapse;}
+    thead{background:#f5f1e8;}
+    th{padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;}
+    td{padding:8px 10px;border-bottom:1px solid #f0ebe0;font-size:13px;color:#555;}
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover{background:#fafaf8;}
+    .chart-wrap{position:relative;height:260px;margin:14px 0;}
+    .legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;background:#f9f7f3;padding:10px;border-radius:10px;}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;}
+    .legend-dot{width:16px;height:16px;border-radius:4px;}
+    .stats-strip{display:flex;gap:12px;flex-wrap:wrap;background:#eaf2ff;padding:8px 14px;border-radius:10px;margin:8px 0;font-size:12px;color:#2f4a75;font-weight:600;}
+    .day-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .day-btn{padding:6px 12px;border:1.5px solid #d4cec2;border-radius:8px;background:white;cursor:pointer;font-size:12px;font-weight:600;color:#888;transition:all .2s;}
+    .day-btn:hover,.day-btn.active{background:#2f4a75;color:white;border-color:#2f4a75;}
+    .tx-list{max-height:240px;overflow-y:auto;}
+    .team-item{display:flex;align-items:center;gap:10px;padding:9px;background:#fafaf8;border:1px solid #e0d9cc;border-radius:8px;margin-bottom:6px;}
+    .team-item:last-child{margin-bottom:0;}
+    .team-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2f4a75,#1f3a55);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;flex-shrink:0;}
+    .team-balance{margin-left:auto;font-weight:700;color:#2f4a75;font-size:13px;}
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
+  </style>
 </head>
-
 <body>
+<header>
+  <div class="logo" id="sessionTitle">Sesijos peržiūra</div>
+  <button class="btn-back" onclick="history.back()">← Atgal</button>
+</header>
+<main>
 
-    <header>
-        <div class="logo">Session Overview - 30 Company Supply Stack</div>
-        <button class="btn" onclick="goBack()">Back</button>
-    </header>
+  <!-- SESSION INFO + MARKET STATE -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>Sesijos informacija</h2>
+      <div class="stat-row"><span class="stat-label">Pavadinimas</span><span class="stat-val" id="sName">—</span></div>
+      <div class="stat-row"><span class="stat-label">PIN</span><span class="stat-val" style="font-family:monospace;letter-spacing:3px;" id="sPin">—</span></div>
+      <div class="stat-row"><span class="stat-label">Statusas</span><span class="stat-val" id="sStatus">—</span></div>
+      <div class="stat-row"><span class="stat-label">Sukurta</span><span class="stat-val" id="sCreated">—</span></div>
+      <div class="stat-row"><span class="stat-label">Raundai</span><span class="stat-val" id="sRounds">—</span></div>
+    </div>
+    <div class="card">
+      <h2>Rinkos būsena</h2>
+      <div class="stat-row"><span class="stat-label">Dabartinė diena</span><span class="stat-val" id="mDay">—</span></div>
+      <div class="stat-row"><span class="stat-label">Raundas</span><span class="stat-val" id="mRound">—</span></div>
+      <div class="stat-row"><span class="stat-label">Rinkos kaina</span><span class="stat-val" id="mPrice">—</span></div>
+      <div class="stat-row"><span class="stat-label">Paklausa</span><span class="stat-val" id="mDemand">—</span></div>
+      <div class="stat-row"><span class="stat-label">Oras</span><span class="stat-val" id="mWeather">—</span></div>
+      <div class="stat-row"><span class="stat-label">Komandos</span><span class="stat-val" id="mTeams">—</span></div>
+    </div>
+  </div>
 
-    <main>
+  <!-- SUPPLY STACK CHART -->
+  <div class="card">
+    <h2>Gamybos grafikas</h2>
+    <div class="legend-row" id="legendRow"></div>
+    <div class="stats-strip" id="statsStrip"></div>
+    <div class="chart-wrap"><canvas id="supplyChart"></canvas></div>
+    <div class="day-row" id="dayRow"></div>
+  </div>
 
-        <!-- SESSION INFO -->
-        <div class="card">
-            <h2>Session Info</h2>
-            <div class="stat-row">
-                <span class="stat-label">Session Name</span>
-                <span class="stat-value">Energy Market Test</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">PIN</span>
-                <span class="stat-value">842193</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Status</span>
-                <span class="stat-value">Active</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Created</span>
-                <span class="stat-value">2026-03-04 09:12</span>
-            </div>
-        </div>
+  <!-- PLAYERS -->
+  <div class="card">
+    <h2>Komandos</h2>
+    <div id="teamsList"></div>
+  </div>
 
-        <!-- MARKET + PRODUCTION -->
-        <div class="grid-2">
+  <!-- TRANSACTIONS -->
+  <div class="card">
+    <h2>Sandoriai</h2>
+    <div class="tx-list">
+      <table>
+        <thead><tr><th>Diena</th><th>R</th><th>Komanda</th><th>Tipas</th><th>MW</th><th>$/MWh</th></tr></thead>
+        <tbody id="txTable"></tbody>
+      </table>
+    </div>
+  </div>
 
-            <!-- MARKET STATE -->
-            <div class="card">
-                <h2>Market State</h2>
-                <div class="stat-row"><span class="stat-label">Current Day</span><span class="stat-value">5</span></div>
-                <div class="stat-row"><span class="stat-label">Round</span><span class="stat-value">2</span></div>
-                <div class="stat-row"><span class="stat-label">Market Price</span><span class="stat-value">$72 / MWh</span></div>
-                <div class="stat-row"><span class="stat-label">Demand</span><span class="stat-value">530 MW</span></div>
-                <div class="stat-row"><span class="stat-label">Weather</span><span class="stat-value">Windy</span></div>
-                <div class="stat-row"><span class="stat-label">Active Companies</span><span class="stat-value">30</span></div>
-            </div>
+</main>
+<script>
+// Load session from admin page
+let session = null;
+try {
+  session = JSON.parse(sessionStorage.getItem('selectedSession'));
+} catch {}
 
-            <!-- PRODUCTION OVERVIEW - 30 COLUMNS -->
-            <div class="card">
-                <h2> Graph </h2>
+// Demo fallback
+if (!session) {
+  session = {
+    id: 1, pin: '842193', gameName: 'Energy Market Test', status: 'active',
+    currentRound: 2, currentDay: 5, numRounds: 5, startDay: 1,
+    marketPrice: 72, demand: 530, weather: 'Vėjuota',
+    createdAt: '2026-03-04 09:12',
+    teams: [
+      { id:'t1', name:'Team Alpha', balance:12400 },
+      { id:'t2', name:'Team Beta',  balance:9850 },
+      { id:'t3', name:'Team Gamma', balance:15200 },
+    ],
+    transactions: [
+      { day:5, round:2, teamName:'Team Alpha', type:'buy',  mw:50, price:70 },
+      { day:5, round:2, teamName:'Team Beta',  type:'sell', mw:30, price:73 },
+      { day:4, round:1, teamName:'Team Gamma', type:'buy',  mw:80, price:68 },
+    ],
+    roundHistory: [
+      { round:1, day:4, marketPrice:68, demand:490, weather:'Giedra' },
+      { round:2, day:5, marketPrice:72, demand:530, weather:'Vėjuota' },
+    ],
+  };
+}
 
-                <!-- Color legend -->
-                <div class="legend-container">
-                    <div class="legend-item"><span class="legend-color" style="background: #4A90E2;"></span> Wind (6)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #F5A623;"></span> Solar (6)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #7B8D8E;"></span> Gas (6)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #2ECC71;"></span> temp1 (6)</div>
-                    <div class="legend-item"><span class="legend-color" style="background: #9B59B6;"></span> temp2 (6)</div>
-                </div>
+// Populate session info
+document.getElementById('sessionTitle').textContent = 'Sesija: ' + session.gameName;
+document.getElementById('sName').textContent = session.gameName;
+document.getElementById('sPin').textContent = session.pin;
+document.getElementById('sStatus').textContent = { waiting:'Laukiama', active:'Aktyvi', finished:'Baigta' }[session.status] || session.status;
+document.getElementById('sCreated').textContent = session.createdAt || '—';
+document.getElementById('sRounds').textContent = session.currentRound + '/' + session.numRounds;
 
-                <!-- Stats panel -->
-                <div class="stats-panel" id="statsPanel"></div>
+document.getElementById('mDay').textContent = session.currentDay;
+document.getElementById('mRound').textContent = session.currentRound;
+document.getElementById('mPrice').textContent = session.marketPrice + ' $/MWh';
+document.getElementById('mDemand').textContent = session.demand + ' MW';
+document.getElementById('mWeather').textContent = session.weather;
+document.getElementById('mTeams').textContent = session.teams.length;
 
-                <div class="chart-container">
-                    <canvas id="productionChart"></canvas>
-                </div>
-                <div class="day-buttons">
-                    <button onclick="updateProduction(1)">Day 1</button>
-                    <button onclick="updateProduction(2)">Day 2</button>
-                    <button onclick="updateProduction(3)">Day 3</button>
-                    <button onclick="updateProduction(4)">Day 4</button>
-                    <button onclick="updateProduction(5)">Day 5</button>
-                </div>
-            </div>
+// Teams
+document.getElementById('teamsList').innerHTML = session.teams.length
+  ? session.teams.sort((a,b)=>b.balance-a.balance).map(t=>`
+    <div class="team-item">
+      <div class="team-avatar">${t.name.slice(0,2).toUpperCase()}</div>
+      <div><div style="font-weight:600;font-size:13px;">${t.name}</div></div>
+      <div class="team-balance">$${(t.balance||0).toLocaleString()}</div>
+    </div>`).join('')
+  : '<p style="color:#bbb;text-align:center;padding:16px;">Nėra komandų</p>';
 
-        </div>
+// Transactions
+document.getElementById('txTable').innerHTML = session.transactions.length
+  ? session.transactions.slice().reverse().map(tx=>`<tr>
+    <td>${tx.day}</td><td>${tx.round}</td><td>${tx.teamName}</td>
+    <td style="color:${tx.type==='buy'?'#27ae60':'#e74c3c'};font-weight:600;">${tx.type==='buy'?'Pirkimas':'Pardavimas'}</td>
+    <td>${tx.mw}</td><td>${tx.price}</td></tr>`).join('')
+  : '<tr><td colspan="6" style="text-align:center;color:#bbb;padding:16px;">Nėra sandorių</td></tr>';
 
-        <!-- PLAYERS -->
-        <div class="card">
-            <h2>Players</h2>
-            <div class="list-item">Team Alpha — Balance: $12,400</div>
-            <div class="list-item">Team Beta — Balance: $9,850</div>
-            <div class="list-item">Team Gamma — Balance: $15,200</div>
-        </div>
+// Supply Stack Chart
+const colorGroups = [
+  { name:'Vėjas', color:'#4A90E2', base:200 },
+  { name:'Saulė', color:'#F5A623', base:150 },
+  { name:'Dujos', color:'#7B8D8E', base:175 },
+  { name:'Vanduo', color:'#2ECC71', base:120 },
+  { name:'Kita',  color:'#9B59B6', base:165 },
+];
+const dayMult = { 1:[0.8,0.9,1.0,1.1,1.2], 2:[0.7,1.0,1.1,0.9,1.3], 3:[1.2,0.8,1.1,0.9,1.0], 4:[1.1,1.2,0.7,1.0,0.9], 5:[1.0,1.1,0.9,1.2,0.8] };
 
-        <!-- TRANSACTIONS -->
-        <div class="card">
-            <h2>Recent Transactions</h2>
-            <div class="list-item">Day 5 — Team Alpha bought 50 MW @ $70</div>
-            <div class="list-item">Day 5 — Team Beta sold 30 MW @ $73</div>
-            <div class="list-item">Day 4 — Team Gamma bought 80 MW @ $68</div>
-        </div>
+let supplyChart = null;
+let currentCompanies = [];
 
-    </main>
+// Legend
+document.getElementById('legendRow').innerHTML = colorGroups.map(g=>`
+  <div class="legend-item"><span class="legend-dot" style="background:${g.color}"></span>${g.name}</div>`).join('');
 
-    <script>
-        function goBack() {
-            window.history.back();
-        }
+// Day buttons
+const numDays = session.numRounds;
+document.getElementById('dayRow').innerHTML = Array.from({length:numDays},(_,i)=>`
+  <button class="day-btn${i===numDays-1?' active':''}" onclick="loadDay(${i+1},this)">D${i+1}</button>`).join('');
 
-        // 5 color groups (6 companies each = 30 total)
-        const colorGroups = [
-            { name: 'Wind', color: '#4A90E2', baseValue: 200 },
-            { name: 'Solar', color: '#F5A623', baseValue: 150 },
-            { name: 'Gas', color: '#7B8D8E', baseValue: 175 },
-            { name: 'temp1', color: '#2ECC71', baseValue: 120 },
-            { name: 'temp2', color: '#9B59B6', baseValue: 165 }
-        ];
+function genCompanies(day) {
+  const mult = dayMult[day] || dayMult[5];
+  const out = [];
+  colorGroups.forEach((g,gi) => {
+    for (let i=0;i<6;i++) {
+      const v = Math.round(g.base * mult[gi] * (0.8+Math.random()*0.4));
+      out.push({ label:`${g.name} ${i+1}`, value:v, color:g.color, group:g.name });
+    }
+  });
+  return out.sort((a,b)=>a.value-b.value);
+}
 
-        // Day-specific multipliers to create variation
-        const dayMultipliers = {
-            1: [0.8, 0.9, 1.0, 1.1, 1.2],
-            2: [0.7, 1.0, 1.1, 0.9, 1.3],
-            3: [1.2, 0.8, 1.1, 0.9, 1.0],
-            4: [1.1, 1.2, 0.7, 1.0, 0.9],
-            5: [1.0, 1.1, 0.9, 1.2, 0.8]
-        };
+function loadDay(day, el) {
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
 
-        // Generate 30 companies with random but consistent offsets
-        function generateCompanies(day) {
-            const companies = [];
-            const multipliers = dayMultipliers[day] || dayMultipliers[5];
+  currentCompanies = genCompanies(day);
+  const labels = currentCompanies.map(c=>c.label);
+  const values = currentCompanies.map(c=>c.value);
+  const colors = currentCompanies.map(c=>c.color);
+  const total = values.reduce((s,v)=>s+v,0);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
 
-            // Extra "companies" for each supplier
-            colorGroups.forEach((group, groupIndex) => {
-                for (let i = 0; i < 6; i++) {
-                    // (±20% random)
-                    const randomFactor = 0.8 + (Math.random() * 0.4);
-                    // Apply day multiplier and random factor
-                    const value = Math.round(group.baseValue * multipliers[groupIndex] * randomFactor);
+  document.getElementById('statsStrip').innerHTML = `<span>Iš viso: ${total} MW</span><span>Min: ${min} MW</span><span>Max: ${max} MW</span><span>Diena ${day}</span>`;
 
-                    companies.push({
-                        label: `${group.name} ${i + 1}`,
-                        value: value,
-                        color: group.color,
-                        group: group.name
-                    });
-                }
-            });
-            return companies.sort((a, b) => a.value - b.value);
-        }
-        // Store current companies for tooltips
-        let currentCompanies = [];
+  const ctx = document.getElementById('supplyChart');
+  if (supplyChart) supplyChart.destroy();
+  supplyChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderRadius:2, borderWidth:.5, borderColor:'rgba(0,0,0,.1)' }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{
+        title:c => currentCompanies[c[0].dataIndex]?.label||'',
+        label:c => [`Grupė: ${currentCompanies[c.dataIndex]?.group}`, `Gamyba: ${c.raw} MW`]
+      }}},
+      scales:{ y:{beginAtZero:true,title:{display:true,text:'MW'}}, x:{grid:{display:false},ticks:{maxRotation:45,minRotation:45,font:{size:7}}} }
+    }
+  });
+}
 
-        const ctx = document.getElementById('productionChart').getContext('2d');
-
-        const productionChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Production (MW)',
-                    data: [],
-                    backgroundColor: [],
-                    borderColor: 'rgba(0,0,0,0.1)',
-                    borderWidth: 0.5,
-                    borderRadius: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: function (context) {
-                                return currentCompanies[context[0].dataIndex]?.label || '';
-                            },
-                            label: function (context) {
-                                const company = currentCompanies[context.dataIndex];
-                                return [
-                                    `Group: ${company?.group || 'Unknown'}`,
-                                    `Production: ${context.raw} MW`
-                                ];
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Production (MW)'
-                        },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            font: { size: 8 }
-                        }
-                    }
-                }
-            }
-        });
-
-        function updateProduction(day) {
-            // Generate new companies for this day
-            currentCompanies = generateCompanies(day);
-
-            // Extract data for chart
-            const labels = currentCompanies.map(c => c.label);
-            const values = currentCompanies.map(c => c.value);
-            const colors = currentCompanies.map(c => c.color);
-
-            // Update chart
-            productionChart.data.labels = labels;
-            productionChart.data.datasets[0].data = values;
-            productionChart.data.datasets[0].backgroundColor = colors;
-            productionChart.update();
-
-            // Update stats
-            const totalProd = values.reduce((sum, val) => sum + val, 0);
-            const minProd = Math.min(...values);
-            const maxProd = Math.max(...values);
-
-            document.getElementById('statsPanel').innerHTML = `
-                    <span> Total: ${totalProd} MW</span>
-                    <span> Range: ${minProd}-${maxProd} MW</span>
-                `;
-
-            document.getElementById('orderNote').innerHTML =
-                `Day ${day}: 30 companies ordered by production (lowest to highest)`;
-        }
-        // Initialize with day 5
-        window.addEventListener('load', () => {
-            updateProduction(5);
-        });
-    </script>
-
+// Init with last day
+loadDay(numDays, document.querySelectorAll('.day-btn')[numDays-1]);
+</script>
 </body>
 </html>

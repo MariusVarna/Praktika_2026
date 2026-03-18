@@ -1,136 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Help & Support</title>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Žinynas — Pavadinimas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%); background-attachment: fixed; color: #333; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E"); background-size: 50px 50px; pointer-events: none; z-index: 0; }
-    body > * { position: relative; z-index: 1; }
-    header { background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); flex-shrink: 0; z-index: 50; }
-    .header-left { display: flex; align-items: center; gap: 15px; }
-    .menu-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.3s ease; }
-    .menu-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .app-name { color: white; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
-    .header-icon { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; cursor: pointer; transition: background 0.3s ease; }
-    .header-icon:hover { background: rgba(255, 255, 255, 0.3); }
-    .sidebar { position: fixed; left: 0; top: 70px; width: 280px; height: calc(100vh - 70px); background: white; border-right: 1px solid #e0d9cc; z-index: 100; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); }
-    .sidebar.active { transform: translateX(0); }
-    .sidebar-header { padding: 20px; border-bottom: 1px solid #e0d9cc; background: #fafaf8; }
-    .sidebar-header h2 { font-size: 18px; font-weight: 600; color: #2f4a75; letter-spacing: 0.3px; }
-    .sidebar-item { padding: 16px 20px; cursor: pointer; transition: all 0.2s ease; color: #555; font-weight: 500; font-size: 15px; border-left: 3px solid transparent; user-select: none; }
-    .sidebar-item:hover { background: #f5f1e8; color: #2f4a75; border-left-color: #2f4a75; padding-left: 24px; }
-    .overlay { position: fixed; top: 70px; left: 0; width: 100%; height: calc(100vh - 70px); background: rgba(0, 0, 0, 0); z-index: 99; opacity: 0; pointer-events: none; transition: all 0.3s ease; }
-    .overlay.active { background: rgba(0, 0, 0, 0.4); opacity: 1; pointer-events: all; }
-    main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; gap: 20px; }
-    .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e8dfd4; }
-    .card h2 { font-size: 24px; font-weight: 600; color: #2f4a75; margin-bottom: 15px; }
-    .card h3 { font-size: 16px; font-weight: 600; color: #2f4a75; margin-bottom: 12px; margin-top: 15px; }
-    .card h3:first-child { margin-top: 0; }
-    .card p { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
-    .card strong { color: #333; }
-    @media (max-width: 480px) { main { padding: 15px; gap: 15px; } .card { padding: 16px; border-radius: 14px; } }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{width:100%;height:100%;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);background-attachment:fixed;color:#333;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
+    body>*{position:relative;z-index:1;}
+    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0;}
+    .header-left{display:flex;align-items:center;gap:10px;}
+    .menu-btn{background:none;border:none;color:white;font-size:24px;cursor:pointer;padding:6px;border-radius:8px;transition:background .3s;}
+    .menu-btn:hover{background:rgba(255,255,255,.1);}
+    .app-name{color:white;font-size:16px;font-weight:600;}
+    .header-icon{width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:13px;}
+    .sidebar{position:fixed;left:0;top:58px;width:260px;height:calc(100vh - 58px);background:white;border-right:1px solid #e0d9cc;z-index:100;transform:translateX(-100%);transition:transform .4s cubic-bezier(.4,0,.2,1);overflow-y:auto;}
+    .sidebar.active{transform:translateX(0);}
+    .sidebar-head{padding:16px 20px;border-bottom:1px solid #e0d9cc;background:#fafaf8;}
+    .sidebar-head h2{font-size:16px;font-weight:600;color:#2f4a75;}
+    .sidebar-item{padding:13px 20px;cursor:pointer;transition:all .2s;color:#555;font-weight:500;font-size:14px;border-left:3px solid transparent;}
+    .sidebar-item:hover{background:#f5f1e8;color:#2f4a75;border-left-color:#2f4a75;padding-left:24px;}
+    .overlay{position:fixed;top:58px;left:0;width:100%;height:calc(100vh - 58px);background:rgba(0,0,0,0);z-index:99;opacity:0;pointer-events:none;transition:all .3s;}
+    .overlay.active{background:rgba(0,0,0,.4);opacity:1;pointer-events:all;}
+    main{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+    .card{background:white;border-radius:12px;padding:16px;box-shadow:0 3px 10px rgba(0,0,0,.07);border:1px solid #e8dfd4;}
+    .card h2{font-size:18px;font-weight:700;color:#2f4a75;margin-bottom:12px;}
+    .card h3{font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:8px;margin-top:14px;}
+    .card h3:first-child{margin-top:0;}
+    .card p{color:#666;font-size:13px;line-height:1.6;margin-bottom:6px;}
+    .card strong{color:#333;}
+    .faq-item{border-bottom:1px solid #f0ebe0;padding:10px 0;cursor:pointer;}
+    .faq-item:last-child{border-bottom:none;}
+    .faq-q{font-weight:600;color:#2f4a75;font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+    .faq-a{color:#666;font-size:13px;line-height:1.6;margin-top:6px;display:none;}
+    .faq-a.open{display:block;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
   </style>
 </head>
-
 <body>
-
 <header>
   <div class="header-left">
     <button class="menu-btn" id="menuBtn">☰</button>
-    <div class="app-name">Pavadinimas</div>
+    <span class="app-name">Pavadinimas</span>
   </div>
   <div class="header-icon">U</div>
 </header>
-
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h2>Navigation</h2>
-    </div>
-    <div class="sidebar-menu">
-        <div class="sidebar-item" onclick="navigateTo('/pages/join.html')">Pin kodas</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/help.html')">Žinynas</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/settings.html')">Parinktys</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/review.html')">Atsiliepimai</div>
-    </div>
+  <div class="sidebar-head"><h2>Navigacija</h2></div>
+  <div class="sidebar-item" onclick="nav('/pages/join.html')">🔑 Pin kodas</div>
+  <div class="sidebar-item" onclick="nav('/pages/help.html')">❓ Žinynas</div>
+  <div class="sidebar-item" onclick="nav('/pages/settings.html')">⚙️ Parinktys</div>
+  <div class="sidebar-item" onclick="nav('/pages/review.html')">💬 Atsiliepimai</div>
 </div>
-
 <div class="overlay" id="overlay"></div>
-
 <main>
   <div class="card">
-    <h2>Help & Support</h2>
+    <h2>❓ Žinynas</h2>
   </div>
-
   <div class="card">
-    <h3>How to Join a Game</h3>
-    <p><strong>1.</strong> On the main page, enter the 6-digit PIN code provided by the game administrator</p>
-    <p><strong>2.</strong> Tap "Prisijungti" to enter the game</p>
-    <p><strong>3.</strong> Wait for the game to start and all players to join</p>
-    <p><strong>4.</strong> Follow the on-screen instructions during gameplay</p>
+    <h3>Kaip prisijungti prie žaidimo</h3>
+    <p><strong>1.</strong> Pagrindiniame puslapyje įveskite 6 skaitmenų PIN kodą, kurį pateikė administratorius.</p>
+    <p><strong>2.</strong> Spauskite „Prisijungti" ir pateksite į laukimo kambarį.</p>
+    <p><strong>3.</strong> Sukurkite arba prisijunkite prie komandos. Slaptažodis apsaugo nuo svetimų komandų.</p>
+    <p><strong>4.</strong> Laukite, kol administratorius pradės žaidimą.</p>
   </div>
-
   <div class="card">
-    <h3>Game Rules</h3>
-    <p><strong>Bidding:</strong> Place bids on power plant outputs during the bidding window</p>
-    <p><strong>Scoring:</strong> Earn points based on your bid accuracy and efficiency</p>
-    <p><strong>Rounds:</strong> The game consists of multiple rounds across different time periods</p>
-    <p><strong>Winner:</strong> Highest score at the end of all rounds wins</p>
+    <h3>Žaidimo taisyklės</h3>
+    <p><strong>Pasiūlymai:</strong> Kiekviename raunde pateikite pirkimo arba pardavimo pasiūlymus energijai.</p>
+    <p><strong>Kaina:</strong> Nurodykite kainą ($/MWh) ir galią (MW) kiekvienam sandoriui.</p>
+    <p><strong>Raundai:</strong> Galite peržiūrėti ankstesnius raundus, bet keisti galima tik aktyvų.</p>
+    <p><strong>Laimėtojas:</strong> Didžiausias balansas po visų raundų — nugalėtojas.</p>
   </div>
-
   <div class="card">
-    <h3>Troubleshooting</h3>
-    <p><strong>Invalid PIN?</strong> Check the PIN provided by the administrator. PINs are 6 digits.</p>
-    <p><strong>Can't join?</strong> The game session may have ended. Ask the administrator for a new PIN.</p>
-    <p><strong>Lost connection?</strong> Refresh the page to reconnect to your current game.</p>
+    <h3>DUK</h3>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Ką daryti, jei PIN neteisingas? <span>▾</span></div>
+      <div class="faq-a">Patikrinkite, ar įvedėte teisingą 6 skaitmenų kodą. Kreipkitės į administratorių naujo PIN.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Ar galiu pakeisti ankstesnio raundo pasiūlymus? <span>▾</span></div>
+      <div class="faq-a">Ne. Praėję raundai yra tik peržiūrai. Keisti galima tik dabartinį aktyvų raundą.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Kiek narių gali būti vienoje komandoje? <span>▾</span></div>
+      <div class="faq-a">Neribotai. Visi komandos nariai prisijungia tuo pačiu vardu ir slaptažodžiu.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Kas yra projektorius? <span>▾</span></div>
+      <div class="faq-a">Administratorius gali rodyti tarpinius rezultatus visiems ekrane — lyderių lentelę ir rinkos duomenis.</div>
+    </div>
   </div>
 </main>
-
 <script>
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('overlay');
-
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-  });
-
-  overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-  });
-
-  document.querySelectorAll('.sidebar-item').forEach(item => {
-    item.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    });
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    }
-  });
-
-  function navigateTo(path) {
-    window.location.href = path;
-  }
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ sidebar.classList.remove('active'); overlay.classList.remove('active'); }});
+function toggleFaq(el) {
+  const a = el.querySelector('.faq-a');
+  const s = el.querySelector('.faq-q span');
+  a.classList.toggle('open');
+  s.textContent = a.classList.contains('open') ? '▴' : '▾';
+}
+function nav(path) { window.location.href = path; }
 </script>
-
 </body>
 </html>

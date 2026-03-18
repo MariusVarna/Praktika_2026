@@ -1,578 +1,746 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pavadinimas - Game</title>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Žaidimas — Pavadinimas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{width:100%;height:100%;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);background-attachment:fixed;color:#333;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
+    body>*{position:relative;z-index:1;}
 
-    html, body {
-      width: 100%;
-      height: 100%;
-    }
+    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);flex-shrink:0;z-index:50;}
+    .hl{display:flex;align-items:center;gap:10px;}
+    .menu-btn{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:6px;border-radius:7px;transition:background .2s;line-height:1;}
+    .menu-btn:hover{background:rgba(255,255,255,.1);}
+    .logo{color:white;font-size:15px;font-weight:700;}
+    .team-badge{background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;}
+    .hr-right{display:flex;align-items:center;gap:6px;}
+    .bets-status-hdr{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;transition:all .3s;}
+    .bets-open-hdr{background:rgba(39,174,96,.3);color:#7effc0;border:1px solid rgba(39,174,96,.4);}
+    .bets-closed-hdr{background:rgba(231,76,60,.2);color:#ffb3ae;border:1px solid rgba(231,76,60,.3);}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
-      background-attachment: fixed;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      position: relative;
-    }
+    .sidebar{position:fixed;left:0;top:56px;width:240px;height:calc(100vh - 56px);background:white;border-right:1px solid #e0d9cc;z-index:100;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:2px 0 8px rgba(0,0,0,.1);}
+    .sidebar.active{transform:translateX(0);}
+    .sb-head{padding:14px 18px;border-bottom:1px solid #e0d9cc;background:#fafaf8;}
+    .sb-head h2{font-size:14px;font-weight:700;color:#2f4a75;}
+    .sb-item{padding:12px 18px;cursor:pointer;transition:all .18s;color:#555;font-weight:500;font-size:13px;border-left:3px solid transparent;}
+    .sb-item:hover{background:#f5f1e8;color:#2f4a75;border-left-color:#2f4a75;padding-left:22px;}
+    .overlay{position:fixed;top:56px;left:0;width:100%;height:calc(100vh - 56px);background:rgba(0,0,0,0);z-index:99;opacity:0;pointer-events:none;transition:all .3s;}
+    .overlay.active{background:rgba(0,0,0,.4);opacity:1;pointer-events:all;}
 
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
-      background-size: 50px 50px;
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* Round nav */
+    .round-nav{background:white;border-bottom:1px solid #e0d9cc;padding:8px 14px;display:flex;align-items:center;gap:6px;overflow-x:auto;flex-shrink:0;}
+    .round-nav::-webkit-scrollbar{height:0;}
+    .rnav-label{font-size:11px;font-weight:700;color:#888;white-space:nowrap;margin-right:4px;flex-shrink:0;}
+    .rbtn{padding:5px 13px;border:1.5px solid #d4cec2;border-radius:20px;background:white;font-size:12px;font-weight:700;color:#888;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;display:flex;align-items:center;gap:4px;}
+    .rbtn:hover{border-color:#2f4a75;color:#2f4a75;}
+    .rbtn.current{background:#2f4a75;color:white;border-color:#2f4a75;}
+    .rbtn.past{background:#f5f1e8;color:#aaa;border-color:#e0d9cc;}
+    .rbtn.viewing{outline:2px solid #f39c12;outline-offset:1px;}
 
-    body > * {
-      position: relative;
-      z-index: 1;
-    }
+    main{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;}
 
-    header {
-      background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-      height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      flex-shrink: 0;
-      z-index: 50;
-    }
+    .readonly-banner{background:#fef3cd;border:1px solid #ffd966;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:#856404;display:flex;align-items:center;gap:6px;}
+    .readonly-banner.hidden{display:none;}
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
+    /* Chart card */
+    .chart-card{background:white;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #e8dfd4;}
+    .chart-card-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .chart-card-title h3{font-size:13px;font-weight:700;color:#2f4a75;}
+    .chart-card-title span{font-size:10px;color:#aaa;}
+    .chart-wrap{position:relative;height:220px;}
+    .chart-note{font-size:10px;color:#aaa;margin-top:5px;text-align:center;}
 
-    .menu-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 28px;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 8px;
-      transition: background 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+    /* Status bar */
+    .status-bar{background:white;border-radius:10px;padding:10px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);border:1px solid #e8dfd4;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+    .stat-chip{display:flex;flex-direction:column;align-items:center;min-width:64px;}
+    .stat-chip .v{font-size:15px;font-weight:700;color:#2f4a75;}
+    .stat-chip .l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+    .stat-sep{width:1px;height:32px;background:#e0d9cc;flex-shrink:0;}
 
-    .menu-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
+    /* Energy */
+    .energy-card{background:white;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);border:1px solid #e8dfd4;}
+    .energy-card h3{font-size:12px;font-weight:700;color:#2f4a75;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
+    .energy-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+    @media(max-width:480px){.energy-grid{grid-template-columns:repeat(2,1fr);}}
+    .ebox{background:#f9f7f3;border:1px solid #e8dfd4;border-radius:8px;padding:8px;text-align:center;}
+    .ebox .v{font-size:14px;font-weight:700;color:#2f4a75;}
+    .ebox .l{font-size:9px;color:#888;margin-top:2px;}
+    .ebox.highlight{background:#e8f0fb;border-color:#b8d4f8;}
 
-    .app-name {
-      color: white;
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
+    /* Bid table */
+    .bid-card{background:white;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);border:1px solid #e8dfd4;}
+    .bid-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+    .bid-card-header h3{font-size:12px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.4px;}
+    .bid-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+    .btn{padding:6px 13px;border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:12px;transition:all .18s;}
+    .btn-primary{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);color:white;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(47,74,117,.3);}
+    .btn-primary:disabled{background:#b0b8c1;cursor:not-allowed;transform:none;box-shadow:none;}
+    .btn-sec{background:#e8dfd4;color:#555;}
+    .btn-sec:hover{background:#ddd5c8;}
+    .btn-warn-sm{padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:11px;background:linear-gradient(135deg,#e67e22,#ca6f1e);color:white;transition:all .15s;}
+    .btn-warn-sm:hover{transform:translateY(-1px);}
+    .bid-submitted-pill{background:#e8f8f0;color:#1e8449;border:1px solid #a9dfbf;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+    .bid-draft-pill{background:#fef9e7;color:#d68910;border:1px solid #f9e79f;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+    .bid-scroll{max-height:340px;overflow-y:auto;border:1px solid #e8dfd4;border-radius:8px;}
+    .bid-scroll::-webkit-scrollbar{width:4px;}
+    .bid-scroll::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
+    .bid-row{display:grid;grid-template-columns:38px 1fr 1fr 92px 68px;gap:4px;align-items:center;padding:4px 8px;border-bottom:1px solid #f5f1e8;font-size:11px;}
+    .bid-row:last-child{border-bottom:none;}
+    .bid-row:hover{background:#fafaf8;}
+    .bid-row.header-row{background:#f5f1e8;position:sticky;top:0;font-weight:700;font-size:10px;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;}
+    .bid-row.has-bid{background:#fffdf0;}
+    .bid-hr-num{color:#aaa;font-size:10px;text-align:center;font-family:'Courier New',monospace;}
+    .bid-input{width:100%;padding:3px 6px;border:1.5px solid #d4cec2;border-radius:5px;background:#fafaf8;color:#333;font-size:11px;}
+    .bid-input:focus{outline:none;border-color:#2f4a75;background:white;}
+    .bid-input:disabled{background:#f3f3f3;color:#aaa;border-color:#eee;cursor:not-allowed;}
+    .bid-select{width:100%;padding:3px 4px;border:1.5px solid #d4cec2;border-radius:5px;background:#fafaf8;color:#333;font-size:11px;}
+    .bid-select:focus{outline:none;border-color:#2f4a75;}
+    .bid-select:disabled{background:#f3f3f3;color:#aaa;border-color:#eee;cursor:not-allowed;}
+    .bid-total{font-size:10px;color:#2f4a75;font-weight:600;text-align:right;}
+    .bid-footer{display:grid;grid-template-columns:38px 1fr 1fr 92px 68px;gap:4px;align-items:center;padding:5px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;border-radius:0 0 8px 8px;}
 
-    .header-icon {
-      width: 40px;
-      height: 40px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
+    /* Tx */
+    .tx-card{background:white;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);border:1px solid #e8dfd4;}
+    .tx-card h3{font-size:12px;font-weight:700;color:#2f4a75;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+    .tx-list{max-height:130px;overflow-y:auto;}
+    .tx-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #f5f1e8;font-size:11px;}
+    .tx-row:last-child{border-bottom:none;}
+    .tx-buy{color:#27ae60;font-weight:700;flex-shrink:0;}
+    .tx-sell{color:#e74c3c;font-weight:700;flex-shrink:0;}
+    .tx-info{flex:1;color:#555;}
+    .tx-meta{color:#bbb;flex-shrink:0;}
 
-    .header-icon:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
+    /* Hour detail modal */
+    .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;padding:16px;}
+    .modal-bd.open{display:flex;}
+    .modal{background:white;border-radius:14px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+    .modal-hd{padding:13px 16px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0;}
+    .modal-hd h2{font-size:14px;font-weight:700;color:#2f4a75;}
+    .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#999;padding:2px;}
+    .modal-body{padding:14px 16px;max-height:70vh;overflow-y:auto;}
 
-    .sidebar {
-      position: fixed;
-      left: 0;
-      top: 70px;
-      width: 280px;
-      height: calc(100vh - 70px);
-      background: white;
-      border-right: 1px solid #e0d9cc;
-      z-index: 100;
-      transform: translateX(-100%);
-      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
-      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-    }
+    .toast{position:fixed;bottom:14px;right:14px;background:#2f4a75;color:white;padding:8px 13px;border-radius:8px;font-size:12px;font-weight:600;z-index:500;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
 
-    .sidebar.active {
-      transform: translateX(0);
-    }
-
-    .sidebar-header {
-      padding: 20px;
-      border-bottom: 1px solid #e0d9cc;
-      background: #fafaf8;
-    }
-
-    .sidebar-header h2 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #2f4a75;
-      letter-spacing: 0.3px;
-    }
-
-    .sidebar-item {
-      padding: 16px 20px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: #555;
-      font-weight: 500;
-      font-size: 15px;
-      border-left: 3px solid transparent;
-      user-select: none;
-    }
-
-    .sidebar-item:hover {
-      background: #f5f1e8;
-      color: #2f4a75;
-      border-left-color: #2f4a75;
-      padding-left: 24px;
-    }
-
-    .overlay {
-      position: fixed;
-      top: 70px;
-      left: 0;
-      width: 100%;
-      height: calc(100vh - 70px);
-      background: rgba(0, 0, 0, 0);
-      z-index: 99;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s ease;
-    }
-
-    .overlay.active {
-      background: rgba(0, 0, 0, 0.4);
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 20px;
-      overflow-y: auto;
-      gap: 20px;
-    }
-
-    .graph-container {
-      background: white;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e8dfd4;
-      min-height: 200px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
-      font-size: 14px;
-    }
-
-    .day-buttons {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding: 5px 0;
-      scrollbar-width: thin;
-      scrollbar-color: #d4cec2 transparent;
-    }
-
-    .day-btn {
-      padding: 10px 18px;
-      background: white;
-      border: 2px solid #d4cec2;
-      color: #2f4a75;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-
-    .day-btn:hover {
-      border-color: #2f4a75;
-      background: #f9f7f3;
-    }
-
-    .day-btn.active {
-      background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-      color: white;
-      border-color: #2f4a75;
-    }
-
-    .day-btn:active {
-      transform: scale(0.96);
-    }
-
-    .error-container {
-      background: white;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      border: 1px solid #fde8e8;
-      border-left: 4px solid #e74c3c;
-      min-height: 80px;
-    }
-
-    .error-container h3 {
-      color: #e74c3c;
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      letter-spacing: 0.2px;
-    }
-
-    .error-list {
-      list-style: none;
-      padding: 0;
-    }
-
-    .error-list li {
-      color: #555;
-      font-size: 13px;
-      padding: 4px 0;
-      line-height: 1.4;
-    }
-
-    .error-list li::before {
-      content: '⚠ ';
-      color: #e74c3c;
-      font-weight: 600;
-      margin-right: 6px;
-    }
-
-    .error-empty {
-      color: #999;
-      font-size: 13px;
-      font-style: italic;
-    }
-
-    .table-container {
-      background: white;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      border: 1px solid #e8dfd4;
-      overflow-x: auto;
-      flex: 1;
-    }
-
-    .table-container h3 {
-      font-size: 16px;
-      font-weight: 600;
-      color: #2f4a75;
-      margin-bottom: 15px;
-      letter-spacing: 0.3px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead {
-      background: #f5f1e8;
-      border-bottom: 2px solid #e0d9cc;
-    }
-
-    th {
-      padding: 12px 15px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 13px;
-      color: #2f4a75;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
-    }
-
-    td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #e8dfd4;
-      font-size: 14px;
-      color: #555;
-    }
-
-    tbody tr:hover {
-      background: #fafaf8;
-    }
-
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    input[type="number"],
-    input[type="text"] {
-      width: 100%;
-      padding: 8px 10px;
-      border: 1px solid #d4cec2;
-      border-radius: 6px;
-      font-size: 13px;
-      font-family: 'Courier New', monospace;
-    }
-
-    input[type="number"]:focus,
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #2f4a75;
-      background: #fafaf8;
-      box-shadow: 0 0 0 2px rgba(47, 74, 117, 0.1);
-    }
-
-    @media (max-width: 480px) {
-      main {
-        padding: 15px;
-        gap: 15px;
-      }
-
-      .graph-container,
-      .error-container,
-      .table-container {
-        border-radius: 14px;
-        padding: 16px;
-      }
-
-      .day-btn {
-        padding: 8px 14px;
-        font-size: 13px;
-      }
-
-      th {
-        padding: 10px 12px;
-        font-size: 12px;
-      }
-
-      td {
-        padding: 10px 12px;
-        font-size: 13px;
-      }
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #d4cec2;
-      border-radius: 3px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #c0baaf;
-    }
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
   </style>
 </head>
-
 <body>
 
 <header>
-  <div class="header-left">
+  <div class="hl">
     <button class="menu-btn" id="menuBtn">☰</button>
-    <div class="app-name">Pavadinimas</div>
+    <span class="logo">Pavadinimas</span>
+    <span class="team-badge" id="teamBadge">Komanda</span>
   </div>
-  <div class="header-icon">U</div>
+  <div class="hr-right">
+    <span class="bets-status-hdr bets-closed-hdr" id="betsHdr">Uždaryti</span>
+  </div>
 </header>
 
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h2>Navigation</h2>
-    </div>
-    <div class="sidebar-menu">
-        <div class="sidebar-item" onclick="navigateTo('/pages/join.html')">Pin kodas</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/help.html')">Žinynas</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/settings.html')">Parinktys</div>
-        <div class="sidebar-item" onclick="navigateTo('/pages/review.html')">Atsiliepimai</div>
-    </div>
+  <div class="sb-head"><h2>Navigacija</h2></div>
+  <div class="sb-item" onclick="nav('/pages/game.html')">Žaidimas</div>
+  <div class="sb-item" onclick="nav('/pages/results.html')">Rezultatai</div>
+  <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
+  <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
+  <div class="sb-item" onclick="logout()">Atsijungti</div>
 </div>
-
 <div class="overlay" id="overlay"></div>
 
-<main>
-  <div class="graph-container">
-    <canvas id="graphCanvas" width="300" height="150"></canvas>
-  </div>
+<div class="round-nav" id="roundNav">
+  <span class="rnav-label">Diena:</span>
+</div>
 
-  <div class="day-buttons">
-    <button class="day-btn active" data-day="1">1d</button>
-    <button class="day-btn" data-day="2">2d</button>
-    <button class="day-btn" data-day="3">3d</button>
-    <button class="day-btn" data-day="4">4d</button>
-    <button class="day-btn" data-day="5">5d</button>
-  </div>
+<main id="mainContent"></main>
 
-  <div class="error-container">
-    <h3>Klaidos</h3>
-    <ul class="error-list" id="errorList">
-      <li class="error-empty">No errors</li>
-    </ul>
+<!-- Hour detail modal -->
+<div class="modal-bd" id="hourModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <h2 id="hourModalTitle">Valanda</h2>
+      <button class="modal-close" onclick="closeHourModal()">×</button>
+    </div>
+    <div class="modal-body" id="hourModalBody"></div>
   </div>
+</div>
 
-  <div class="table-container">
-    <h3>Energijos pirkimas/pardavimas</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Round</th>
-          <th>Price ($/MWh)</th>
-          <th>Power (MW)</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1</td>
-          <td><input type="number" placeholder="50" value="50"></td>
-          <td><input type="number" placeholder="20" value="20"></td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td>2</td>
-          <td><input type="number" placeholder="45"></td>
-          <td><input type="number" placeholder="15"></td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td>3</td>
-          <td><input type="number" placeholder="55"></td>
-          <td><input type="number" placeholder="25"></td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td>4</td>
-          <td><input type="number" placeholder="60"></td>
-          <td><input type="number" placeholder="30"></td>
-          <td>-</td>
-        </tr>
-        <tr>
-          <td>5</td>
-          <td><input type="number" placeholder="50"></td>
-          <td><input type="number" placeholder="20"></td>
-          <td>-</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</main>
+<div class="toast" id="toast"></div>
 
 <script>
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('overlay');
+// ══════════════════════════════════════════════
+// DATA MODEL
+// round = one full day
+// bidRows[round] = array of 24 objects: { price, mw, type }  (index = hour 0–23)
+// marketPrices[round] = array of 24 numbers (market price per hour)
+// ══════════════════════════════════════════════
+const NUM_HOURS = 24;
 
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-  });
+let session = null, myTeam = null, viewRound = 1, editingSubmitted = false;
 
-  overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-  });
+function loadSession() {
+  try {
+    const sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
+    const pin = sessionStorage.getItem('gamePin');
+    const teamId = sessionStorage.getItem('myTeamId');
+    session = sessions.find(s => s.pin === pin) || sessions[0] || makeDemoSession();
+    myTeam = session.teams.find(t => t.id === teamId) || session.teams[0] || makeDemoTeam(session);
+  } catch(e) {
+    session = makeDemoSession();
+    myTeam = makeDemoTeam(session);
+  }
+  // Ensure marketPrices per round exists
+  if (!session.marketPrices) session.marketPrices = {};
+  ensureHourlyPrices(session.currentRound);
+}
 
-  document.querySelectorAll('.sidebar-item').forEach(item => {
-    item.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
+// Generate 24 hourly market prices for a round if not present
+function ensureHourlyPrices(round) {
+  if (!session.marketPrices[round]) {
+    const base = session.marketPrice || 70;
+    session.marketPrices[round] = Array.from({length: NUM_HOURS}, (_, h) => {
+      // Price curve: lower at night, peak morning & evening
+      const curve = [0.82,0.78,0.76,0.75,0.77,0.85,0.95,1.08,1.12,1.10,1.06,1.04,1.02,1.00,0.99,1.01,1.05,1.13,1.18,1.14,1.08,1.00,0.93,0.87];
+      return +(base * curve[h] * (0.9 + Math.random() * 0.2)).toFixed(2);
     });
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
+  }
+  // Also generate for all past rounds
+  (session.roundHistory || []).forEach(rh => {
+    if (!session.marketPrices[rh.round]) {
+      const base = rh.marketPrice || 70;
+      session.marketPrices[rh.round] = Array.from({length: NUM_HOURS}, (_, h) => {
+        const curve = [0.82,0.78,0.76,0.75,0.77,0.85,0.95,1.08,1.12,1.10,1.06,1.04,1.02,1.00,0.99,1.01,1.05,1.13,1.18,1.14,1.08,1.00,0.93,0.87];
+        return +(base * curve[h] * (0.9 + Math.random() * 0.2)).toFixed(2);
+      });
     }
   });
+}
 
-  document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('active') && 
-        !sidebar.contains(e.target) && 
-        !menuBtn.contains(e.target)) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
+function makeDemoSession() {
+  return {
+    id: 1, pin: '123456', gameName: 'Demo sesija', status: 'active',
+    currentRound: 2, numRounds: 5, currentDay: 2, startDay: 1,
+    betsOpen: true, marketPrice: 74, demand: 520, weather: 'Giedra',
+    roundStarted: true,
+    roundHistory: [{round:1,day:1,marketPrice:68,demand:500,weather:'Giedra'}],
+    teams: [], transactions: [], marketPrices: {}
+  };
+}
+
+function makeDemoTeam(s) {
+  const t = { id: 'demo', name: 'Demo komanda', password: 'pw1', balance: 14200, bids: [], roundHistory: [], bidRows: {} };
+  // Seed round 1 with submitted 24-hour bids
+  const base = 65;
+  t.bidRows[1] = Array.from({length: NUM_HOURS}, (_, h) => ({
+    price: +(base + Math.random()*8 - 4).toFixed(1), mw: Math.floor(10+Math.random()*30), type: h%6===5?'sell':'buy'
+  }));
+  t.bids.push({round:1, price:base, mw:20, type:'buy', submitted:true});
+  t.roundHistory.push({round:1, balance:12100, profit:2100});
+  if (!s.teams.length) s.teams.push(t);
+  return t;
+}
+
+// ══════════════════════════════════════════════
+// CHART
+// ══════════════════════════════════════════════
+let chartInstance = null;
+
+function buildChartData(round) {
+  const prices = session.marketPrices[round] || Array(NUM_HOURS).fill(session.marketPrice || 70);
+  const labels = Array.from({length: NUM_HOURS}, (_, i) => String(i).padStart(2,'0') + ':00');
+
+  const isSubmitted = (myTeam.bids || []).some(b => b.round === round && b.submitted);
+  const savedRows = (myTeam.bidRows || {})[round] || [];
+
+  // Submitted bid prices (solid orange line)
+  const submittedLine = Array(NUM_HOURS).fill(null);
+  if (isSubmitted) {
+    savedRows.forEach((r, i) => { if (r && r.price) submittedLine[i] = +r.price; });
+  }
+
+  // Draft bid prices (dashed red line) — only when actively editing
+  const draftLine = Array(NUM_HOURS).fill(null);
+  const isEditingNow = round === session.currentRound && editingSubmitted;
+  const isNewDraft = round === session.currentRound && !isSubmitted;
+  if (isEditingNow || isNewDraft) {
+    for (let i = 0; i < NUM_HOURS; i++) {
+      const el = document.getElementById('price_' + i);
+      const v = el ? +el.value : 0;
+      if (v) draftLine[i] = v;
+    }
+  }
+
+  return { labels, prices, submittedLine, draftLine };
+}
+
+function renderChart(round) {
+  const ctx = document.getElementById('priceChart');
+  if (!ctx) return;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const { labels, prices, submittedLine, draftLine } = buildChartData(round);
+  const hasDraft = draftLine.some(v => v !== null);
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Rinkos kaina ($/MWh)',
+          data: prices,
+          backgroundColor: 'rgba(47,74,117,.4)',
+          borderColor: '#2f4a75',
+          borderWidth: 1,
+          borderRadius: 3,
+          type: 'bar',
+          order: 5
+        },
+        {
+          label: 'Pateikti pasiūlymai',
+          data: submittedLine,
+          type: 'line',
+          borderColor: '#f39c12',
+          backgroundColor: 'rgba(243,156,18,.08)',
+          pointBackgroundColor: '#f39c12',
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2,
+          tension: 0.2,
+          spanGaps: false,
+          order: 2
+        },
+        ...(hasDraft ? [{
+          label: 'Juodraštis',
+          data: draftLine,
+          type: 'line',
+          borderColor: '#e74c3c',
+          backgroundColor: 'transparent',
+          pointBackgroundColor: '#e74c3c',
+          pointRadius: 3,
+          borderWidth: 2,
+          borderDash: [5, 4],
+          tension: 0.2,
+          spanGaps: false,
+          order: 1
+        }] : [])
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: (evt, elements, chart) => {
+        const pts = chart.getElementsAtEventForMode(evt, 'index', {intersect: false}, false);
+        if (pts.length) openHourModal(round, pts[0].index);
+      },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+        tooltip: {
+          callbacks: {
+            title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
+            afterBody: items => {
+              const h = items[0].dataIndex;
+              const row = ((myTeam.bidRows || {})[round] || [])[h];
+              if (row && row.price) return [`Mano pasiūlymas: ${row.price} $/MWh · ${row.mw} MW (${row.type==='buy'?'pirkimas':'pardavimas'})`];
+              return [];
+            }
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: false, ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
+        x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+      },
+      animation: { duration: 300 }
     }
   });
+}
 
-  document.querySelectorAll('.day-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      const day = this.dataset.day;
-      console.log('Selected day:', day);
+// ══════════════════════════════════════════════
+// HOUR DETAIL MODAL
+// ══════════════════════════════════════════════
+function openHourModal(round, hour) {
+  const prices = session.marketPrices[round] || [];
+  const mp = prices[hour] || session.marketPrice;
+  const row = ((myTeam.bidRows || {})[round] || [])[hour];
+  const label = String(hour).padStart(2,'0') + ':00 — ' + String(hour+1).padStart(2,'0') + ':00';
+
+  document.getElementById('hourModalTitle').textContent = 'Diena ' + round + ' · ' + label;
+  document.getElementById('hourModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <div style="background:#e8f0fb;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:#2f4a75;">${mp.toFixed(2)}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">Rinkos kaina ($/MWh)</div>
+      </div>
+      <div style="background:${row&&row.price?'#e8f8f0':'#f5f1e8'};border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:${row&&row.price?'#1e8449':'#aaa'};">${row&&row.price?row.price+'$':'—'}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">Mano pasiūlymas</div>
+      </div>
+    </div>
+    ${row && row.price ? `
+      <div style="background:#f9f7f3;border-radius:8px;padding:10px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
+          <span style="color:#777;">Kaina</span><span style="font-weight:600;color:#2f4a75;">${row.price} $/MWh</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
+          <span style="color:#777;">Kiekis</span><span style="font-weight:600;">${row.mw} MW</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
+          <span style="color:#777;">Tipas</span><span style="font-weight:600;color:${row.type==='buy'?'#27ae60':'#e74c3c'};">${row.type==='buy'?'Pirkimas':'Pardavimas'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
+          <span style="color:#777;">Suma</span><span style="font-weight:600;color:#2f4a75;">$${(+row.price * +row.mw).toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;">
+          <span style="color:#777;">Skirtumas nuo rinkos</span>
+          <span style="font-weight:600;color:${+row.price < mp ? '#27ae60' : '#e74c3c'};">
+            ${(+row.price - mp).toFixed(2)} $/MWh
+          </span>
+        </div>
+      </div>` : `<p style="color:#bbb;font-size:12px;text-align:center;padding:16px;">Šiai valandai pasiūlymas nepateiktas.</p>`}
+  `;
+  document.getElementById('hourModal').classList.add('open');
+}
+function closeHourModal() { document.getElementById('hourModal').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════
+function renderRoundNav() {
+  const nav = document.getElementById('roundNav');
+  const cr = session.currentRound, nr = session.numRounds;
+  let html = '<span class="rnav-label">Diena:</span>';
+  for (let r = 1; r <= nr; r++) {
+    const cls = r === cr ? 'rbtn current' : r < cr ? 'rbtn past' : 'rbtn';
+    const lock = r < cr ? '🔒 ' : '';
+    html += `<button class="${cls}${r===viewRound?' viewing':''}" onclick="switchRound(${r})" id="rbtn_${r}">${lock}D${r}</button>`;
+  }
+  nav.innerHTML = html;
+}
+
+function switchRound(r) {
+  if (viewRound === session.currentRound) saveDraftRows(viewRound);
+  viewRound = r;
+  editingSubmitted = false;
+  renderRound();
+}
+
+function saveDraftRows(round) {
+  if (!myTeam.bidRows) myTeam.bidRows = {};
+  const rows = [];
+  for (let i = 0; i < NUM_HOURS; i++) {
+    const p = document.getElementById('price_' + i);
+    const m = document.getElementById('mw_' + i);
+    const t = document.getElementById('type_' + i);
+    rows.push({ price: p ? +p.value || 0 : 0, mw: m ? +m.value || 0 : 0, type: t ? t.value : 'buy' });
+  }
+  myTeam.bidRows[round] = rows;
+}
+
+function renderRound() {
+  const cr = session.currentRound;
+  const isReadOnly = viewRound < cr;
+  const isFuture = viewRound > cr;
+  const rh = session.roundHistory ? session.roundHistory.find(h => h.round === viewRound) : null;
+  const mp = rh ? rh.marketPrice : session.marketPrice;
+  const demand = rh ? rh.demand : session.demand;
+  const weather = rh ? rh.weather : session.weather;
+
+  ensureHourlyPrices(viewRound);
+
+  const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => ({price:'',mw:'',type:'buy'}));
+  const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
+  const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
+  const isEditing = editingSubmitted && canEdit;
+  const disabled = isReadOnly || isFuture || (isSubmitted && !isEditing);
+
+  const betsHdr = document.getElementById('betsHdr');
+  if (session.betsOpen && !isReadOnly) {
+    betsHdr.className = 'bets-status-hdr bets-open-hdr';
+    betsHdr.textContent = 'Atidaryti';
+  } else {
+    betsHdr.className = 'bets-status-hdr bets-closed-hdr';
+    betsHdr.textContent = 'Uždaryti';
+  }
+
+  const acc = getAccumulation(viewRound);
+  const roundResult = myTeam.roundHistory ? myTeam.roundHistory.find(r => r.round === viewRound) : null;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
+      Diena ${viewRound} baigta — tik peržiūra.
+      <button class="btn btn-sec" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="switchRound(${cr})">→ D${cr}</button>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-card">
+      <div class="chart-card-title">
+        <h3>Rinkos kainos — Diena ${viewRound}</h3>
+        <span>Spustelėkite ant valandos norėdami matyti detales</span>
+      </div>
+      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+      <div class="chart-note">Oranžinė linija = jūsų pateikti pasiūlymai · Raudona punktyrinė = juodraštis</div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+      <div class="stat-chip">
+        <span class="v">D${viewRound}${isReadOnly?' 🔒':''}</span>
+        <span class="l">Diena</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-chip">
+        <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
+        <span class="l">Vid. kaina</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-chip">
+        <span class="v">${demand}</span>
+        <span class="l">Paklausa MW</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-chip">
+        <span class="v">${weather}</span>
+        <span class="l">Oras</span>
+      </div>
+      <div class="stat-sep"></div>
+      <div class="stat-chip">
+        <span class="v" style="color:#27ae60;">$${(myTeam.balance||0).toLocaleString()}</span>
+        <span class="l">Balansas</span>
+      </div>
+      ${roundResult ? `<div class="stat-sep"></div><div class="stat-chip">
+        <span class="v" style="color:${roundResult.profit>=0?'#27ae60':'#e74c3c'}">${roundResult.profit>=0?'+':''}$${Math.abs(roundResult.profit||0).toLocaleString()}</span>
+        <span class="l">D${viewRound} pelnas</span>
+      </div>` : ''}
+    </div>
+
+    <!-- ENERGY -->
+    <div class="energy-card">
+      <h3>Energijos portfelis (iki D${viewRound})</h3>
+      <div class="energy-grid">
+        <div class="ebox highlight"><div class="v">${acc.totalBought}<small style="font-size:9px;"> MWh</small></div><div class="l">Pirkta</div></div>
+        <div class="ebox"><div class="v">${acc.totalSold}<small style="font-size:9px;"> MWh</small></div><div class="l">Parduota</div></div>
+        <div class="ebox"><div class="v">${acc.net}<small style="font-size:9px;"> MWh</small></div><div class="l">Grynasis</div></div>
+        <div class="ebox highlight"><div class="v" style="color:${acc.pnl>=0?'#27ae60':'#e74c3c'}">${acc.pnl>=0?'+':''}$${Math.abs(acc.pnl).toLocaleString()}</div><div class="l">P&amp;L</div></div>
+      </div>
+    </div>
+
+    <!-- BIDS -->
+    <div class="bid-card">
+      <div class="bid-card-header">
+        <h3>Pasiūlymai — Diena ${viewRound} (24 val.)</h3>
+        <div class="bid-actions">
+          ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
+            ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
+          ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
+          ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
+            <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
+            <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen?'':'disabled'}>
+              ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
+            </button>` : ''}
+        </div>
+      </div>
+      <div class="bid-scroll">
+        <div class="bid-row header-row">
+          <span>Val.</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Veiksmas</span><span style="text-align:right;">Suma</span>
+        </div>
+        ${savedRows.map((row, i) => `
+          <div class="bid-row ${row&&row.price?'has-bid':''}" id="bidrow_${i}">
+            <span class="bid-hr-num">${String(i).padStart(2,'0')}:00</span>
+            <input class="bid-input" type="number" id="price_${i}" value="${row&&row.price||''}" min="0" step="0.01" placeholder="—"
+              ${disabled?'disabled':''} oninput="onBidInput(${i})">
+            <input class="bid-input" type="number" id="mw_${i}" value="${row&&row.mw||''}" min="0" step="1" placeholder="—"
+              ${disabled?'disabled':''} oninput="onBidInput(${i})">
+            <select class="bid-select" id="type_${i}" ${disabled?'disabled':''} onchange="onBidInput(${i})">
+              <option value="buy" ${row&&row.type==='buy'?'selected':''}>Pirkti</option>
+              <option value="sell" ${row&&row.type==='sell'?'selected':''}>Parduoti</option>
+            </select>
+            <span class="bid-total" id="rowTotal_${i}">${row&&row.price&&row.mw?'$'+(+row.price*+row.mw).toLocaleString():'—'}</span>
+          </div>`).join('')}
+      </div>
+      <div class="bid-footer">
+        <span></span><span>Iš viso</span>
+        <span id="totalMW">—</span><span></span>
+        <span id="totalSum" style="text-align:right;">—</span>
+      </div>
+      <div id="bidErrors" style="margin-top:6px;"></div>
+    </div>
+
+    <!-- TX -->
+    <div class="tx-card">
+      <h3>Sandoriai</h3>
+      <div class="tx-list">${buildTxList()}</div>
+    </div>
+  `;
+
+  // Render nav highlights
+  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('viewing'));
+  const rb = document.getElementById('rbtn_' + viewRound);
+  if (rb) rb.classList.add('viewing');
+
+  updateTotals();
+  renderChart(viewRound);
+}
+
+// ══════════════════════════════════════════════
+// BID INTERACTIONS
+// ══════════════════════════════════════════════
+function onBidInput(i) {
+  const p = +document.getElementById('price_' + i)?.value || 0;
+  const m = +document.getElementById('mw_' + i)?.value || 0;
+  const rowTotalEl = document.getElementById('rowTotal_' + i);
+  if (rowTotalEl) rowTotalEl.textContent = (p && m) ? '$' + (p * m).toLocaleString() : '—';
+  updateTotals();
+  updateEnergyAccumulation();
+  // Update draft line on chart
+  if (editingSubmitted || !(myTeam.bids||[]).some(b=>b.round===viewRound&&b.submitted)) {
+    renderChart(viewRound);
+  }
+}
+
+function updateTotals() {
+  let totalMW = 0, totalSum = 0;
+  for (let i = 0; i < NUM_HOURS; i++) {
+    const p = +document.getElementById('price_'+i)?.value || 0;
+    const m = +document.getElementById('mw_'+i)?.value || 0;
+    totalMW += m; totalSum += p * m;
+  }
+  const tmw = document.getElementById('totalMW');
+  const ts = document.getElementById('totalSum');
+  if (tmw) tmw.textContent = totalMW ? totalMW + ' MW' : '—';
+  if (ts) ts.textContent = totalSum ? '$' + totalSum.toLocaleString() : '—';
+}
+
+function updateEnergyAccumulation() {
+  const acc = getAccumulation(viewRound);
+  const boxes = document.querySelectorAll('.energy-grid .ebox .v');
+  if (boxes[0]) boxes[0].innerHTML = acc.totalBought + ' <small style="font-size:9px;">MWh</small>';
+  if (boxes[1]) boxes[1].innerHTML = acc.totalSold + ' <small style="font-size:9px;">MWh</small>';
+  if (boxes[2]) boxes[2].innerHTML = acc.net + ' <small style="font-size:9px;">MWh</small>';
+  if (boxes[3]) { boxes[3].style.color = acc.pnl >= 0 ? '#27ae60' : '#e74c3c'; boxes[3].textContent = (acc.pnl>=0?'+':'') + '$' + Math.abs(acc.pnl).toLocaleString(); }
+}
+
+function clearBids() {
+  for (let i = 0; i < NUM_HOURS; i++) {
+    const p = document.getElementById('price_'+i), m = document.getElementById('mw_'+i);
+    if (p) p.value = ''; if (m) m.value = '';
+    const rt = document.getElementById('rowTotal_'+i);
+    if (rt) rt.textContent = '—';
+  }
+  updateTotals(); updateEnergyAccumulation(); renderChart(viewRound);
+}
+
+function editBids() { editingSubmitted = true; renderRound(); toast('Redagavimo režimas — pakeiskite ir pateikite iš naujo'); }
+
+function submitBids() {
+  if (!session.betsOpen) { toast('Pasiūlymai šiuo metu uždaryti'); return; }
+  const errors = [], rows = [];
+  for (let i = 0; i < NUM_HOURS; i++) {
+    const p = +document.getElementById('price_'+i)?.value;
+    const m = +document.getElementById('mw_'+i)?.value;
+    const t = document.getElementById('type_'+i)?.value || 'buy';
+    if (p || m) {
+      if (!p || p <= 0) errors.push(`${String(i).padStart(2,'0')}:00 — netinkama kaina`);
+      else if (!m || m <= 0) errors.push(`${String(i).padStart(2,'0')}:00 — netinkamas kiekis`);
+      else rows.push({ hour: i, price: p, mw: m, type: t });
+    }
+  }
+  const errEl = document.getElementById('bidErrors');
+  if (errors.length) {
+    if (errEl) errEl.innerHTML = errors.slice(0,4).map(e => `<div style="font-size:11px;color:#e74c3c;">⚠ ${e}</div>`).join('') + (errors.length>4?`<div style="font-size:11px;color:#aaa;">...ir dar ${errors.length-4}</div>`:'');
+    toast('Patikrinkite įvestus duomenis'); return;
+  }
+  if (!rows.length) { toast('Įveskite bent vieną pasiūlymą'); return; }
+  if (errEl) errEl.innerHTML = '';
+
+  if (!myTeam.bidRows) myTeam.bidRows = {};
+  myTeam.bidRows[viewRound] = Array.from({length: NUM_HOURS}, (_, i) => ({
+    price: +document.getElementById('price_'+i)?.value || 0,
+    mw: +document.getElementById('mw_'+i)?.value || 0,
+    type: document.getElementById('type_'+i)?.value || 'buy'
+  }));
+  if (!myTeam.bids) myTeam.bids = [];
+  myTeam.bids = myTeam.bids.filter(b => b.round !== viewRound);
+  myTeam.bids.push({ round: viewRound, price: rows[0].price, mw: rows[0].mw, type: rows[0].type, submitted: true, hourCount: rows.length });
+
+  saveTeamToSession();
+  editingSubmitted = false;
+  toast('Pasiūlymai pateikti (' + rows.length + ' val.)');
+  renderRound();
+}
+
+function saveTeamToSession() {
+  try {
+    const sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
+    const idx = sessions.findIndex(s => s.id === session.id);
+    if (idx >= 0) {
+      if (!sessions[idx].marketPrices) sessions[idx].marketPrices = {};
+      Object.assign(sessions[idx].marketPrices, session.marketPrices);
+      const tIdx = sessions[idx].teams.findIndex(t => t.id === myTeam.id);
+      if (tIdx >= 0) sessions[idx].teams[tIdx] = myTeam;
+      else sessions[idx].teams.push(myTeam);
+      sessionStorage.setItem('adminSessions', JSON.stringify(sessions));
+    }
+  } catch(e) {}
+}
+
+function buildTxList() {
+  const txs = (session.transactions || []).filter(tx => tx.teamId === myTeam.id || tx.teamName === myTeam.name);
+  if (!txs.length) return '<p style="color:#bbb;font-size:11px;padding:6px 0;">Nėra sandorių</p>';
+  return txs.slice().reverse().map(tx => `
+    <div class="tx-row">
+      <span class="${tx.type==='buy'?'tx-buy':'tx-sell'}">${tx.type==='buy'?'▲':'▼'}</span>
+      <span class="tx-info">${tx.mw} MW @ ${tx.price} $/MWh</span>
+      <span class="tx-meta">D${tx.round}</span>
+    </div>`).join('');
+}
+
+function getAccumulation(upToRound) {
+  let totalBought = 0, totalSold = 0, totalCostBuy = 0, totalRevSell = 0;
+  for (let r = 1; r <= upToRound; r++) {
+    const rows = (myTeam.bidRows || {})[r] || [];
+    rows.forEach(row => {
+      if (!row.price || !row.mw) return;
+      if (row.type === 'buy') { totalBought += +row.mw; totalCostBuy += +row.mw * +row.price; }
+      else { totalSold += +row.mw; totalRevSell += +row.mw * +row.price; }
     });
-  });
-
-  const canvas = document.getElementById('graphCanvas');
-  if (canvas && canvas.getContext) {
-    const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#2f4a75';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(20, 120);
-    ctx.lineTo(80, 60);
-    ctx.lineTo(150, 80);
-    ctx.lineTo(220, 40);
-    ctx.lineTo(280, 100);
-    ctx.stroke();
   }
+  const net = totalBought - totalSold;
+  const pnl = Math.round(totalRevSell - totalCostBuy + net * (session.marketPrice || 70));
+  return { totalBought, totalSold, net, pnl };
+}
 
-  function addError(errorMessage) {
-    const errorList = document.getElementById('errorList');
-    const errorItem = errorList.querySelector('.error-empty');
-    if (errorItem) {
-      errorItem.remove();
-    }
-    const li = document.createElement('li');
-    li.textContent = errorMessage;
-    errorList.appendChild(li);
-  }
+// ══════════════════════════════════════════════
+// SIDEBAR / MISC
+// ══════════════════════════════════════════════
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { sidebar.classList.remove('active'); overlay.classList.remove('active'); closeHourModal(); }
+});
+document.querySelectorAll('.sb-item').forEach(i => i.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); }));
+document.getElementById('hourModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHourModal(); });
 
-  function clearErrors() {
-    const errorList = document.getElementById('errorList');
-    errorList.innerHTML = '<li class="error-empty">No errors</li>';
-  }
+function nav(p) { window.location.href = p; }
+function logout() { if (confirm('Atsijungti?')) { sessionStorage.removeItem('myTeamId'); sessionStorage.removeItem('gamePin'); window.location.href = '/pages/join.html'; } }
+function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
 
-  function navigateTo(path) {
-    window.location.href = path;
-  }
+// INIT
+loadSession();
+viewRound = session.currentRound || 1;
+document.getElementById('teamBadge').textContent = myTeam.name;
+renderRoundNav();
+renderRound();
 </script>
-
 </body>
 </html>

@@ -1,393 +1,94 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="lt">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%);
-            background-attachment: fixed;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-            body::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
-                background-size: 50px 50px;
-                pointer-events: none;
-                z-index: 0;
-            }
-
-            body > * {
-                position: relative;
-                z-index: 1;
-            }
-
-        header {
-            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            flex-shrink: 0;
-            z-index: 50;
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .back-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-            .back-btn:hover {
-                background: rgba(255, 255, 255, 0.1);
-            }
-
-        .app-name {
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        .header-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-        }
-
-        main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 20px;
-            overflow-y: auto;
-        }
-
-        .card {
-            width: 100%;
-            max-width: 400px;
-            background: white;
-            border-radius: 16px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e8dfd4;
-        }
-
-            .card h1 {
-                font-size: 24px;
-                font-weight: 600;
-                color: #2f4a75;
-                margin-bottom: 8px;
-                letter-spacing: -0.3px;
-            }
-
-            .card p {
-                color: #666;
-                font-size: 14px;
-                margin-bottom: 30px;
-                line-height: 1.5;
-            }
-
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 8px;
-            text-align: left;
-            letter-spacing: 0.2px;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 16px;
-            border: 2px solid #d4cec2;
-            border-radius: 10px;
-            background: #fafaf8;
-            color: #333;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-            input:focus {
-                outline: none;
-                border-color: #2f4a75;
-                background: #fff;
-                box-shadow: 0 0 0 3px rgba(47, 74, 117, 0.1);
-            }
-
-            input::placeholder {
-                color: #aaa;
-            }
-
-        .btn {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%);
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 12px rgba(47, 74, 117, 0.2);
-            margin-bottom: 15px;
-        }
-
-            .btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 16px rgba(47, 74, 117, 0.25);
-            }
-
-            .btn:active {
-                transform: translateY(0);
-            }
-
-        .btn-outline {
-            background: transparent;
-            color: #2f4a75;
-            border: 2px solid #2f4a75;
-            box-shadow: none;
-        }
-
-            .btn-outline:hover {
-                background: rgba(47, 74, 117, 0.05);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(47, 74, 117, 0.15);
-            }
-
-        .demo-credentials {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f5f1e8;
-            border-radius: 10px;
-            text-align: left;
-            border: 1px dashed #2f4a75;
-        }
-
-            .demo-credentials p {
-                margin-bottom: 8px;
-                font-size: 13px;
-                color: #555;
-            }
-
-            .demo-credentials code {
-                display: block;
-                padding: 8px;
-                background: #fff;
-                border-radius: 6px;
-                border: 1px solid #d4cec2;
-                font-family: monospace;
-                color: #2f4a75;
-            }
-
-        .error-message {
-            color: #d32f2f;
-            font-size: 13px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            text-align: left;
-            display: none;
-        }
-
-            .error-message.visible {
-                display: block;
-            }
-
-        @media (max-width: 480px) {
-            .card {
-                padding: 32px 24px;
-                border-radius: 14px;
-            }
-
-                .card h1 {
-                    font-size: 22px;
-                }
-
-            input {
-                padding: 12px 14px;
-                font-size: 16px;
-            }
-
-            .btn {
-                padding: 12px 16px;
-            }
-        }
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #d4cec2;
-            border-radius: 3px;
-        }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: #c0baaf;
-            }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Administratoriaus prisijungimas</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{width:100%;height:100%;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);background-attachment:fixed;color:#333;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
+    body>*{position:relative;z-index:1;}
+    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:58px;display:flex;align-items:center;padding:0 16px;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);flex-shrink:0;}
+    .back-btn{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:6px;border-radius:8px;transition:background .2s;}
+    .back-btn:hover{background:rgba(255,255,255,.1);}
+    .app-name{color:white;font-size:16px;font-weight:600;}
+    .admin-badge{background:rgba(255,165,0,.3);color:#ffd78a;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,165,0,.4);}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow-y:auto;}
+    .card{width:100%;max-width:380px;background:white;border-radius:16px;padding:32px 28px;box-shadow:0 4px 16px rgba(0,0,0,.1);border:1px solid #e8dfd4;}
+    .card h1{font-size:22px;font-weight:700;color:#2f4a75;margin-bottom:6px;text-align:center;}
+    .card p{color:#888;font-size:13px;margin-bottom:24px;line-height:1.5;text-align:center;}
+    label{display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+    input{width:100%;padding:12px 14px;font-size:14px;border:2px solid #d4cec2;border-radius:10px;background:#fafaf8;color:#333;margin-bottom:16px;transition:all .3s;}
+    input:focus{outline:none;border-color:#2f4a75;background:white;box-shadow:0 0 0 3px rgba(47,74,117,.1);}
+    input::placeholder{color:#bbb;}
+    .btn{width:100%;padding:13px;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;transition:all .3s;margin-bottom:10px;}
+    .btn-primary{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);color:white;box-shadow:0 4px 12px rgba(47,74,117,.25);}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(47,74,117,.3);}
+    .btn-outline{background:transparent;color:#2f4a75;border:2px solid #d4cec2;}
+    .btn-outline:hover{border-color:#2f4a75;background:#f9f7f3;}
+    .error-msg{color:#e74c3c;font-size:13px;margin-top:-10px;margin-bottom:14px;display:none;text-align:center;}
+    .error-msg.show{display:block;}
+    .demo-box{margin-top:16px;padding:12px;background:#f5f1e8;border-radius:10px;border:1px dashed #2f4a75;}
+    .demo-box p{font-size:12px;color:#666;margin-bottom:6px;font-weight:600;}
+    .demo-row{display:flex;gap:6px;margin-bottom:4px;}
+    .demo-row code{flex:1;padding:6px;background:white;border-radius:6px;border:1px solid #e0d9cc;font-family:monospace;font-size:12px;color:#2f4a75;}
+    ::-webkit-scrollbar{width:5px;}
+    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
+    @keyframes shake{0%,100%{transform:translateX(0);}20%,60%{transform:translateX(-6px);}40%,80%{transform:translateX(6px);}}
+    .shake{animation:shake .4s ease;}
+  </style>
 </head>
-
 <body>
-    <header>
-        <div class="header-left">
-            <button class="back-btn" id="backBtn" title="Go Back">←</button>
-            <div class="app-name">Pavadinimas</div>
-        </div>
-        <div class="header-icon">A</div>
-    </header>
+<header>
+  <button class="back-btn" onclick="history.back()">←</button>
+  <span class="app-name">Pavadinimas</span>
+  <span class="admin-badge">ADMIN</span>
+</header>
+<main>
+  <div class="card" id="loginCard">
+    <h1>Prisijunkite</h1>
+    <p>Administratoriaus paskyra</p>
+    <label>Slapyvardis</label>
+    <input id="usernameInput" type="text" placeholder="Įveskite slapyvardį" autocomplete="off"/>
+    <label>Slaptažodis</label>
+    <input id="passwordInput" type="password" placeholder="••••••••"/>
+    <div class="error-msg" id="errorMsg">Neteisingas slapyvardis arba slaptažodis</div>
+    <button class="btn btn-primary" id="loginBtn">Prisijungti</button>
+    <button class="btn btn-outline" onclick="history.back()">Atšaukti</button>
+    <div class="demo-box">
+      <p>Demo kredencialai:</p>
+      <div class="demo-row"><code>Slapyvardis: admin</code></div>
+      <div class="demo-row"><code>Slaptažodis: admin123</code></div>
+    </div>
+  </div>
+</main>
+<script>
+const loginBtn = document.getElementById('loginBtn');
+const errorMsg = document.getElementById('errorMsg');
 
-    <main>
-        <div class="card">
-            <h1>Prisijunkite </h1>
-            <label>Slapyvardis</label>
-            <input id="usernameInput"
-                   type="text"
-                   placeholder="Įveskite slapyvardį"
-                   autocomplete="off" />
+loginBtn.addEventListener('click', login);
+document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+document.getElementById('usernameInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('passwordInput').focus(); });
+['usernameInput','passwordInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => errorMsg.classList.remove('show'));
+});
 
-            <label>Slaptažodis</label>
-            <input id="passwordInput"
-                   type="password"
-                   placeholder="#&%$^@" />
-
-            <div class="error-message" id="errorMessage">Invalid username or password</div>
-
-            <button class="btn" id="loginBtn">Prisijungti</button>
-            <button class="btn btn-outline" id="cancelBtn">Atšaukti</button>
-
-            <div class="demo-credentials">
-                <p><strong>demo:</strong></p>
-                <code>Slapyvardis: admin</code>
-                <code style="margin-top: 5px;">Slaptažodis: admin123</code>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        // Back button
-        document.getElementById('backBtn').addEventListener('click', () => {
-            window.history.back();
-        });
-
-        // Cancel button
-        document.getElementById('cancelBtn').addEventListener('click', () => {
-            window.history.back();
-        });
-
-        // Login functionality
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            const username = document.getElementById('usernameInput').value.trim();
-            const password = document.getElementById('passwordInput').value;
-            const errorElement = document.getElementById('errorMessage');
-
-            // Simple hardcoded validation for demo
-            if (username === 'admin' && password === 'admin123') {
-                // Successful login
-                errorElement.classList.remove('visible');
-
-                // need to set a session token here
-                // For demo, just redirect to admin dashboard
-                alert('Login successful! Redirecting to admin panel...');
-                window.location.href = '/pages/admin.html';
-            } else {
-                // Failed login
-                errorElement.classList.add('visible');
-                // Shake animation for error
-                const card = document.querySelector('.card');
-                card.style.animation = 'shake 0.5s ease';
-                setTimeout(() => {
-                    card.style.animation = '';
-                }, 500);
-            }
-        });
-        // Enter key press
-        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('loginBtn').click();
-            }
-        });
-        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('passwordInput').focus();
-            }
-        });
-        // Clear error when typing
-        document.getElementById('usernameInput').addEventListener('input', () => {
-            document.getElementById('errorMessage').classList.remove('visible');
-        });
-        document.getElementById('passwordInput').addEventListener('input', () => {
-            document.getElementById('errorMessage').classList.remove('visible');
-        });
-        // Add shake animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                20%, 40%, 60%, 80% { transform: translateX(5px); }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
+function login() {
+  const u = document.getElementById('usernameInput').value.trim();
+  const p = document.getElementById('passwordInput').value;
+  if (u === 'admin' && p === 'admin123') {
+    sessionStorage.setItem('isAdmin','1');
+    sessionStorage.setItem('adminUser', u);
+    window.location.href = '/pages/admin.html';
+  } else {
+    errorMsg.classList.add('show');
+    const card = document.getElementById('loginCard');
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 400);
+  }
+}
+</script>
 </body>
 </html>
