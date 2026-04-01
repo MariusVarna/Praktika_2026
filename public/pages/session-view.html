@@ -1,238 +1,626 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sesijos peržiūra</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{width:100%;min-height:100%;}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);color:#333;display:flex;flex-direction:column;min-height:100vh;position:relative;}
-    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
-    body>*{position:relative;z-index:1;}
-    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;color:white;}
-    .logo{font-size:16px;font-weight:700;}
-    .btn-back{padding:8px 14px;background:rgba(255,255,255,.2);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px;transition:background .2s;}
-    .btn-back:hover{background:rgba(255,255,255,.3);}
-    main{flex:1;padding:20px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;}
-    .card{background:white;border-radius:14px;padding:18px;border:1px solid #e8dfd4;box-shadow:0 3px 10px rgba(0,0,0,.07);}
-    .card h2{font-size:17px;font-weight:700;color:#2f4a75;margin-bottom:14px;}
-    .card h3{font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:10px;}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
-    @media(max-width:600px){.grid-2{grid-template-columns:1fr;}}
-    .stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0ebe0;font-size:13px;}
-    .stat-row:last-child{border-bottom:none;}
-    .stat-label{color:#777;}
-    .stat-val{color:#2f4a75;font-weight:600;}
-    table{width:100%;border-collapse:collapse;}
-    thead{background:#f5f1e8;}
-    th{padding:8px 10px;text-align:left;font-size:11px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;}
-    td{padding:8px 10px;border-bottom:1px solid #f0ebe0;font-size:13px;color:#555;}
-    tbody tr:last-child td{border-bottom:none;}
-    tbody tr:hover{background:#fafaf8;}
-    .chart-wrap{position:relative;height:260px;margin:14px 0;}
-    .legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;background:#f9f7f3;padding:10px;border-radius:10px;}
-    .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;}
-    .legend-dot{width:16px;height:16px;border-radius:4px;}
-    .stats-strip{display:flex;gap:12px;flex-wrap:wrap;background:#eaf2ff;padding:8px 14px;border-radius:10px;margin:8px 0;font-size:12px;color:#2f4a75;font-weight:600;}
-    .day-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
-    .day-btn{padding:6px 12px;border:1.5px solid #d4cec2;border-radius:8px;background:white;cursor:pointer;font-size:12px;font-weight:600;color:#888;transition:all .2s;}
-    .day-btn:hover,.day-btn.active{background:#2f4a75;color:white;border-color:#2f4a75;}
-    .tx-list{max-height:240px;overflow-y:auto;}
-    .team-item{display:flex;align-items:center;gap:10px;padding:9px;background:#fafaf8;border:1px solid #e0d9cc;border-radius:8px;margin-bottom:6px;}
-    .team-item:last-child{margin-bottom:0;}
-    .team-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2f4a75,#1f3a55);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;flex-shrink:0;}
-    .team-balance{margin-left:auto;font-weight:700;color:#2f4a75;font-size:13px;}
-    ::-webkit-scrollbar{width:5px;height:5px;}
-    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sesijos peržiūra</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            background: linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: relative;
+        }
+
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
+                background-size: 50px 50px;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
+
+        header {
+            background: linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            color: white;
+        }
+
+        .logo {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .btn-back {
+            padding: 8px 14px;
+            background: rgba(255,255,255,.2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background .2s;
+        }
+
+            .btn-back:hover {
+                background: rgba(255,255,255,.3);
+            }
+
+        main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            border: 1px solid #e8dfd4;
+            box-shadow: 0 3px 10px rgba(0,0,0,.07);
+        }
+
+            .card h2 {
+                font-size: 17px;
+                font-weight: 700;
+                color: #2f4a75;
+                margin-bottom: 14px;
+            }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        @media(max-width:600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid #f0ebe0;
+            font-size: 13px;
+        }
+
+            .stat-row:last-child {
+                border-bottom: none;
+            }
+
+        .stat-label {
+            color: #777;
+        }
+
+        .stat-val {
+            color: #2f4a75;
+            font-weight: 600;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 320px;
+            margin: 14px 0;
+        }
+
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 12px;
+            background: #f9f7f3;
+            padding: 10px;
+            border-radius: 10px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .legend-dot-bar {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        .legend-dot-line {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .stats-strip {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            background: #eaf2ff;
+            padding: 10px 16px;
+            border-radius: 10px;
+            margin: 8px 0;
+            font-size: 13px;
+            color: #2f4a75;
+            font-weight: 600;
+            justify-content: center;
+        }
+
+        .day-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            justify-content: center;
+        }
+
+        .day-btn {
+            padding: 6px 14px;
+            border: 1.5px solid #d4cec2;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            transition: all .2s;
+        }
+
+            .day-btn:hover, .day-btn.active {
+                background: #2f4a75;
+                color: white;
+                border-color: #2f4a75;
+            }
+
+        .clearing-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f5f1e8;
+        }
+
+        th {
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: #2f4a75;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0ebe0;
+            font-size: 12px;
+        }
+
+        .tx-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .team-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            background: #fafaf8;
+            border: 1px solid #e0d9cc;
+            border-radius: 8px;
+            margin-bottom: 6px;
+        }
+
+        .team-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#2f4a75,#1f3a55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .team-balance {
+            margin-left: auto;
+            font-weight: 700;
+            color: #2f4a75;
+        }
+    </style>
 </head>
 <body>
-<header>
-  <div class="logo" id="sessionTitle">Sesijos peržiūra</div>
-  <button class="btn-back" onclick="history.back()">← Atgal</button>
-</header>
-<main>
+    <header>
+        <div class="logo" id="sessionTitle">Sesijos peržiūra</div>
+        <button class="btn-back" onclick="history.back()">← Atgal</button>
+    </header>
+    <main>
 
-  <!-- SESSION INFO + MARKET STATE -->
-  <div class="grid-2">
-    <div class="card">
-      <h2>Sesijos informacija</h2>
-      <div class="stat-row"><span class="stat-label">Pavadinimas</span><span class="stat-val" id="sName">—</span></div>
-      <div class="stat-row"><span class="stat-label">PIN</span><span class="stat-val" style="font-family:monospace;letter-spacing:3px;" id="sPin">—</span></div>
-      <div class="stat-row"><span class="stat-label">Statusas</span><span class="stat-val" id="sStatus">—</span></div>
-      <div class="stat-row"><span class="stat-label">Sukurta</span><span class="stat-val" id="sCreated">—</span></div>
-      <div class="stat-row"><span class="stat-label">Raundai</span><span class="stat-val" id="sRounds">—</span></div>
-    </div>
-    <div class="card">
-      <h2>Rinkos būsena</h2>
-      <div class="stat-row"><span class="stat-label">Dabartinė diena</span><span class="stat-val" id="mDay">—</span></div>
-      <div class="stat-row"><span class="stat-label">Raundas</span><span class="stat-val" id="mRound">—</span></div>
-      <div class="stat-row"><span class="stat-label">Rinkos kaina</span><span class="stat-val" id="mPrice">—</span></div>
-      <div class="stat-row"><span class="stat-label">Paklausa</span><span class="stat-val" id="mDemand">—</span></div>
-      <div class="stat-row"><span class="stat-label">Oras</span><span class="stat-val" id="mWeather">—</span></div>
-      <div class="stat-row"><span class="stat-label">Komandos</span><span class="stat-val" id="mTeams">—</span></div>
-    </div>
-  </div>
+        <div class="grid-2">
+            <div class="card">
+                <h2>Sesijos informacija</h2>
+                <div class="stat-row"><span class="stat-label">Pavadinimas</span><span class="stat-val" id="sName">—</span></div>
+                <div class="stat-row"><span class="stat-label">PIN</span><span class="stat-val" id="sPin">—</span></div>
+                <div class="stat-row"><span class="stat-label">Statusas</span><span class="stat-val" id="sStatus">—</span></div>
+                <div class="stat-row"><span class="stat-label">Raundai</span><span class="stat-val" id="sRounds">—</span></div>
+            </div>
+            <div class="card">
+                <h2>Rinkos būsena</h2>
+                <div class="stat-row"><span class="stat-label">Dabartinė diena</span><span class="stat-val" id="mDay">—</span></div>
+                <div class="stat-row"><span class="stat-label">Raundas</span><span class="stat-val" id="mRound">—</span></div>
+                <div class="stat-row"><span class="stat-label">Rinkos kaina</span><span class="stat-val" id="mPrice">—</span></div>
+                <div class="stat-row"><span class="stat-label">Paklausa</span><span class="stat-val" id="mDemand">—</span></div>
+                <div class="stat-row"><span class="stat-label">Komandos</span><span class="stat-val" id="mTeams">—</span></div>
+            </div>
+        </div>
 
-  <!-- SUPPLY STACK CHART -->
-  <div class="card">
-    <h2>Gamybos grafikas</h2>
-    <div class="legend-row" id="legendRow"></div>
-    <div class="stats-strip" id="statsStrip"></div>
-    <div class="chart-wrap"><canvas id="supplyChart"></canvas></div>
-    <div class="day-row" id="dayRow"></div>
-  </div>
+        <div class="card">
+            <h2>Pasiūla ir paklausa</h2>
+            <div class="legend-row">
+                <div class="legend-item"><div class="legend-dot-bar" style="background:#4A90E2;"></div><span>Gamintojai (pasiūla)</span></div>
+                <div class="legend-item"><div class="legend-dot-line" style="background:#E74C3C;"></div><span>Paklausos kreivė</span></div>
+                <div class="legend-item"><div class="legend-dot-bar" style="background:#F39C12;width:12px;height:12px;border-radius:50%;"></div><span>Kliringo taškas</span></div>
+            </div>
+            <div class="stats-strip" id="statsStrip"></div>
+            <div class="chart-wrap"><canvas id="supplyChart"></canvas></div>
+            <div class="day-row" id="dayRow"></div>
+        </div>
 
-  <!-- PLAYERS -->
-  <div class="card">
-    <h2>Komandos</h2>
-    <div id="teamsList"></div>
-  </div>
+        <div class="card">
+            <h2>Komandos</h2>
+            <div id="teamsList"></div>
+        </div>
 
-  <!-- TRANSACTIONS -->
-  <div class="card">
-    <h2>Sandoriai</h2>
-    <div class="tx-list">
-      <table>
-        <thead><tr><th>Diena</th><th>R</th><th>Komanda</th><th>Tipas</th><th>MW</th><th>$/MWh</th></tr></thead>
-        <tbody id="txTable"></tbody>
-      </table>
-    </div>
-  </div>
+        <div class="card">
+            <h2>Sandoriai</h2>
+            <div class="tx-list">
+                <table style="width:100%">
+                    <thead>  <tr><th>Diena</th><th>R</th><th>Komanda</th><th>Tipas</th><th>MW</th><th>$/MWh</th></tr> </thead>
+                    <tbody id="txTable"></tbody>
+                </table>
+            </div>
+        </div>
 
-</main>
-<script>
-// Load session from admin page
-let session = null;
-try {
-  session = JSON.parse(sessionStorage.getItem('selectedSession'));
-} catch {}
+    </main>
+    <script>
+        let session = null;
+        try {
+            session = JSON.parse(sessionStorage.getItem('selectedSession'));
+        } catch { }
 
-// Demo fallback
-if (!session) {
-  session = {
-    id: 1, pin: '842193', gameName: 'Energy Market Test', status: 'active',
-    currentRound: 2, currentDay: 5, numRounds: 5, startDay: 1,
-    marketPrice: 72, demand: 530, weather: 'Vėjuota',
-    createdAt: '2026-03-04 09:12',
-    teams: [
-      { id:'t1', name:'Team Alpha', balance:12400 },
-      { id:'t2', name:'Team Beta',  balance:9850 },
-      { id:'t3', name:'Team Gamma', balance:15200 },
-    ],
-    transactions: [
-      { day:5, round:2, teamName:'Team Alpha', type:'buy',  mw:50, price:70 },
-      { day:5, round:2, teamName:'Team Beta',  type:'sell', mw:30, price:73 },
-      { day:4, round:1, teamName:'Team Gamma', type:'buy',  mw:80, price:68 },
-    ],
-    roundHistory: [
-      { round:1, day:4, marketPrice:68, demand:490, weather:'Giedra' },
-      { round:2, day:5, marketPrice:72, demand:530, weather:'Vėjuota' },
-    ],
-  };
-}
+        if (!session) {
+            session = {
+                id: 1, pin: '842193', gameName: 'Energy Market Test', status: 'active',
+                currentRound: 2, currentDay: 5, numRounds: 5, startDay: 1,
+                marketPrice: 72, demand: 530, weather: 'Vejuota',
+                createdAt: '2026-03-04 09:12',
+                teams: [
+                    { id: 't1', name: 'Team Alpha', balance: 12400 },
+                    { id: 't2', name: 'Team Beta', balance: 9850 },
+                    { id: 't3', name: 'Team Gamma', balance: 15200 },
+                ],
+                transactions: [
+                    { day: 5, round: 2, teamName: 'Team Alpha', type: 'buy', mw: 50, price: 70 },
+                    { day: 5, round: 2, teamName: 'Team Beta', type: 'sell', mw: 30, price: 73 },
+                    { day: 4, round: 1, teamName: 'Team Gamma', type: 'buy', mw: 80, price: 68 },
+                ],
+                roundHistory: [
+                    { round: 1, day: 4, marketPrice: 68, demand: 490, weather: 'Giedra' },
+                    { round: 2, day: 5, marketPrice: 72, demand: 530, weather: 'Vejuota' },
+                ],
+            };
+        }
 
-// Populate session info
-document.getElementById('sessionTitle').textContent = 'Sesija: ' + session.gameName;
-document.getElementById('sName').textContent = session.gameName;
-document.getElementById('sPin').textContent = session.pin;
-document.getElementById('sStatus').textContent = { waiting:'Laukiama', active:'Aktyvi', finished:'Baigta' }[session.status] || session.status;
-document.getElementById('sCreated').textContent = session.createdAt || '—';
-document.getElementById('sRounds').textContent = session.currentRound + '/' + session.numRounds;
+        document.getElementById('sessionTitle').textContent = 'Sesija: ' + session.gameName;
+        document.getElementById('sName').textContent = session.gameName;
+        document.getElementById('sPin').textContent = session.pin;
+        document.getElementById('sStatus').textContent = { waiting: 'Laukiama', active: 'Aktyvi', finished: 'Baigta' }[session.status] || session.status;
+        document.getElementById('sRounds').textContent = session.currentRound + '/' + session.numRounds;
+        document.getElementById('mDay').textContent = session.currentDay;
+        document.getElementById('mRound').textContent = session.currentRound;
+        document.getElementById('mPrice').textContent = session.marketPrice + ' $/MWh';
+        document.getElementById('mDemand').textContent = session.demand + ' MW';
+        document.getElementById('mTeams').textContent = session.teams.length;
 
-document.getElementById('mDay').textContent = session.currentDay;
-document.getElementById('mRound').textContent = session.currentRound;
-document.getElementById('mPrice').textContent = session.marketPrice + ' $/MWh';
-document.getElementById('mDemand').textContent = session.demand + ' MW';
-document.getElementById('mWeather').textContent = session.weather;
-document.getElementById('mTeams').textContent = session.teams.length;
+        document.getElementById('teamsList').innerHTML = session.teams.length
+            ? session.teams.sort((a, b) => b.balance - a.balance).map(t => `
+                    <div class="team-item">
+                        <div class="team-avatar">${t.name.slice(0, 2).toUpperCase()}</div>
+                        <div><div style="font-weight:600;">${t.name}</div></div>
+                        <div class="team-balance">$${(t.balance || 0).toLocaleString()}</div>
+                    </div>`).join('')
+            : '<p style="color:#bbb;text-align:center;padding:16px;">Nera komandu</p>';
 
-// Teams
-document.getElementById('teamsList').innerHTML = session.teams.length
-  ? session.teams.sort((a,b)=>b.balance-a.balance).map(t=>`
-    <div class="team-item">
-      <div class="team-avatar">${t.name.slice(0,2).toUpperCase()}</div>
-      <div><div style="font-weight:600;font-size:13px;">${t.name}</div></div>
-      <div class="team-balance">$${(t.balance||0).toLocaleString()}</div>
-    </div>`).join('')
-  : '<p style="color:#bbb;text-align:center;padding:16px;">Nėra komandų</p>';
+        document.getElementById('txTable').innerHTML = session.transactions.length
+            ? session.transactions.slice().reverse().map(tx => `
+                    <tr>
+                        <td>${tx.day}</td>
+                        <td>${tx.round}</td>
+                        <td>${tx.teamName}</td>
+                        <td style="color:${tx.type === 'buy' ? '#27ae60' : '#e74c3c'}">${tx.type === 'buy' ? 'Pirkimas' : 'Pardavimas'}</td>
+                        <td>${tx.mw}</td>
+                        <td>${tx.price}</td>
+                    </tr>`).join('')
+            : '<tr><td colspan="6" style="text-align:center;color:#bbb;">Nera sandoriu</td></tr>';
 
-// Transactions
-document.getElementById('txTable').innerHTML = session.transactions.length
-  ? session.transactions.slice().reverse().map(tx=>`<tr>
-    <td>${tx.day}</td><td>${tx.round}</td><td>${tx.teamName}</td>
-    <td style="color:${tx.type==='buy'?'#27ae60':'#e74c3c'};font-weight:600;">${tx.type==='buy'?'Pirkimas':'Pardavimas'}</td>
-    <td>${tx.mw}</td><td>${tx.price}</td></tr>`).join('')
-  : '<tr><td colspan="6" style="text-align:center;color:#bbb;padding:16px;">Nėra sandorių</td></tr>';
+        const colorGroups = [
+            { name: 'Vejas', color: '#4A90E2', base: 200 },
+            { name: 'Saule', color: '#F5A623', base: 150 },
+            { name: 'Dujos', color: '#7B8D8E', base: 175 },
+            { name: 'Vanduo', color: '#2ECC71', base: 120 },
+            { name: 'Kita', color: '#9B59B6', base: 165 },
+        ];
 
-// Supply Stack Chart
-const colorGroups = [
-  { name:'Vėjas', color:'#4A90E2', base:200 },
-  { name:'Saulė', color:'#F5A623', base:150 },
-  { name:'Dujos', color:'#7B8D8E', base:175 },
-  { name:'Vanduo', color:'#2ECC71', base:120 },
-  { name:'Kita',  color:'#9B59B6', base:165 },
-];
-const dayMult = { 1:[0.8,0.9,1.0,1.1,1.2], 2:[0.7,1.0,1.1,0.9,1.3], 3:[1.2,0.8,1.1,0.9,1.0], 4:[1.1,1.2,0.7,1.0,0.9], 5:[1.0,1.1,0.9,1.2,0.8] };
+        const dayMult = { 1: [0.8, 0.9, 1.0, 1.1, 1.2], 2: [0.7, 1.0, 1.1, 0.9, 1.3], 3: [1.2, 0.8, 1.1, 0.9, 1.0], 4: [1.1, 1.2, 0.7, 1.0, 0.9], 5: [1.0, 1.1, 0.9, 1.2, 0.8] };
 
-let supplyChart = null;
-let currentCompanies = [];
+        let supplyChart = null;
+        let currentCompanies = [];
 
-// Legend
-document.getElementById('legendRow').innerHTML = colorGroups.map(g=>`
-  <div class="legend-item"><span class="legend-dot" style="background:${g.color}"></span>${g.name}</div>`).join('');
+        const numDays = session.numRounds;
+        document.getElementById('dayRow').innerHTML = Array.from({ length: numDays }, (_, i) => `
+                <button class="day-btn${i === numDays - 1 ? ' active' : ''}" onclick="loadDay(${i + 1},this)">D${i + 1}</button>`).join('');
 
-// Day buttons
-const numDays = session.numRounds;
-document.getElementById('dayRow').innerHTML = Array.from({length:numDays},(_,i)=>`
-  <button class="day-btn${i===numDays-1?' active':''}" onclick="loadDay(${i+1},this)">D${i+1}</button>`).join('');
+        function genCompanies(day) {
+            const mult = dayMult[day] || dayMult[5];
+            const out = [];
+            colorGroups.forEach((g, gi) => {
+                for (let i = 0; i < 6; i++) {
+                    const v = Math.round(g.base * mult[gi] * (0.8 + Math.random() * 0.4));
+                    out.push({ label: `${g.name} ${i + 1}`, value: v, color: g.color, group: g.name });
+                }
+            });
+            return out.sort((a, b) => a.value - b.value);
+        }
 
-function genCompanies(day) {
-  const mult = dayMult[day] || dayMult[5];
-  const out = [];
-  colorGroups.forEach((g,gi) => {
-    for (let i=0;i<6;i++) {
-      const v = Math.round(g.base * mult[gi] * (0.8+Math.random()*0.4));
-      out.push({ label:`${g.name} ${i+1}`, value:v, color:g.color, group:g.name });
-    }
-  });
-  return out.sort((a,b)=>a.value-b.value);
-}
+        function generateDemandCurve(maxQuantity, maxPrice, basePrice) {
+            const points = [];
+            // Create multiple points from high price (low quantity) to low price (high quantity)
+            for (let qty = 0; qty <= maxQuantity * 1.2; qty += maxQuantity / 15) {
+                // Price decreases as quantity increases (downward sloping demand)
+                let price;
+                if (qty <= maxQuantity) {
+                    // Before reaching total demand, price is above base price
+                    price = basePrice * (1 + (1 - qty / maxQuantity) * 0.8);
+                } else {
+                    // After exceeding demand, price drops significantly
+                    price = basePrice * (0.5 - (qty - maxQuantity) / maxQuantity * 0.3);
+                }
+                price = Math.max(15, Math.min(basePrice * 1.8, price));
+                points.push({ x: Math.round(qty), y: Math.round(price * 10) / 10 });
+            }
+            // Remove duplicate x values and sort by x ascending
+            const unique = [];
+            const seenX = new Set();
+            for (let i = 0; i < points.length; i++) {
+                if (!seenX.has(points[i].x)) {
+                    seenX.add(points[i].x);
+                    unique.push(points[i]);
+                }
+            }
+            return unique.sort((a, b) => a.x - b.x);
+        }
 
-function loadDay(day, el) {
-  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
+        function findClearingPoint(supplyCumulative, demandPoints) {
+            for (let i = 0; i < supplyCumulative.length; i++) {
+                const supplyQty = supplyCumulative[i].cumulative;
+                for (let j = 0; j < demandPoints.length; j++) {
+                    if (demandPoints[j].x >= supplyQty) {
+                        return {
+                            clearingQuantity: supplyQty,
+                            clearingPrice: demandPoints[j].y,
+                            clearingIndex: supplyCumulative[i].index
+                        };
+                    }
+                }
+            }
+            return { clearingQuantity: null, clearingPrice: null, clearingIndex: -1 };
+        }
 
-  currentCompanies = genCompanies(day);
-  const labels = currentCompanies.map(c=>c.label);
-  const values = currentCompanies.map(c=>c.value);
-  const colors = currentCompanies.map(c=>c.color);
-  const total = values.reduce((s,v)=>s+v,0);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+        function drawDemandCurve(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex) {
+            if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
 
-  document.getElementById('statsStrip').innerHTML = `<span>Iš viso: ${total} MW</span><span>Min: ${min} MW</span><span>Max: ${max} MW</span><span>Diena ${day}</span>`;
+            const ctx = chart.ctx;
+            const xScale = chart.scales.x;
+            const yScale = chart.scales.y;
 
-  const ctx = document.getElementById('supplyChart');
-  if (supplyChart) supplyChart.destroy();
-  supplyChart = new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderRadius:2, borderWidth:.5, borderColor:'rgba(0,0,0,.1)' }] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{
-        title:c => currentCompanies[c[0].dataIndex]?.label||'',
-        label:c => [`Grupė: ${currentCompanies[c.dataIndex]?.group}`, `Gamyba: ${c.raw} MW`]
-      }}},
-      scales:{ y:{beginAtZero:true,title:{display:true,text:'MW'}}, x:{grid:{display:false},ticks:{maxRotation:45,minRotation:45,font:{size:7}}} }
-    }
-  });
-}
+            ctx.save();
 
-// Init with last day
-loadDay(numDays, document.querySelectorAll('.day-btn')[numDays-1]);
-</script>
+            ctx.beginPath();
+            ctx.strokeStyle = '#E74C3C';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+
+            let firstPoint = true;
+            for (let i = 0; i < demandPoints.length; i++) {
+                const x = xScale.getPixelForValue(demandPoints[i].x);
+                const y = yScale.getPixelForValue(demandPoints[i].y);
+
+                if (x >= chart.chartArea.left && x <= chart.chartArea.right &&
+                    y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+                    if (firstPoint) {
+                        ctx.moveTo(x, y);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            if (clearingQuantity && clearingPrice && clearingIndex !== -1) {
+                const clearingX = xScale.getPixelForValue(clearingQuantity);
+                const clearingY = yScale.getPixelForValue(clearingPrice);
+
+                ctx.beginPath();
+                ctx.moveTo(clearingX, chart.chartArea.top);
+                ctx.lineTo(clearingX, clearingY);
+                ctx.strokeStyle = '#F39C12';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 6]);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(chart.chartArea.left, clearingY);
+                ctx.lineTo(clearingX, clearingY);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(clearingX, clearingY, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = '#F39C12';
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('K', clearingX - 3, clearingY + 4);
+            }
+
+            ctx.restore();
+        }
+
+        function loadDay(day, el) {
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            currentCompanies = genCompanies(day);
+            const values = currentCompanies.map(c => c.value);
+            const demand = session.demand || 500;
+            const basePrice = session.marketPrice || 70;
+
+            let cumulative = 0;
+            const supplyCumulative = [];
+            for (let i = 0; i < values.length; i++) {
+                cumulative += values[i];
+                supplyCumulative.push({ index: i, cumulative: cumulative });
+            }
+
+            const demandCurve = generateDemandCurve(demand, basePrice * 1.5, basePrice);
+            const { clearingQuantity, clearingPrice, clearingIndex } = findClearingPoint(supplyCumulative, demandCurve);
+
+            const total = cumulative;
+            const clearingValue = clearingIndex !== -1 ? values[clearingIndex] : null;
+
+            let clearingInfo = '';
+            if (clearingQuantity && clearingPrice) {
+                clearingInfo = `<span class="clearing-badge">Kliringo kaina: ${clearingPrice.toFixed(2)} $/MWh</span>
+                                    <span class="clearing-badge">Kliringo kiekis: ${clearingQuantity} MW</span>`;
+            } else {
+                clearingInfo = `<span class="clearing-badge">Nepakanka pasiulos! Truksta ${demand - total} MW</span>`;
+            }
+
+            document.getElementById('statsStrip').innerHTML = `
+                    <span>Is viso: ${total} MW</span>
+                    <span>Paklausa: ${demand} MW</span>
+                    ${clearingInfo}
+                `;
+
+            const ctx = document.getElementById('supplyChart');
+            if (supplyChart) supplyChart.destroy();
+
+            supplyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: currentCompanies.map(c => c.label),
+                    datasets: [{
+                        data: values,
+                        backgroundColor: currentCompanies.map(c => c.color),
+                        borderRadius: 2,
+                        borderWidth: 0.5,
+                        borderColor: 'rgba(0,0,0,.1)',
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.9
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => currentCompanies[items[0].dataIndex]?.label || '',
+                                label: (item) => {
+                                    const idx = item.dataIndex;
+                                    let cum = 0;
+                                    for (let i = 0; i <= idx; i++) cum += values[i];
+                                    return [
+                                        `Grupė: ${currentCompanies[idx]?.group}`,
+                                        `Gamyba: ${item.raw} MW`,
+                                        `Kumuliacine: ${cum} MW`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'MW / Kaina ($)', font: { size: 10 } },
+                            ticks: { stepSize: 50 },
+                            grid: { color: '#e0e0e0' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxRotation: 45, minRotation: 45, font: { size: 8 }, autoSkip: true, maxTicksLimit: 20 }
+                        }
+                    },
+                    animation: {
+                        onComplete: function () {
+                            drawDemandCurve(supplyChart, demandCurve, clearingQuantity, clearingPrice, clearingIndex);
+                        }
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                drawDemandCurve(supplyChart, demandCurve, clearingQuantity, clearingPrice, clearingIndex);
+            }, 150);
+        }
+
+        loadDay(numDays, document.querySelectorAll('.day-btn')[numDays - 1]);
+    </script>
 </body>
 </html>

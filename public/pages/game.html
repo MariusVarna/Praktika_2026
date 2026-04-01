@@ -354,8 +354,8 @@ function renderChart(round) {
           }
         }
       },
-      scales: {
-        y: { beginAtZero: false, ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
+        scales: {
+        y: { beginAtZero: false, min: Math.round( Math.min(...prices) - 5), ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
         x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
       },
       animation: { duration: 300 }
