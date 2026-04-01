@@ -1,21 +1,23 @@
-# app/services/market.py
 from app.seed_data import SEED_DATA
 from typing import List, Dict
+import random
+
+# Pre-index SEED_DATA for O(1) lookup
+# SEED_DATA structure is { "Grafikai": { "1": [...], "2": [...] } }
+# We want { 1: [...], 2: [...] }
+INDEXED_SEED_DATA = {}
+for sheet_name, sheet_dict in SEED_DATA.items():
+    for day_id, data in sheet_dict.items():
+        # Ensure day_id is stored as int for consistent lookup
+        try:
+            day_key = int(day_id)
+            INDEXED_SEED_DATA[day_key] = data
+        except ValueError:
+            continue
 
 def get_day_seed(day: int) -> List[Dict]:
-    """Returns the profile for a given day (1-365)."""
-    # Keys in SEED_DATA are usually sheet names, but we mapped them to days.
-    # We generated SEED_DATA based on sheet_name keys: { "Sheet1": { 1: [...], 2: [...] } }
-    # So we need to find the day across all sheets or specify the sheet.
-    
-    for sheet_name, data in SEED_DATA.items():
-        if day in data:
-            return data[day]
-            
-    # Default fallback if day not found
-    return []
-
-import random
+    """Returns the profile for a given day (1-365) in O(1) time."""
+    return INDEXED_SEED_DATA.get(day, [])
 
 def generate_supply_curve(hour_data: dict, session) -> List[dict]:
     """Generates a granular supply curve with realistic volatility (Steeper steps)."""
