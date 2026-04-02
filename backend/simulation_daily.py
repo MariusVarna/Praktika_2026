@@ -116,4 +116,4 @@ def run_daily_simulation(day_num=1):
     plt.close()
 
 if __name__ == "__main__":
-    run_daily_simulation(day_num="1")
+    run_daily_simulation(day_num=1)

@@ -23,6 +23,7 @@ class BidResponse(BidCreate):
 # --- Team State ---
 class TeamStateResponse(BaseModel):
     current_battery_mwh: float
+    budget: float
     total_profit: float
 
     model_config = ConfigDict(from_attributes=True)
@@ -53,6 +54,10 @@ class RoundResponse(BaseModel):
 class SessionCreate(BaseModel):
     admin_id: str
     start_day: Optional[int] = 1
+    duration_days: Optional[int] = 1
+    start_budget: Optional[float] = 1000.0
+    penalty_k: Optional[float] = 0.5
+    penalty_b: Optional[float] = 5.0
     pro_rata_enabled: Optional[bool] = True
     battery_max_mwh: Optional[float] = 100.0
     battery_initial_mwh: Optional[float] = 50.0
@@ -88,3 +93,34 @@ class HourlyForecast(BaseModel):
 class ForecastingResponse(BaseModel):
     round_id: int
     forecast: List[HourlyForecast]
+
+class BaselineHour(BaseModel):
+    hour: int
+    clearing_price: float
+    clearing_volume: float
+    wind_profile: float
+    solar_profile: float
+    demand_profile: float
+
+class BaselineResponse(BaseModel):
+    round_id: int
+    baseline: List[BaselineHour]
+
+class RoundStatsEntry(BaseModel):
+    round_id: int
+    round_number: int
+    total_profit: float
+    total_penalty: float
+
+class StandingsEntry(BaseModel):
+    user_id: int
+    name: str
+    current_battery_mwh: float
+    budget: float
+    total_profit: float
+    total_penalty: float
+    round_stats: List[RoundStatsEntry]
+
+class StandingsResponse(BaseModel):
+    session_id: int
+    standings: List[StandingsEntry]

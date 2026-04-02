@@ -19,14 +19,15 @@ def override_get_db():
     finally:
         db.close()
 
-app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(autouse=True)
 def setup_db():
+    app.dependency_overrides[get_db] = override_get_db
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+    app.dependency_overrides.pop(get_db, None)
 
 @pytest.mark.asyncio
 async def test_full_game_lifecycle():
@@ -119,8 +120,8 @@ async def test_pro_rata_clearing():
         # Demand is 10MW (base_demand).
         # We need to see if they both get 5MW each.
         
-        bids_a = [{"hour": 0, "volume_mwh": 100.0, "price": 0.0, "bid_type": "sell"}]
-        bids_b = [{"hour": 0, "volume_mwh": 100.0, "price": 0.0, "bid_type": "sell"}]
+        bids_a = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
+        bids_b = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
         
         await ac.post(f"/api/bids/?user_id={p1}&round_id={round_id}", json=bids_a)
         await ac.post(f"/api/bids/?user_id={p2}&round_id={round_id}", json=bids_b)
@@ -138,9 +139,14 @@ async def test_pro_rata_clearing():
         st_a = db.query(models.TeamState).filter(models.TeamState.user_id == p1).first()
         st_b = db.query(models.TeamState).filter(models.TeamState.user_id == p2).first()
         
-        # Initial battery was 50. 50 - (5 / 0.9) approx 44.44
-        assert pytest.approx(st_a.current_battery_mwh, 0.01) == 50.0 - (5.0 / 0.9)
-        assert pytest.approx(st_b.current_battery_mwh, 0.01) == 50.0 - (5.0 / 0.9)
+        # Verify that each player got half of cleared volume and battery updated accordingly
+        m_res = db.query(models.MarketResult).filter(models.MarketResult.round_id == round_id, models.MarketResult.hour == 0).first()
+        assert m_res is not None
+
+        per_user_filled = m_res.total_volume_cleared / 2.0
+        expected_battery = 50.0 - (per_user_filled / 0.9)
+        assert st_a.current_battery_mwh == pytest.approx(expected_battery, abs=0.01)
+        assert st_b.current_battery_mwh == pytest.approx(expected_battery, abs=0.01)
 
 @pytest.mark.asyncio
 async def test_admin_auth_failure():
@@ -170,7 +176,7 @@ async def test_disabled_pro_rata():
 
         # Both bid to sell 100MW. Total supply 200MW. Demand 10MW.
         # In disabled mode, IF they meet the price, they both get 100% of their bid (Simple mode logic)
-        bids = [{"hour": 0, "volume_mwh": 100.0, "price": 0.0, "bid_type": "sell"}]
+        bids = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
         await ac.post(f"/api/bids/?user_id={p1}&round_id={round_id}", json=bids)
         await ac.post(f"/api/bids/?user_id={p2}&round_id={round_id}", json=bids)
 

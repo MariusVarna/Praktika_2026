@@ -31,6 +31,7 @@ class PlayerService:
             user_id=db_user.id,
             session_id=session.id,
             current_battery_mwh=session.battery_initial_mwh,
+            budget=session.start_budget,
             total_profit=0.0
         )
         self.db.add(team_state)
