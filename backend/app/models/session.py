@@ -12,6 +12,10 @@ class Session(Base):
     
     # Settings
     start_day = Column(Integer, default=1) # The seed profile day to start on
+    duration_days = Column(Integer, default=1)
+    start_budget = Column(Float, default=1000.0)
+    penalty_k = Column(Float, default=0.5)
+    penalty_b = Column(Float, default=5.0)
     pro_rata_enabled = Column(Boolean, default=True)
     forecast_error_margin = Column(Float, default=0.15)
     battery_max_mwh = Column(Float, default=100.0)

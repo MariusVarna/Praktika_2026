@@ -4,3 +4,5 @@ from .round import Round
 from .bid import Bid
 from .result import MarketResult
 from .team_state import TeamState
+from .penalty import Penalty
+from .player_round_stats import PlayerRoundStats

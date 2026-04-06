@@ -7,7 +7,10 @@ class TeamState(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"), index=True)
     current_battery_mwh = Column(Float, default=0.0)
+    budget = Column(Float, default=0.0)
     total_profit = Column(Float, default=0.0)
 
     user = relationship("User", back_populates="state")
+    session = relationship("Session")
