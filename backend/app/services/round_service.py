@@ -222,14 +222,10 @@ class RoundService:
                 if discharge_success:
                     profit = round(fill_volume * result.clearing_price, 2)
 
-            # Calculate penalties using PenaltyService
-            physics_penalty = self.penalty_service.calculate_physics_penalty(
-                charge_success, discharge_success, fill_volume, session.penalty_price
+            # Calculate total penalty (Physical violation linear model: k*v + b)
+            total_penalty = self.penalty_service.calculate_total_penalty(
+                charge_success, discharge_success, fill_volume, session.penalty_k, session.penalty_b
             )
-            prediction_penalty = self.penalty_service.calculate_prediction_penalty(
-                bid.price, result.clearing_price, session.penalty_k, session.penalty_b
-            )
-            total_penalty = self.penalty_service.combine_penalties(physics_penalty, prediction_penalty)
 
             ts.total_profit = round(float(ts.total_profit) + profit - total_penalty, 2)
             self.db.add(ts)
