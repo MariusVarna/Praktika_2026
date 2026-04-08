@@ -1,17 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
-from enum import Enum
-
-class BidType(str, Enum):
-    BUY = "buy"
-    SELL = "sell"
 
 class MarketBid(BaseModel):
     bid_id: str
     user_id: Optional[str] = None
     volume: float
     price: float
-    bid_type: BidType
+    bid_type: bool  # True for 'buy' (charge), False for 'sell' (discharge)
 
 class MarketResult(BaseModel):
     hour: int

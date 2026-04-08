@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, Float, ForeignKey, CheckConstraint, Index
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -11,7 +11,18 @@ class Bid(Base):
     hour = Column(Integer) # 0-23
     volume_mwh = Column(Float)
     price = Column(Float)
-    bid_type = Column(String) # 'buy' (charge) or 'sell' (discharge)
+    bid_type = Column(Boolean) # True for 'buy' (charge), False for 'sell' (discharge)
 
     user = relationship("User", back_populates="bids")
     round = relationship("Round", back_populates="bids")
+    
+    # DB-level constraints for data integrity
+    __table_args__ = (
+        CheckConstraint("hour >= 0 AND hour <= 23", name="check_hour_range"),
+        CheckConstraint("volume_mwh > 0", name="check_positive_volume"),
+        CheckConstraint("price >= -100 AND price <= 500", name="check_price_range"),
+        # Composite index for hourly filtering performance
+        Index("idx_bid_round_hour", "round_id", "hour"),
+        # Index for user bid lookups
+        Index("idx_bid_user_round", "user_id", "round_id"),
+    )

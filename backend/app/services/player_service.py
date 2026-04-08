@@ -11,6 +11,11 @@ class PlayerService:
         session = self.db.query(models.Session).filter(models.Session.join_code == user_in.join_code).first()
         if not session:
             raise HTTPException(status_code=404, detail="Invalid join code or session not found")
+        
+        # FIX: Prevent joining finished sessions
+        from app.models.session import SessionStatus
+        if session.status == SessionStatus.FINISHED:
+            raise HTTPException(status_code=400, detail="Session has finished")
             
         existing_user = self.db.query(models.User).filter(
             models.User.session_id == session.id,
@@ -31,7 +36,6 @@ class PlayerService:
             user_id=db_user.id,
             session_id=session.id,
             current_battery_mwh=session.battery_initial_mwh,
-            budget=session.start_budget,
             total_profit=0.0
         )
         self.db.add(team_state)

@@ -36,6 +36,7 @@ async def test_full_game_lifecycle():
         admin_payload = {
             "admin_id": "test_admin",
             "start_day": 1,
+            "duration_days": 2,
             "battery_max_mwh": 100.0,
             "battery_initial_mwh": 50.0,
             "penalty_price": 20.0,
@@ -60,7 +61,7 @@ async def test_full_game_lifecycle():
         assert response.status_code == 400
 
         # 3. ADMIN: Start Session
-        response = await ac.post(f"/api/admin/sessions/{session_id}/start?admin_id=test_admin")
+        response = await ac.post(f"/api/admin/sessions/{session_id}/start", headers={"admin-id": "test_admin"})
         assert response.status_code == 200
         round_id = response.json()["id"]
 
@@ -68,15 +69,15 @@ async def test_full_game_lifecycle():
         # Bid to buy (charge) at hour 1
         # Bid to sell (discharge) at hour 2
         bids = [
-            {"hour": 1, "volume_mwh": 10.0, "price": 200.0, "bid_type": "buy"},
-            {"hour": 2, "volume_mwh": 5.0, "price": 10.0, "bid_type": "sell"}
+            {"hour": 1, "volume_mwh": 10.0, "price": 200.0, "bid_type": True},
+            {"hour": 2, "volume_mwh": 5.0, "price": 10.0, "bid_type": False}
         ]
         response = await ac.post(f"/api/bids/?user_id={player_id}&round_id={round_id}", json=bids)
         assert response.status_code == 200
         assert len(response.json()) == 2
 
         # 5. ADMIN: Calculate Results
-        response = await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate?admin_id=test_admin")
+        response = await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate", headers={"admin-id": "test_admin"})
         assert response.status_code == 200
 
         # 6. VERIFY: State Change
@@ -86,10 +87,54 @@ async def test_full_game_lifecycle():
         # Since we don't have a "get player state" endpoint shown in the schemas yet, let's assume it worked if 200.
 
         # 7. ADMIN: Move to Next Round
-        response = await ac.post(f"/api/admin/sessions/{session_id}/next?admin_id=test_admin")
+        response = await ac.post(f"/api/admin/sessions/{session_id}/next", headers={"admin-id": "test_admin"})
         assert response.status_code == 200
         new_round_data = response.json()
         assert new_round_data["round_number"] == 2
+
+@pytest.mark.asyncio
+async def test_auto_finish_on_last_planned_round():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post("/api/sessions/", json={
+            "admin_id": "finish_admin",
+            "start_day": 1,
+            "duration_days": 1,
+            "battery_max_mwh": 100.0,
+            "battery_initial_mwh": 50.0,
+            "penalty_price": 20.0,
+            "base_demand_mw": 5.0
+        })
+        assert response.status_code == 200
+        session_id = response.json()["id"]
+        join_code = response.json()["join_code"]
+
+        player_payload = {"name": "FinishTeam", "join_code": join_code}
+        response = await ac.post("/api/players/join", json=player_payload)
+        assert response.status_code == 200
+        player_id = response.json()["id"]
+
+        response = await ac.post(f"/api/admin/sessions/{session_id}/start", headers={"admin-id": "finish_admin"})
+        assert response.status_code == 200
+        round_id = response.json()["id"]
+
+        bids = [{"hour": 1, "volume_mwh": 1.0, "price": 100.0, "bid_type": True}]
+        response = await ac.post(f"/api/bids/?user_id={player_id}&round_id={round_id}", json=bids)
+        assert response.status_code == 200
+
+        response = await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate", headers={"admin-id": "finish_admin"})
+        assert response.status_code == 200
+        result = response.json()
+        assert result["session_finished"] is True
+
+        # Confirm session is marked finished in DB
+        db = TestingSessionLocal()
+        session = db.query(models.Session).filter(models.Session.id == session_id).first()
+        assert session.status == "finished"
+        db.close()
+
+        # Next round should now be blocked
+        response = await ac.post(f"/api/admin/sessions/{session_id}/next", headers={"admin-id": "finish_admin"})
+        assert response.status_code == 400
 
 @pytest.mark.asyncio
 async def test_invalid_session_join():
@@ -111,7 +156,7 @@ async def test_pro_rata_clearing():
         p2 = (await ac.post("/api/players/join", json={"name": "B", "join_code": join_code})).json()["id"]
 
         # Start
-        res = await ac.post(f"/api/admin/sessions/{s_id}/start?admin_id=pro_rata_admin")
+        res = await ac.post(f"/api/admin/sessions/{s_id}/start", headers={"admin-id": "pro_rata_admin"})
         round_id = res.json()["id"]
 
         # Both bid to sell 100MW at price 10
@@ -120,14 +165,14 @@ async def test_pro_rata_clearing():
         # Demand is 10MW (base_demand).
         # We need to see if they both get 5MW each.
         
-        bids_a = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
-        bids_b = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
+        bids_a = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": False}]
+        bids_b = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": False}]
         
         await ac.post(f"/api/bids/?user_id={p1}&round_id={round_id}", json=bids_a)
         await ac.post(f"/api/bids/?user_id={p2}&round_id={round_id}", json=bids_b)
 
         # Calculate
-        await ac.post(f"/api/admin/sessions/{s_id}/round/{round_id}/calculate?admin_id=pro_rata_admin")
+        await ac.post(f"/api/admin/sessions/{s_id}/round/{round_id}/calculate", headers={"admin-id": "pro_rata_admin"})
 
         # Check filled volumes indirecty via profit or battery (initial was 50)
         # Price will likely be 0.0 (marginal price from these bids)
@@ -156,7 +201,7 @@ async def test_admin_auth_failure():
         s_id = res.json()["id"]
         
         # Try to start it with wrong admin_id
-        response = await ac.post(f"/api/admin/sessions/{s_id}/start?admin_id=hacker")
+        response = await ac.post(f"/api/admin/sessions/{s_id}/start", headers={"admin-id": "hacker"})
         assert response.status_code == 404
 
 @pytest.mark.asyncio
@@ -171,16 +216,16 @@ async def test_disabled_pro_rata():
         p1 = (await ac.post("/api/players/join", json={"name": "A", "join_code": join_code})).json()["id"]
         p2 = (await ac.post("/api/players/join", json={"name": "B", "join_code": join_code})).json()["id"]
 
-        res_start = await ac.post(f"/api/admin/sessions/{session_id}/start?admin_id=no_pro_admin")
+        res_start = await ac.post(f"/api/admin/sessions/{session_id}/start", headers={"admin-id": "no_pro_admin"})
         round_id = res_start.json()["id"]
 
         # Both bid to sell 100MW. Total supply 200MW. Demand 10MW.
         # In disabled mode, IF they meet the price, they both get 100% of their bid (Simple mode logic)
-        bids = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": "sell"}]
+        bids = [{"hour": 0, "volume_mwh": 100.0, "price": -100.0, "bid_type": False}]
         await ac.post(f"/api/bids/?user_id={p1}&round_id={round_id}", json=bids)
         await ac.post(f"/api/bids/?user_id={p2}&round_id={round_id}", json=bids)
 
-        await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate?admin_id=no_pro_admin")
+        await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate", headers={"admin-id": "no_pro_admin"})
 
         db = TestingSessionLocal()
         st_a = db.query(models.TeamState).filter(models.TeamState.user_id == p1).first()

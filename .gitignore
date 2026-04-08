@@ -10,6 +10,10 @@ firebase-debug.*.log*
 # Firebase cache
 .firebase/
 
+# local env files
+electricity_market.db
+backend/daily_price_profile.png
+
 # Firebase config
 
 # Uncomment this if you'd like others to create their own Firebase project.

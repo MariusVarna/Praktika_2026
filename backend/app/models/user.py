@@ -10,5 +10,5 @@ class User(Base):
     session_id = Column(Integer, ForeignKey("sessions.id"))
 
     session = relationship("Session", back_populates="users")
-    bids = relationship("Bid", back_populates="user")
-    state = relationship("TeamState", back_populates="user", uselist=False)
+    bids = relationship("Bid", back_populates="user", cascade="all, delete-orphan")
+    state = relationship("TeamState", back_populates="user", uselist=False, cascade="all, delete-orphan")

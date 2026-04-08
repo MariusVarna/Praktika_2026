@@ -1,17 +1,27 @@
 from sqlalchemy.orm import Session
 from app import models
 from app.schemas import schemas
+from app.schemas.market_models import MarketBid, HourlyMarketInput
 from typing import List
 from fastapi import HTTPException
 import random
 import string
-from app.services.market import get_day_seed, generate_supply_curve, calculate_clearing_price
+from app.services.market import get_day_seed, generate_supply_curve
+from app.services.market_engine import MarketEngine
 
 class SessionService:
     def __init__(self, db: Session):
         self.db = db
+        self.market_engine = MarketEngine()
 
     def create_session(self, session_in: schemas.SessionCreate) -> models.Session:
+        # FIX: Add validation for battery_initial_mwh <= battery_max_mwh
+        if session_in.battery_initial_mwh > session_in.battery_max_mwh:
+            raise ValueError("Initial battery capacity cannot exceed max battery capacity")
+        
+        # FIX: Add validation for base_demand_mw and max_demand_mw consistency
+        if session_in.max_demand_mw < session_in.base_demand_mw:
+            raise ValueError("Max demand must be >= base demand")
         code = self._generate_join_code()
         while self.db.query(models.Session).filter(models.Session.join_code == code).first():
             code = self._generate_join_code()
@@ -47,7 +57,12 @@ class SessionService:
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        day_to_use = session.start_day + round_id - 1
+        # FIX: Use round.round_number not round_id (DB PK)
+        round = self.db.query(models.Round).filter(models.Round.id == round_id).first()
+        if not round or round.session_id != session_id:
+            raise HTTPException(status_code=404, detail="Round not found in session")
+        
+        day_to_use = session.start_day + round.round_number - 1
         day_data = get_day_seed(day_to_use)
         
         if not day_data:
@@ -57,8 +72,16 @@ class SessionService:
         for hour_info in day_data:
             base_demand = session.base_demand_mw * hour_info.get("demand_forecast_profile", 0.5)
             bot_supply = generate_supply_curve(hour_info, session)
+            supply_curve = [MarketBid(bid_id=s["bid_id"], volume=s["volume"], price=s["price"], bid_type=False) for s in bot_supply]
             
-            predicted_price, _, _ = calculate_clearing_price(bot_supply, [], base_demand)
+            market_input = HourlyMarketInput(
+                hour=hour_info["hour"],
+                supply_curve=supply_curve,
+                demand_curve=[],
+                inelastic_demand=base_demand
+            )
+            result = self.market_engine.calculate_clearing(market_input)
+            predicted_price = result.clearing_price
             
             margin = session.forecast_error_margin
             error_margin = random.uniform(1.0 - margin, 1.0 + margin)
@@ -110,7 +133,6 @@ class SessionService:
                 "user_id": user.id,
                 "name": user.name,
                 "current_battery_mwh": float(ts.current_battery_mwh),
-                "budget": float(ts.budget),
                 "total_profit": float(ts.total_profit),
                 "total_penalty": total_penalty,
                 "round_stats": rounds_for_user

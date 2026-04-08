@@ -31,25 +31,25 @@ async def run_scenario():
         print("Player 2 Joined:", p2_id)
 
         # 3. Start Session
-        res = await ac.post(f"/api/admin/sessions/{session_id}/start?admin_id=admin_123")
+        res = await ac.post(f"/api/admin/sessions/{session_id}/start", headers={"admin-id": "admin_123"})
         round_id = res.json()["id"]
         print("Session Started, Round:", round_id)
 
         # 4. Submit Bids
         # Team A wants to charge (buy) at night (hour 2) when prices might be low
-        bids_a = [{"hour": 2, "volume_mwh": 10.0, "price": 50.0, "bid_type": "buy"}]
+        bids_a = [{"hour": 2, "volume_mwh": 10.0, "price": 50.0, "bid_type": True}]
         # Team A wants to discharge (sell) at peak hour 12
-        bids_a.append({"hour": 12, "volume_mwh": 8.0, "price": 100.0, "bid_type": "sell"})
+        bids_a.append({"hour": 12, "volume_mwh": 8.0, "price": 100.0, "bid_type": False})
 
         await ac.post(f"/api/bids/?user_id={p1_id}&round_id={round_id}", json=bids_a)
 
         # Team B wants to charge (buy) at night (hour 2) but is willing to pay more
-        bids_b = [{"hour": 2, "volume_mwh": 20.0, "price": 80.0, "bid_type": "buy"}]
+        bids_b = [{"hour": 2, "volume_mwh": 20.0, "price": 80.0, "bid_type": True}]
         await ac.post(f"/api/bids/?user_id={p2_id}&round_id={round_id}", json=bids_b)
         print("Bids submitted")
 
         # 5. Calculate Round
-        res = await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate?admin_id=admin_123")
+        res = await ac.post(f"/api/admin/sessions/{session_id}/round/{round_id}/calculate", headers={"admin-id": "admin_123"})
         print("Round Calculated:", res.json())
 
         # 6. Check results

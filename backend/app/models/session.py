@@ -1,6 +1,13 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
+from enum import Enum
+
+class SessionStatus(str, Enum):
+    """Valid session states"""
+    PENDING = "pending"
+    ACTIVE = "active"
+    FINISHED = "finished"
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -8,7 +15,7 @@ class Session(Base):
     id = Column(Integer, primary_key=True, index=True)
     join_code = Column(String, unique=True, index=True)
     admin_id = Column(String, index=True) # Just a token or string to identifier admin
-    status = Column(String, default="pending") # pending, active, finished
+    status = Column(String, default=SessionStatus.PENDING) # pending, active, finished
     
     # Settings
     start_day = Column(Integer, default=1) # The seed profile day to start on
@@ -30,5 +37,5 @@ class Session(Base):
     max_solar_mw = Column(Float, default=1000.0)
     max_demand_mw = Column(Float, default=3000.0)
     
-    users = relationship("User", back_populates="session")
-    rounds = relationship("Round", back_populates="session")
+    users = relationship("User", back_populates="session", cascade="all, delete-orphan")
+    rounds = relationship("Round", back_populates="session", cascade="all, delete-orphan")

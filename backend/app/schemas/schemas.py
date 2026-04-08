@@ -1,6 +1,12 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
+from app.utils.sanitization import (
+    sanitize_string, 
+    sanitize_alphanumeric, 
+    sanitize_join_code,
+    validate_input
+)
 
 # --- Token / Auth (Simple) ---
 class AdminJoin(BaseModel):
@@ -8,10 +14,10 @@ class AdminJoin(BaseModel):
 
 # --- Bids ---
 class BidCreate(BaseModel):
-    hour: int
-    volume_mwh: float
-    price: float
-    bid_type: str # 'buy' or 'sell'
+    hour: int = Field(..., ge=0, le=23)
+    volume_mwh: float = Field(..., gt=0.0)
+    price: float = Field(..., ge=-100.0, le=500.0)
+    bid_type: bool # True for 'buy' (charge), False for 'sell' (discharge)
 
 class BidResponse(BidCreate):
     id: int
@@ -23,15 +29,26 @@ class BidResponse(BidCreate):
 # --- Team State ---
 class TeamStateResponse(BaseModel):
     current_battery_mwh: float
-    budget: float
     total_profit: float
 
     model_config = ConfigDict(from_attributes=True)
 
 # --- User / Team ---
 class UserCreate(BaseModel):
-    name: str
-    join_code: str
+    name: str = Field(..., min_length=1, max_length=255)
+    join_code: str = Field(..., min_length=1, max_length=10)
+    
+    @field_validator('name')
+    @classmethod
+    def sanitize_name(cls, v):
+        """FIX: Comprehensive input sanitization - XSS/injection prevention."""
+        return validate_input(v, field_name="name", max_length=255)
+    
+    @field_validator('join_code')
+    @classmethod
+    def sanitize_join_code_validator(cls, v):
+        """FIX: Sanitize join code - alphanumeric only."""
+        return sanitize_join_code(v)
 
 class UserResponse(BaseModel):
     id: int
@@ -52,23 +69,32 @@ class RoundResponse(BaseModel):
 
 # --- Session ---
 class SessionCreate(BaseModel):
-    admin_id: str
-    start_day: Optional[int] = 1
-    duration_days: Optional[int] = 1
-    start_budget: Optional[float] = 1000.0
-    penalty_k: Optional[float] = 0.5
-    penalty_b: Optional[float] = 5.0
-    pro_rata_enabled: Optional[bool] = True
-    battery_max_mwh: Optional[float] = 100.0
-    battery_initial_mwh: Optional[float] = 50.0
-    battery_efficiency_charge: Optional[float] = 0.9
-    battery_efficiency_discharge: Optional[float] = 0.9
-    penalty_price: Optional[float] = 10.0
-    base_demand_mw: Optional[float] = 3000.0
-    max_wind_mw: Optional[float] = 1000.0
-    max_solar_mw: Optional[float] = 1000.0
-    max_demand_mw: Optional[float] = 3000.0
-    forecast_error_margin: Optional[float] = 0.15
+    admin_id: str = Field(..., min_length=1, max_length=255)
+    start_day: int = Field(1, ge=1)
+    duration_days: int = Field(1, ge=1, le=365)
+    start_budget: float = Field(1000.0, ge=0.0)
+    penalty_k: float = Field(0.5, ge=0.0)
+    penalty_b: float = Field(5.0, ge=0.0)
+    pro_rata_enabled: bool = True
+    battery_max_mwh: float = Field(100.0, gt=0.0)
+    battery_initial_mwh: float = Field(50.0, ge=0.0)
+    battery_efficiency_charge: float = Field(0.9, ge=0.0, le=1.0)
+    battery_efficiency_discharge: float = Field(0.9, ge=0.0, le=1.0)
+    penalty_price: float = Field(10.0, ge=0.0)
+    base_demand_mw: float = Field(3000.0, gt=0.0)
+    max_wind_mw: float = Field(1000.0, gt=0.0)
+    max_solar_mw: float = Field(1000.0, gt=0.0)
+    max_demand_mw: float = Field(3000.0, gt=0.0)
+    forecast_error_margin: float = Field(0.15, ge=0.0, le=1.0)
+    
+    @field_validator('admin_id')
+    @classmethod
+    def validate_admin_id(cls, v):
+        """FIX: Comprehensive admin_id validation and sanitization."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError('admin_id cannot be empty or whitespace')
+        # Use comprehensive alphanumeric sanitization
+        return sanitize_alphanumeric(v, max_length=255, allow_underscore=True, allow_hyphen=True)
 
 class SessionResponse(SessionCreate):
     id: int
@@ -116,7 +142,6 @@ class StandingsEntry(BaseModel):
     user_id: int
     name: str
     current_battery_mwh: float
-    budget: float
     total_profit: float
     total_penalty: float
     round_stats: List[RoundStatsEntry]
@@ -124,3 +149,34 @@ class StandingsEntry(BaseModel):
 class StandingsResponse(BaseModel):
     session_id: int
     standings: List[StandingsEntry]
+
+# --- Round Results (Detailed Market Analysis) ---
+class HourlyMarketClearing(BaseModel):
+    hour: int
+    clearing_price: float
+    clearing_volume: float
+
+class PlayerHourBid(BaseModel):
+    hour: int
+    volume_mwh: float
+    price: float
+    bid_type: bool  # True = buy (charge), False = sell (discharge)
+
+class PlayerRoundFill(BaseModel):
+    player_name: str
+    player_id: int
+    total_volume_bought: float  # Total filled on buy bids
+    total_volume_sold: float    # Total filled on sell bids
+    round_profit: float
+    round_penalty: float
+    bids: List[PlayerHourBid]  # All bids for this round
+
+class RoundResultsResponse(BaseModel):
+    round_id: int
+    round_number: int
+    session_id: int
+    status: str
+    market_clearing: List[HourlyMarketClearing]  # 24 hours of market data
+    player_results: List[PlayerRoundFill]  # Details per player
+    
+    model_config = ConfigDict(from_attributes=True)
