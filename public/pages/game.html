@@ -87,15 +87,23 @@
     .btn-warn-sm:hover{transform:translateY(-1px);}
     .bid-submitted-pill{background:#e8f8f0;color:#1e8449;border:1px solid #a9dfbf;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
     .bid-draft-pill{background:#fef9e7;color:#d68910;border:1px solid #f9e79f;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
-    .bid-scroll{max-height:340px;overflow-y:auto;border:1px solid #e8dfd4;border-radius:8px;}
+    .bid-scroll{max-height:400px;overflow-y:auto;border:1px solid #e8dfd4;border-radius:8px;}
     .bid-scroll::-webkit-scrollbar{width:4px;}
     .bid-scroll::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
-    .bid-row{display:grid;grid-template-columns:38px 1fr 1fr 92px 68px;gap:4px;align-items:center;padding:4px 8px;border-bottom:1px solid #f5f1e8;font-size:11px;}
+    .bid-row{display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px 80px;gap:4px;align-items:center;padding:8px 8px;border-bottom:1px solid #f0ebe0;font-size:11px;background:white;cursor:pointer;}
     .bid-row:last-child{border-bottom:none;}
     .bid-row:hover{background:#fafaf8;}
-    .bid-row.header-row{background:#f5f1e8;position:sticky;top:0;font-weight:700;font-size:10px;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;}
+    .bid-row.header-row{background:#f5f1e8;position:sticky;top:0;font-weight:700;font-size:10px;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;cursor:default;}
     .bid-row.has-bid{background:#fffdf0;}
     .bid-hr-num{color:#aaa;font-size:10px;text-align:center;font-family:'Courier New',monospace;}
+    .bid-expand-icon{font-size:16px;color:#2f4a75;}
+    .bid-detail-row{display:none;background:#fafaf8;border-top:1px solid #e8dfd4;}
+    .bid-detail-row.open{display:block;}
+    .bid-detail-header{display:grid;grid-template-columns:40px 70px 1fr 1fr 64px 40px;background:#e8dfd4;padding:6px 8px;font-size:9px;font-weight:700;color:#2f4a75;border-bottom:1px solid #d4cec2;}
+    .bid-detail-item{display:grid;grid-template-columns:40px 70px 1fr 1fr 64px 40px;align-items:center;padding:6px 8px;border-bottom:1px solid #f0ebe0;font-size:11px;}
+    .bid-battery-row{display:grid;grid-template-columns:40px 1fr;align-items:center;padding:6px 8px;background:#e8f0fb;border-bottom:1px solid #b8d4f8;font-size:11px;}
+    .bid-remove-btn{background:#e74c3c;color:white;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;font-weight:600;}
+    .bid-remove-btn:hover{background:#c0392b;}
     .bid-input{width:100%;padding:3px 6px;border:1.5px solid #d4cec2;border-radius:5px;background:#fafaf8;color:#333;font-size:11px;}
     .bid-input:focus{outline:none;border-color:#2f4a75;background:white;}
     .bid-input:disabled{background:#f3f3f3;color:#aaa;border-color:#eee;cursor:not-allowed;}
@@ -103,7 +111,7 @@
     .bid-select:focus{outline:none;border-color:#2f4a75;}
     .bid-select:disabled{background:#f3f3f3;color:#aaa;border-color:#eee;cursor:not-allowed;}
     .bid-total{font-size:10px;color:#2f4a75;font-weight:600;text-align:right;}
-    .bid-footer{display:grid;grid-template-columns:38px 1fr 1fr 92px 68px;gap:4px;align-items:center;padding:5px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;border-radius:0 0 8px 8px;}
+    .bid-footer{display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px 80px;gap:4px;align-items:center;padding:8px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;border-radius:0 0 8px 8px;}
 
     /* Tx */
     .tx-card{background:white;border-radius:10px;padding:12px 14px;box-shadow:0 2px 6px rgba(0,0,0,.06);border:1px solid #e8dfd4;}
@@ -119,11 +127,11 @@
     /* Hour detail modal */
     .modal-bd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;padding:16px;}
     .modal-bd.open{display:flex;}
-    .modal{background:white;border-radius:14px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+    .modal{background:white;border-radius:14px;width:100%;max-width:750px;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:85vh;display:flex;flex-direction:column;}
     .modal-hd{padding:13px 16px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0;}
     .modal-hd h2{font-size:14px;font-weight:700;color:#2f4a75;}
     .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#999;padding:2px;}
-    .modal-body{padding:14px 16px;max-height:70vh;overflow-y:auto;}
+    .modal-body{padding:14px 16px;overflow-y:auto;flex:1;}
 
     .toast{position:fixed;bottom:14px;right:14px;background:#2f4a75;color:white;padding:8px 13px;border-radius:8px;font-size:12px;font-weight:600;z-index:500;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
     .toast.show{opacity:1;transform:translateY(0);}
@@ -178,12 +186,13 @@
 // ══════════════════════════════════════════════
 // DATA MODEL
 // round = one full day
-// bidRows[round] = array of 24 objects: { price, mw, type }  (index = hour 0–23)
+// bidRows[round] = array of 24 arrays of objects: [[{price, mw, type}, ...], ...]
 // marketPrices[round] = array of 24 numbers (market price per hour)
 // ══════════════════════════════════════════════
 const NUM_HOURS = 24;
 
 let session = null, myTeam = null, viewRound = 1, editingSubmitted = false;
+let hourSupplyChartInstance = null;
 
 function loadSession() {
   try {
@@ -238,9 +247,14 @@ function makeDemoTeam(s) {
   const t = { id: 'demo', name: 'Demo komanda', password: 'pw1', balance: 14200, bids: [], roundHistory: [], bidRows: {} };
   // Seed round 1 with submitted 24-hour bids
   const base = 65;
-  t.bidRows[1] = Array.from({length: NUM_HOURS}, (_, h) => ({
-    price: +(base + Math.random()*8 - 4).toFixed(1), mw: Math.floor(10+Math.random()*30), type: h%6===5?'sell':'buy'
-  }));
+  t.bidRows[1] = Array.from({length: NUM_HOURS}, (_, h) => {
+    const numBids = Math.floor(Math.random() * 3) + 1; // 1-3 bids per hour
+    return Array.from({length: numBids}, (_, b) => ({
+      price: +(base + b * 5 + Math.random()*8 - 4).toFixed(1),
+      mw: Math.floor(10+Math.random()*30),
+      type: h%6===5?'sell':'buy'
+    }));
+  });
   t.bids.push({round:1, price:base, mw:20, type:'buy', submitted:true});
   t.roundHistory.push({round:1, balance:12100, profit:2100});
   if (!s.teams.length) s.teams.push(t);
@@ -258,26 +272,39 @@ function buildChartData(round) {
 
   const isSubmitted = (myTeam.bids || []).some(b => b.round === round && b.submitted);
   const savedRows = (myTeam.bidRows || {})[round] || [];
-
-  // Submitted bid prices (solid orange line)
-  const submittedLine = Array(NUM_HOURS).fill(null);
-  if (isSubmitted) {
-    savedRows.forEach((r, i) => { if (r && r.price) submittedLine[i] = +r.price; });
-  }
-
-  // Draft bid prices (dashed red line) — only when actively editing
-  const draftLine = Array(NUM_HOURS).fill(null);
+  const allBids = [];
+  savedRows.forEach((hourBids, h) => {
+    if (hourBids && hourBids.length) {
+      hourBids.forEach(bid => {
+        if (bid && bid.price) {
+          allBids.push({ hour: h, price: bid.price, mw: bid.mw, type: bid.type, submitted: isSubmitted });
+        }
+      });
+    }
+  });
+  // Draft bids
+  const draftBids = [];
   const isEditingNow = round === session.currentRound && editingSubmitted;
   const isNewDraft = round === session.currentRound && !isSubmitted;
   if (isEditingNow || isNewDraft) {
-    for (let i = 0; i < NUM_HOURS; i++) {
-      const el = document.getElementById('price_' + i);
-      const v = el ? +el.value : 0;
-      if (v) draftLine[i] = v;
+    for (let h = 0; h < NUM_HOURS; h++) {
+      let bidIdx = 0;
+      while (true) {
+        const p = document.getElementById('price_' + h + '_' + bidIdx);
+        if (!p) break;
+        const m = document.getElementById('mw_' + h + '_' + bidIdx);
+        const t = document.getElementById('type_' + h + '_' + bidIdx);
+        const price = +p.value || 0;
+        const mw = +m.value || 0;
+        if (price && mw) {
+          draftBids.push({ hour: h, price, mw, type: t ? t.value : 'buy' });
+        }
+        bidIdx++;
+      }
     }
   }
 
-  return { labels, prices, submittedLine, draftLine };
+  return { labels, prices, allBids, draftBids };
 }
 
 function renderChart(round) {
@@ -285,8 +312,7 @@ function renderChart(round) {
   if (!ctx) return;
   if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-  const { labels, prices, submittedLine, draftLine } = buildChartData(round);
-  const hasDraft = draftLine.some(v => v !== null);
+  const { labels, prices, allBids, draftBids } = buildChartData(round);
 
   chartInstance = new Chart(ctx, {
     type: 'bar',
@@ -302,35 +328,7 @@ function renderChart(round) {
           borderRadius: 3,
           type: 'bar',
           order: 5
-        },
-        {
-          label: 'Pateikti pasiūlymai',
-          data: submittedLine,
-          type: 'line',
-          borderColor: '#f39c12',
-          backgroundColor: 'rgba(243,156,18,.08)',
-          pointBackgroundColor: '#f39c12',
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          borderWidth: 2,
-          tension: 0.2,
-          spanGaps: false,
-          order: 2
-        },
-        ...(hasDraft ? [{
-          label: 'Juodraštis',
-          data: draftLine,
-          type: 'line',
-          borderColor: '#e74c3c',
-          backgroundColor: 'transparent',
-          pointBackgroundColor: '#e74c3c',
-          pointRadius: 3,
-          borderWidth: 2,
-          borderDash: [5, 4],
-          tension: 0.2,
-          spanGaps: false,
-          order: 1
-        }] : [])
+        }
       ]
     },
     options: {
@@ -347,20 +345,309 @@ function renderChart(round) {
             title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
             afterBody: items => {
               const h = items[0].dataIndex;
-              const row = ((myTeam.bidRows || {})[round] || [])[h];
-              if (row && row.price) return [`Mano pasiūlymas: ${row.price} $/MWh · ${row.mw} MW (${row.type==='buy'?'pirkimas':'pardavimas'})`];
+              const hourBids = ((myTeam.bidRows || {})[round] || [])[h];
+              if (hourBids && hourBids.length) {
+                return hourBids.map((bid, idx) => 
+                  `#${idx+1}: ${bid.price} $/MWh · ${bid.mw} MW (${bid.type==='buy'?'pirkimas':'pardavimas'})`
+                );
+              }
               return [];
             }
           }
         }
       },
-        scales: {
-        y: { beginAtZero: false, min: Math.round( Math.min(...prices) - 5), ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
+      scales: {
+        y: { beginAtZero: false, min: Math.round(Math.min(...prices) - 5), ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
         x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
       },
       animation: { duration: 300 }
+    },
+    plugins: [{
+      id: 'multiBidDots',
+      afterDatasetsDraw(chart) {
+        const { ctx, scales } = chart;
+        
+        // Draw submitted bids (filled dots)
+        allBids.forEach(bid => {
+          const x = scales.x.getPixelForValue(bid.hour);
+          const y = scales.y.getPixelForValue(bid.price);
+          if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
+              y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(bid.mw, x, y);
+            ctx.restore();
+          }
+        });
+        
+        // Draw draft bids (dashed outline)
+        draftBids.forEach(bid => {
+          const x = scales.x.getPixelForValue(bid.hour);
+          const y = scales.y.getPixelForValue(bid.price);
+          if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
+              y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = bid.type === 'buy' ? 'rgba(39,174,96,0.3)' : 'rgba(231,76,60,0.3)';
+            ctx.fill();
+            ctx.strokeStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 7px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(bid.mw, x, y);
+            ctx.restore();
+          }
+        });
+      }
+    }]
+  });
+}
+
+// ══════════════════════════════════════════════
+// SUPPLY CHART FUNCTIONS
+// ══════════════════════════════════════════════
+function generateSupplyStackForHour(round, hour) {
+  let seed = round * 31 + hour * 7;
+  const rng = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+
+  const groups = [
+    { name: 'Vėjas', color: '#4A90E2', base: 200 },
+    { name: 'Saulė', color: '#F5A623', base: 150 },
+    { name: 'Dujos', color: '#7B8D8E', base: 175 },
+    { name: 'Vanduo', color: '#2ECC71', base: 120 },
+    { name: 'Kita', color: '#9B59B6', base: 165 }
+  ];
+
+  const dayMults = [
+    [0.8, 0.9, 1.0, 1.1, 1.2],
+    [0.7, 1.0, 1.1, 0.9, 1.3],
+    [1.2, 0.8, 1.1, 0.9, 1.0],
+    [1.1, 1.2, 0.7, 1.0, 0.9],
+    [1.0, 1.1, 0.9, 1.2, 0.8]
+  ];
+  const mult = dayMults[(round - 1) % dayMults.length];
+
+  const labels = [];
+  const values = [];
+  const colors = [];
+
+  groups.forEach((g, gi) => {
+    for (let i = 0; i < 6; i++) {
+      labels.push(`${g.name} ${i + 1}`);
+      const hourFactor = 0.7 + (hour / 24) * 0.6;
+      const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
+      values.push(Math.max(10, value));
+      colors.push(g.color);
     }
   });
+
+  const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
+  combined.sort((a, b) => a.value - b.value);
+
+  return {
+    labels: combined.map(c => c.label),
+    values: combined.map(c => c.value),
+    colors: combined.map(c => c.color)
+  };
+}
+
+function generateDemandCurve(maxQuantity, basePrice, round, hour) {
+  const points = [];
+  const numPoints = 6;
+  for (let i = 0; i <= numPoints; i++) {
+    const price = basePrice + (1 - (i / numPoints)) * 50;
+    const quantity = maxQuantity * (0.2 + (i / numPoints) * 0.8);
+    points.push({ x: Math.round(quantity), y: Math.round(price) });
+  }
+  const seed = round * hour;
+  points.forEach(p => {
+    p.x = Math.max(10, p.x + (seed % 20) - 10);
+    p.y = Math.max(20, p.y + (seed % 15) - 7);
+  });
+  return points.sort((a, b) => a.x - b.x);
+}
+
+function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex, values) {
+  if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
+
+  const ctx = chart.ctx;
+  const xScale = chart.scales.x;
+  const yScale = chart.scales.y;
+
+  ctx.save();
+
+  // Draw demand curve line
+  ctx.beginPath();
+  ctx.strokeStyle = '#E74C3C';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([]);
+
+  let firstPoint = true;
+  for (let i = 0; i < demandPoints.length; i++) {
+    const x = xScale.getPixelForValue(demandPoints[i].x);
+    const y = yScale.getPixelForValue(demandPoints[i].y);
+
+    if (x >= chart.chartArea.left && x <= chart.chartArea.right &&
+        y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+      if (firstPoint) {
+        ctx.moveTo(x, y);
+        firstPoint = false;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+  }
+  ctx.stroke();
+  // Dashed horizontal clearing line
+  if (clearingQuantity && clearingPrice && clearingIndex !== -1) {
+    const clearingX = xScale.getPixelForValue(clearingQuantity);
+    const clearingY = yScale.getPixelForValue(clearingPrice);
+    const barMeta = chart.getDatasetMeta(0);
+    if (barMeta && barMeta.data[clearingIndex]) {
+        const barX = barMeta.data[clearingIndex].x;
+      ctx.beginPath();
+      ctx.moveTo(barX, clearingY);
+      ctx.lineTo(clearingX, clearingY);
+      ctx.strokeStyle = '#F39C12';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour) {
+  if (hourSupplyChartInstance) {
+    try { hourSupplyChartInstance.destroy(); } catch(e) {}
+    hourSupplyChartInstance = null;
+  }
+
+  // Calculate cumulative sum
+  let cumulative = 0;
+  const cumulativeSums = [];
+  let clearingIndex = -1;
+  let clearingPrice = null;
+  let clearingQuantity = null;
+
+  for (let i = 0; i < supplyData.values.length; i++) {
+    cumulative += supplyData.values[i];
+    cumulativeSums.push(cumulative);
+  }
+
+  // Find intersection
+  for (let i = 0; i < cumulativeSums.length; i++) {
+    const supplyQty = cumulativeSums[i];
+    for (let j = 0; j < demandPoints.length; j++) {
+      if (demandPoints[j].x >= supplyQty) {
+        clearingIndex = i;
+        clearingQuantity = supplyQty;
+        clearingPrice = demandPoints[j].y;
+        break;
+      }
+    }
+    if (clearingIndex !== -1) break;
+  }
+
+  // Bar colors
+  const barColors = supplyData.values.map((_, idx) => {
+    if (clearingIndex !== -1 && idx <= clearingIndex) {
+      return 'rgba(46, 204, 113, 0.7)';
+    }
+    return supplyData.colors[idx];
+  });
+
+  const cumulativeLabels = supplyData.labels.map((label, idx) => {
+    let cumulative = 0;
+    for (let i = 0; i <= idx; i++) {
+      cumulative += supplyData.values[i];
+    }
+    return `${cumulative} MW`;
+  });
+
+  hourSupplyChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: cumulativeLabels,
+      datasets: [{
+        data: supplyData.values,
+        backgroundColor: barColors,
+        borderRadius: 3,
+        borderWidth: 0.5,
+        borderColor: 'rgba(0,0,0,.1)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => supplyData.labels[items[0].dataIndex],
+            label: (item) => {
+              const idx = item.dataIndex;
+              return [
+                `Gamyba: ${item.raw} MW`,
+                `Kumuliacinė: ${cumulativeSums[idx]} MW`
+              ];
+            },
+            footer: () => {
+              if (clearingPrice !== null) {
+                return `Kliringo kaina: ${clearingPrice.toFixed(2)} $/MWh, Kiekis: ${clearingQuantity} MW`;
+              }
+              return `Paklausa: ${demand} MW - Nepasiekta`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'MW / Kaina ($)', font: { size: 10 }, color: '#888' },
+          ticks: { font: { size: 9 }, color: '#888' },
+          grid: { color: '#f0ebe0' }
+        },
+        x: {
+          ticks: {
+            font: { size: 8 },
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 15
+          },
+          grid: { display: false }
+        }
+      },
+      animation: {
+        duration: 200,
+        onComplete: function () {
+          drawDemandCurveOnSupplyChart(hourSupplyChartInstance, demandPoints, clearingQuantity, clearingPrice, clearingIndex, supplyData.values);
+        }
+      }
+    }
+  });
+
+  return { clearingIndex, clearingPrice, clearingQuantity, cumulativeSums };
 }
 
 // ══════════════════════════════════════════════
@@ -369,46 +656,83 @@ function renderChart(round) {
 function openHourModal(round, hour) {
   const prices = session.marketPrices[round] || [];
   const mp = prices[hour] || session.marketPrice;
-  const row = ((myTeam.bidRows || {})[round] || [])[hour];
+  const hourBids = ((myTeam.bidRows || {})[round] || [])[hour] || [];
   const label = String(hour).padStart(2,'0') + ':00 — ' + String(hour+1).padStart(2,'0') + ':00';
+  const demand = session.demand || 500;
 
   document.getElementById('hourModalTitle').textContent = 'Diena ' + round + ' · ' + label;
+  
+  const supplyData = generateSupplyStackForHour(round, hour);
+  const totalSupply = supplyData.values.reduce((sum, v) => sum + v, 0);
+
   document.getElementById('hourModalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
       <div style="background:#e8f0fb;border-radius:8px;padding:10px;text-align:center;">
         <div style="font-size:18px;font-weight:700;color:#2f4a75;">${mp.toFixed(2)}</div>
         <div style="font-size:10px;color:#888;margin-top:2px;">Rinkos kaina ($/MWh)</div>
       </div>
-      <div style="background:${row&&row.price?'#e8f8f0':'#f5f1e8'};border-radius:8px;padding:10px;text-align:center;">
-        <div style="font-size:18px;font-weight:700;color:${row&&row.price?'#1e8449':'#aaa'};">${row&&row.price?row.price+'$':'—'}</div>
-        <div style="font-size:10px;color:#888;margin-top:2px;">Mano pasiūlymas</div>
+      <div style="background:${hourBids.length?'#e8f8f0':'#f5f1e8'};border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:${hourBids.length?'#1e8449':'#aaa'};">${hourBids.length ? hourBids.length + ' pasiūl.' : '—'}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">Mano pasiūlymai</div>
       </div>
     </div>
-    ${row && row.price ? `
+
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
+      <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
+        </div>
+        <div style="position:relative;height:220px;">
+          <canvas id="supplyChart_modal"></canvas>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
+          <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
+          <span>Paklausa: <strong>${demand} MW</strong></span>
+        </div>
+      </div>
+    </div>
+
+    ${hourBids.length ? `
       <div style="background:#f9f7f3;border-radius:8px;padding:10px;font-size:12px;">
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
-          <span style="color:#777;">Kaina</span><span style="font-weight:600;color:#2f4a75;">${row.price} $/MWh</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
-          <span style="color:#777;">Kiekis</span><span style="font-weight:600;">${row.mw} MW</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
-          <span style="color:#777;">Tipas</span><span style="font-weight:600;color:${row.type==='buy'?'#27ae60':'#e74c3c'};">${row.type==='buy'?'Pirkimas':'Pardavimas'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e8dfd4;">
-          <span style="color:#777;">Suma</span><span style="font-weight:600;color:#2f4a75;">$${(+row.price * +row.mw).toLocaleString()}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;">
-          <span style="color:#777;">Skirtumas nuo rinkos</span>
-          <span style="font-weight:600;color:${+row.price < mp ? '#27ae60' : '#e74c3c'};">
-            ${(+row.price - mp).toFixed(2)} $/MWh
-          </span>
-        </div>
-      </div>` : `<p style="color:#bbb;font-size:12px;text-align:center;padding:16px;">Šiai valandai pasiūlymas nepateiktas.</p>`}
+        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:8px;">Mano pasiūlymai šią valandą</div>
+        ${hourBids.map((bid, idx) => `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8dfd4;">
+            <span style="color:#777;">#${idx + 1}</span>
+            <span style="font-weight:600;color:#2f4a75;">${bid.price} $/MWh</span>
+            <span style="font-weight:600;">${bid.mw} MW</span>
+            <span style="font-weight:600;color:${bid.type==='buy'?'#27ae60':'#e74c3c'};">${bid.type==='buy'?'Pirkimas':'Pardavimas'}</span>
+            <span style="font-weight:600;color:#2f4a75;">$${(+bid.price * +bid.mw).toLocaleString()}</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : `<p style="color:#bbb;font-size:12px;text-align:center;padding:16px;">Šiai valandai pasiūlymas nepateiktas.</p>`}
   `;
+  
   document.getElementById('hourModal').classList.add('open');
+  
+  // Render supply chart
+  setTimeout(() => {
+    const canvas = document.getElementById('supplyChart_modal');
+    if (canvas) {
+      const maxQuantity = totalSupply * 1.2;
+      const demandPoints = generateDemandCurve(maxQuantity, mp, round, hour);
+      renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour);
+    }
+  }, 50);
 }
-function closeHourModal() { document.getElementById('hourModal').classList.remove('open'); }
+
+function closeHourModal() { 
+  document.getElementById('hourModal').classList.remove('open');
+  if (hourSupplyChartInstance) {
+    try { hourSupplyChartInstance.destroy(); } catch(e) {}
+    hourSupplyChartInstance = null;
+  }
+}
 
 // ══════════════════════════════════════════════
 // RENDER
@@ -436,12 +760,100 @@ function saveDraftRows(round) {
   if (!myTeam.bidRows) myTeam.bidRows = {};
   const rows = [];
   for (let i = 0; i < NUM_HOURS; i++) {
-    const p = document.getElementById('price_' + i);
-    const m = document.getElementById('mw_' + i);
-    const t = document.getElementById('type_' + i);
-    rows.push({ price: p ? +p.value || 0 : 0, mw: m ? +m.value || 0 : 0, type: t ? t.value : 'buy' });
+    const hourBids = [];
+    let bidIdx = 0;
+    while (true) {
+      const p = document.getElementById('price_' + i + '_' + bidIdx);
+      if (!p) break;
+      const m = document.getElementById('mw_' + i + '_' + bidIdx);
+      const t = document.getElementById('type_' + i + '_' + bidIdx);
+      const price = p ? +p.value || 0 : 0;
+      const mw = m ? +m.value || 0 : 0;
+      if (price && mw) {
+        hourBids.push({ price, mw, type: t ? t.value : 'buy' });
+      }
+      bidIdx++;
+    }
+    rows.push(hourBids);
   }
   myTeam.bidRows[round] = rows;
+}
+
+function toggleHourBids(hourId) {
+  const content = document.getElementById(hourId);
+  const icon = document.getElementById(hourId + '_icon');
+  
+  if (content) {
+    if (content.style.display === 'none' || content.style.display === '') {
+      content.style.display = 'block';
+      if (icon) icon.textContent = '▼';
+    } else {
+      content.style.display = 'none';
+      if (icon) icon.textContent = '▶';
+    }
+  }
+}
+
+function addBidToHour(hour) {
+  const container = document.getElementById('hour_' + viewRound + '_' + hour);
+  if (!container) return;
+  
+  const detailItems = container.querySelectorAll('.bid-detail-item');
+  const bidIdx = detailItems.length;
+  
+  if (bidIdx >= 3) {
+    toast('Maksimalus 3 pasiūlymai per valandą');
+    return;
+  }
+  
+  const newBid = document.createElement('div');
+  newBid.className = 'bid-detail-item';
+  newBid.id = 'bid_' + hour + '_' + bidIdx;
+  newBid.innerHTML = `
+    <span style="color:#aaa;">↳</span>
+    <span style="color:#888;">#${bidIdx + 1}</span>
+    <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" placeholder="Kaina" min="0" step="0.01" oninput="onBidInput(${hour})">
+    <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" placeholder="MW" min="0" step="1" oninput="onBidInput(${hour})">
+    <select class="bid-select" id="type_${hour}_${bidIdx}" onchange="onBidInput(${hour})">
+      <option value="buy">Pirkti</option>
+      <option value="sell">Parduoti</option>
+    </select>
+    <button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>
+  `;
+  
+  container.appendChild(newBid);
+  onBidInput(hour);
+}
+
+function removeBidFromHour(hour, bidIdx) {
+  const bidEl = document.getElementById('bid_' + hour + '_' + bidIdx);
+  if (bidEl) bidEl.remove();
+  
+  // Renumber remaining bids
+  const container = document.getElementById('hour_' + viewRound + '_' + hour);
+  if (container) {
+    const items = container.querySelectorAll('.bid-detail-item');
+    items.forEach((item, idx) => {
+      const numSpan = item.querySelector('span:nth-child(2)');
+      if (numSpan) numSpan.textContent = '#' + (idx + 1);
+      
+      // Update IDs
+      const oldIdx = item.id.split('_').pop();
+      item.id = 'bid_' + hour + '_' + idx;
+      
+      const priceInput = item.querySelector('input[type="number"]');
+      const mwInput = item.querySelectorAll('input[type="number"]')[1];
+      const typeSelect = item.querySelector('select');
+      const removeBtn = item.querySelector('button');
+      
+      if (priceInput) priceInput.id = 'price_' + hour + '_' + idx;
+      if (mwInput) mwInput.id = 'mw_' + hour + '_' + idx;
+      if (typeSelect) typeSelect.id = 'type_' + hour + '_' + idx;
+      if (removeBtn) removeBtn.onclick = () => removeBidFromHour(hour, idx);
+    });
+  }
+  
+  onBidInput(hour);
 }
 
 function renderRound() {
@@ -455,7 +867,7 @@ function renderRound() {
 
   ensureHourlyPrices(viewRound);
 
-  const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => ({price:'',mw:'',type:'buy'}));
+  const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => []);
   const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
   const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
   const isEditing = editingSubmitted && canEdit;
@@ -473,6 +885,27 @@ function renderRound() {
   const acc = getAccumulation(viewRound);
   const roundResult = myTeam.roundHistory ? myTeam.roundHistory.find(r => r.round === viewRound) : null;
 
+  // Calculate battery state for each hour
+  let currentBattery = myTeam.batteryStored || 0;
+  const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
+  const batteryHistory = [currentBattery]; // Start with initial
+  
+  for (let i = 0; i < savedRows.length; i++) {
+    const hourBids = savedRows[i];
+    let netMW = 0;
+    if (hourBids && hourBids.length) {
+      for (const bid of hourBids) {
+        if (bid && bid.price) {
+          if (bid.type === 'buy') netMW += bid.mw;
+          else if (bid.type === 'sell') netMW -= bid.mw;
+        }
+      }
+    }
+    currentBattery += netMW;
+    currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
+    batteryHistory.push(currentBattery);
+  }
+
   document.getElementById('mainContent').innerHTML = `
     <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
       Diena ${viewRound} baigta — tik peržiūra.
@@ -483,10 +916,90 @@ function renderRound() {
     <div class="chart-card">
       <div class="chart-card-title">
         <h3>Rinkos kainos — Diena ${viewRound}</h3>
-        <span>Spustelėkite ant valandos norėdami matyti detales</span>
+        <span>Spustelėkite ant valandos norėdami matyti išsamią informaciją</span>
       </div>
       <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
-      <div class="chart-note">Oranžinė linija = jūsų pateikti pasiūlymai · Raudona punktyrinė = juodraštis</div>
+      <div class="chart-note">Žalios/raudonos apskritimai = jūsų pasiūlymai (skaičius = MW) · Punktyrinės = juodraštis</div>
+    </div>
+
+        <!-- BIDS -->
+    <div class="bid-card">
+      <div class="bid-card-header">
+        <h3>Pasiūlymai — Diena ${viewRound} (24 val.)</h3>
+        <div class="bid-actions">
+          ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
+            ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
+          ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
+          ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
+            <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
+            <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen ? '' : 'disabled'}>
+              ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
+            </button>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
+        <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
+        <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
+      </div>
+      <div class="bid-scroll">
+        <div class="bid-row header-row">
+          <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
+        </div>
+        ${savedRows.map((hourBids, hour) => {
+            const netMW = hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0);
+            const totalMW = hourBids.reduce((sum, b) => sum + b.mw, 0);
+            const bidCount = hourBids.length;
+            const batteryBefore = batteryHistory[hour];
+            const batteryAfter = batteryHistory[hour + 1];
+            const netColor = netMW > 0 ? '#27ae60' : (netMW < 0 ? '#e74c3c' : '#888');
+            const netPrefix = netMW > 0 ? '+' : '';
+            const hourId = `hour_${viewRound}_${hour}`;
+
+            return `
+            <div style="border-bottom:1px solid #f0ebe0;">
+              <div class="bid-row ${hourBids.length ? 'has-bid' : ''}" onclick="toggleHourBids('${hourId}')">
+                <span class="bid-expand-icon" id="${hourId}_icon">▶</span>
+                <span style="font-weight:600;color:#2f4a75;">${String(hour).padStart(2, '0')}:00</span>
+                <span style="color:${netColor};font-weight:600;">${netPrefix}${netMW} MW</span>
+                <span style="color:#555;">${totalMW} MW</span>
+                <span style="color:#f39c12;">${bidCount}</span>
+                <span style="color:#888;font-weight:600;">${batteryBefore.toFixed(0)}</span>
+                <span style="color:#f39c12;font-weight:600;">${batteryAfter.toFixed(0)}</span>
+              </div>
+              <div id="${hourId}" class="bid-detail-row">
+                <div class="bid-detail-header">
+                  <span></span><span>#</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span><span></span>
+                </div>
+                ${hourBids.map((bid, bidIdx) => `
+                  <div class="bid-detail-item" id="bid_${hour}_${bidIdx}">
+                    <span style="color:#aaa;">↳</span>
+                    <span style="color:#888;">#${bidIdx + 1}</span>
+                    <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" value="${bid.price || ''}" min="0" step="0.01" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                    <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" value="${bid.mw || ''}" min="0" step="1" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                    <select class="bid-select" id="type_${hour}_${bidIdx}" ${disabled ? 'disabled' : ''} onchange="onBidInput(${hour})">
+                      <option value="buy" ${bid.type === 'buy' ? 'selected' : ''}>Pirkti</option>
+                      <option value="sell" ${bid.type === 'sell' ? 'selected' : ''}>Parduoti</option>
+                    </select>
+                    ${!disabled ? `<button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>` : '<span></span>'}
+                  </div>
+                `).join('')}
+                ${!disabled && hourBids.length < 3 ? `<div style="padding:8px;text-align:center;">
+                  <button class="btn btn-sec" style="font-size:11px;padding:4px 12px;" onclick="addBidToHour(${hour})">+ Pridėti pasiūlymą</button>
+                </div>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="bid-footer">
+        <span></span><span>IŠ VISO</span>
+        <span id="totalNetMW">—</span>
+        <span id="totalMW">—</span>
+        <span id="totalBids">—</span>
+        <span>${(myTeam.batteryStored || 0).toFixed(0)}</span>
+        <span id="finalBattery" style="color:#f39c12;">—</span>
+      </div>
+      <div id="bidErrors" style="margin-top:6px;"></div>
     </div>
 
     <!-- STATUS -->
@@ -532,52 +1045,7 @@ function renderRound() {
       </div>
     </div>
 
-    <!-- BIDS -->
-    <div class="bid-card">
-      <div class="bid-card-header">
-        <h3>Pasiūlymai — Diena ${viewRound} (24 val.)</h3>
-        <div class="bid-actions">
-          ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
-            ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
-          ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
-          ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
-            <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
-            <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen?'':'disabled'}>
-              ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
-            </button>` : ''}
-        </div>
-      </div>
-      <div class="bid-scroll">
-        <div class="bid-row header-row">
-          <span>Val.</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Veiksmas</span><span style="text-align:right;">Suma</span>
-        </div>
-        ${savedRows.map((row, i) => `
-          <div class="bid-row ${row&&row.price?'has-bid':''}" id="bidrow_${i}">
-            <span class="bid-hr-num">${String(i).padStart(2,'0')}:00</span>
-            <input class="bid-input" type="number" id="price_${i}" value="${row&&row.price||''}" min="0" step="0.01" placeholder="—"
-              ${disabled?'disabled':''} oninput="onBidInput(${i})">
-            <input class="bid-input" type="number" id="mw_${i}" value="${row&&row.mw||''}" min="0" step="1" placeholder="—"
-              ${disabled?'disabled':''} oninput="onBidInput(${i})">
-            <select class="bid-select" id="type_${i}" ${disabled?'disabled':''} onchange="onBidInput(${i})">
-              <option value="buy" ${row&&row.type==='buy'?'selected':''}>Pirkti</option>
-              <option value="sell" ${row&&row.type==='sell'?'selected':''}>Parduoti</option>
-            </select>
-            <span class="bid-total" id="rowTotal_${i}">${row&&row.price&&row.mw?'$'+(+row.price*+row.mw).toLocaleString():'—'}</span>
-          </div>`).join('')}
-      </div>
-      <div class="bid-footer">
-        <span></span><span>Iš viso</span>
-        <span id="totalMW">—</span><span></span>
-        <span id="totalSum" style="text-align:right;">—</span>
-      </div>
-      <div id="bidErrors" style="margin-top:6px;"></div>
-    </div>
 
-    <!-- TX -->
-    <div class="tx-card">
-      <h3>Sandoriai</h3>
-      <div class="tx-list">${buildTxList()}</div>
-    </div>
   `;
 
   // Render nav highlights
@@ -592,11 +1060,7 @@ function renderRound() {
 // ══════════════════════════════════════════════
 // BID INTERACTIONS
 // ══════════════════════════════════════════════
-function onBidInput(i) {
-  const p = +document.getElementById('price_' + i)?.value || 0;
-  const m = +document.getElementById('mw_' + i)?.value || 0;
-  const rowTotalEl = document.getElementById('rowTotal_' + i);
-  if (rowTotalEl) rowTotalEl.textContent = (p && m) ? '$' + (p * m).toLocaleString() : '—';
+function onBidInput(hour) {
   updateTotals();
   updateEnergyAccumulation();
   // Update draft line on chart
@@ -606,16 +1070,80 @@ function onBidInput(i) {
 }
 
 function updateTotals() {
-  let totalMW = 0, totalSum = 0;
-  for (let i = 0; i < NUM_HOURS; i++) {
-    const p = +document.getElementById('price_'+i)?.value || 0;
-    const m = +document.getElementById('mw_'+i)?.value || 0;
-    totalMW += m; totalSum += p * m;
+  let totalNetMW = 0, totalMW = 0, totalBids = 0;
+  let currentBattery = myTeam.batteryStored || 0;
+  const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
+  
+  for (let h = 0; h < NUM_HOURS; h++) {
+    let bidIdx = 0;
+    let hourNetMW = 0, hourTotalMW = 0;
+    
+    while (true) {
+      const p = document.getElementById('price_' + h + '_' + bidIdx);
+      if (!p) break;
+      const m = document.getElementById('mw_' + h + '_' + bidIdx);
+      const t = document.getElementById('type_' + h + '_' + bidIdx);
+      
+      const price = +p.value || 0;
+      const mw = +m.value || 0;
+      
+      if (price && mw) {
+        totalBids++;
+        hourTotalMW += mw;
+        if (t && t.value === 'buy') {
+          hourNetMW += mw;
+        } else {
+          hourNetMW -= mw;
+        }
+      }
+      bidIdx++;
+    }
+    
+    totalNetMW += hourNetMW;
+    totalMW += hourTotalMW;
+    
+    // Update the row display
+    const rowNetEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(3)');
+    const rowTotalEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(4)');
+    const rowCountEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(5)');
+    const rowBeforeEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(6)');
+    const rowAfterEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(7)');
+    
+    const batteryBefore = currentBattery;
+    currentBattery += hourNetMW;
+    currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
+    const batteryAfter = currentBattery;
+    
+    if (rowNetEl) {
+      const netColor = hourNetMW > 0 ? '#27ae60' : (hourNetMW < 0 ? '#e74c3c' : '#888');
+      const netPrefix = hourNetMW > 0 ? '+' : '';
+      rowNetEl.style.color = netColor;
+      rowNetEl.style.fontWeight = '600';
+      rowNetEl.textContent = netPrefix + hourNetMW + ' MW';
+    }
+    if (rowTotalEl) {
+      rowTotalEl.textContent = hourTotalMW + ' MW';
+    }
+    if (rowCountEl) {
+      rowCountEl.textContent = bidIdx;
+    }
+    if (rowBeforeEl) {
+      rowBeforeEl.textContent = batteryBefore.toFixed(0);
+    }
+    if (rowAfterEl) {
+      rowAfterEl.textContent = batteryAfter.toFixed(0);
+    }
   }
+  
+  const tnet = document.getElementById('totalNetMW');
   const tmw = document.getElementById('totalMW');
-  const ts = document.getElementById('totalSum');
+  const tb = document.getElementById('totalBids');
+  const fb = document.getElementById('finalBattery');
+  
+  if (tnet) tnet.textContent = totalNetMW ? (totalNetMW > 0 ? '+' : '') + totalNetMW + ' MW' : '—';
   if (tmw) tmw.textContent = totalMW ? totalMW + ' MW' : '—';
-  if (ts) ts.textContent = totalSum ? '$' + totalSum.toLocaleString() : '—';
+  if (tb) tb.textContent = totalBids || '—';
+  if (fb) fb.textContent = currentBattery.toFixed(0);
 }
 
 function updateEnergyAccumulation() {
@@ -628,51 +1156,93 @@ function updateEnergyAccumulation() {
 }
 
 function clearBids() {
-  for (let i = 0; i < NUM_HOURS; i++) {
-    const p = document.getElementById('price_'+i), m = document.getElementById('mw_'+i);
-    if (p) p.value = ''; if (m) m.value = '';
-    const rt = document.getElementById('rowTotal_'+i);
-    if (rt) rt.textContent = '—';
+  for (let h = 0; h < NUM_HOURS; h++) {
+    let bidIdx = 0;
+    while (true) {
+      const p = document.getElementById('price_' + h + '_' + bidIdx);
+      if (!p) break;
+      const m = document.getElementById('mw_' + h + '_' + bidIdx);
+      if (p) p.value = '';
+      if (m) m.value = '';
+      bidIdx++;
+    }
   }
-  updateTotals(); updateEnergyAccumulation(); renderChart(viewRound);
+  updateTotals(); 
+  updateEnergyAccumulation(); 
+  renderChart(viewRound);
 }
 
-function editBids() { editingSubmitted = true; renderRound(); toast('Redagavimo režimas — pakeiskite ir pateikite iš naujo'); }
+function editBids() { 
+  editingSubmitted = true; 
+  renderRound(); 
+  toast('Redagavimo režimas — pakeiskite ir pateikite iš naujo'); 
+}
 
 function submitBids() {
   if (!session.betsOpen) { toast('Pasiūlymai šiuo metu uždaryti'); return; }
-  const errors = [], rows = [];
-  for (let i = 0; i < NUM_HOURS; i++) {
-    const p = +document.getElementById('price_'+i)?.value;
-    const m = +document.getElementById('mw_'+i)?.value;
-    const t = document.getElementById('type_'+i)?.value || 'buy';
-    if (p || m) {
-      if (!p || p <= 0) errors.push(`${String(i).padStart(2,'0')}:00 — netinkama kaina`);
-      else if (!m || m <= 0) errors.push(`${String(i).padStart(2,'0')}:00 — netinkamas kiekis`);
-      else rows.push({ hour: i, price: p, mw: m, type: t });
+  
+  const errors = [], allBids = [];
+  let totalBidCount = 0;
+  
+  for (let h = 0; h < NUM_HOURS; h++) {
+    const hourBids = [];
+    let bidIdx = 0;
+    
+    while (true) {
+      const p = document.getElementById('price_' + h + '_' + bidIdx);
+      if (!p) break;
+      const m = document.getElementById('mw_' + h + '_' + bidIdx);
+      const t = document.getElementById('type_' + h + '_' + bidIdx);
+      
+      const price = +p.value;
+      const mw = +m.value;
+      
+      if (price || mw) {
+        if (!price || price <= 0) errors.push(`${String(h).padStart(2,'0')}:00 #${bidIdx+1} — netinkama kaina`);
+        else if (!mw || mw <= 0) errors.push(`${String(h).padStart(2,'0')}:00 #${bidIdx+1} — netinkamas kiekis`);
+        else {
+          hourBids.push({ price, mw, type: t ? t.value : 'buy' });
+          totalBidCount++;
+        }
+      }
+      bidIdx++;
     }
+    
+    allBids.push(hourBids);
   }
+  
   const errEl = document.getElementById('bidErrors');
   if (errors.length) {
     if (errEl) errEl.innerHTML = errors.slice(0,4).map(e => `<div style="font-size:11px;color:#e74c3c;">⚠ ${e}</div>`).join('') + (errors.length>4?`<div style="font-size:11px;color:#aaa;">...ir dar ${errors.length-4}</div>`:'');
-    toast('Patikrinkite įvestus duomenis'); return;
+    toast('Patikrinkite įvestus duomenis'); 
+    return;
   }
-  if (!rows.length) { toast('Įveskite bent vieną pasiūlymą'); return; }
+  
+  if (totalBidCount === 0) { toast('Įveskite bent vieną pasiūlymą'); return; }
   if (errEl) errEl.innerHTML = '';
 
   if (!myTeam.bidRows) myTeam.bidRows = {};
-  myTeam.bidRows[viewRound] = Array.from({length: NUM_HOURS}, (_, i) => ({
-    price: +document.getElementById('price_'+i)?.value || 0,
-    mw: +document.getElementById('mw_'+i)?.value || 0,
-    type: document.getElementById('type_'+i)?.value || 'buy'
-  }));
+  myTeam.bidRows[viewRound] = allBids;
+  
   if (!myTeam.bids) myTeam.bids = [];
   myTeam.bids = myTeam.bids.filter(b => b.round !== viewRound);
-  myTeam.bids.push({ round: viewRound, price: rows[0].price, mw: rows[0].mw, type: rows[0].type, submitted: true, hourCount: rows.length });
+  
+  // Use first bid from first hour that has bids
+  const firstHourWithBids = allBids.find(hb => hb.length > 0);
+  const firstBid = firstHourWithBids ? firstHourWithBids[0] : { price: 0, mw: 0, type: 'buy' };
+  
+  myTeam.bids.push({ 
+    round: viewRound, 
+    price: firstBid.price, 
+    mw: firstBid.mw, 
+    type: firstBid.type, 
+    submitted: true, 
+    hourCount: totalBidCount 
+  });
 
   saveTeamToSession();
   editingSubmitted = false;
-  toast('Pasiūlymai pateikti (' + rows.length + ' val.)');
+  toast('Pasiūlymai pateikti (' + totalBidCount + ' iš viso)');
   renderRound();
 }
 
@@ -690,7 +1260,7 @@ function saveTeamToSession() {
     }
   } catch(e) {}
 }
-
+// excess function
 function buildTxList() {
   const txs = (session.transactions || []).filter(tx => tx.teamId === myTeam.id || tx.teamName === myTeam.name);
   if (!txs.length) return '<p style="color:#bbb;font-size:11px;padding:6px 0;">Nėra sandorių</p>';
@@ -706,10 +1276,18 @@ function getAccumulation(upToRound) {
   let totalBought = 0, totalSold = 0, totalCostBuy = 0, totalRevSell = 0;
   for (let r = 1; r <= upToRound; r++) {
     const rows = (myTeam.bidRows || {})[r] || [];
-    rows.forEach(row => {
-      if (!row.price || !row.mw) return;
-      if (row.type === 'buy') { totalBought += +row.mw; totalCostBuy += +row.mw * +row.price; }
-      else { totalSold += +row.mw; totalRevSell += +row.mw * +row.price; }
+    rows.forEach(hourBids => {
+      if (!hourBids || !hourBids.length) return;
+      hourBids.forEach(bid => {
+        if (!bid.price || !bid.mw) return;
+        if (bid.type === 'buy') { 
+          totalBought += +bid.mw; 
+          totalCostBuy += +bid.mw * +bid.price; 
+        } else { 
+          totalSold += +bid.mw; 
+          totalRevSell += +bid.mw * +bid.price; 
+        }
+      });
     });
   }
   const net = totalBought - totalSold;
@@ -726,7 +1304,11 @@ const overlay = document.getElementById('overlay');
 menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
 overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { sidebar.classList.remove('active'); overlay.classList.remove('active'); closeHourModal(); }
+  if (e.key === 'Escape') { 
+    sidebar.classList.remove('active'); 
+    overlay.classList.remove('active'); 
+    closeHourModal(); 
+  }
 });
 document.querySelectorAll('.sb-item').forEach(i => i.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); }));
 document.getElementById('hourModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHourModal(); });

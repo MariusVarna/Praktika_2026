@@ -392,52 +392,46 @@
 
     <main>
         <div class="card">
-            <h3>How would you rate your experience?</h3>
-
+            <h3>Įvertinkite aplikaciją penkiabalėje skalėje</h3>
             <div class="rating-container" id="ratingContainer">
                 <div class="rating-item" data-rating="1">
                     <span class="rating-emoji">🌟</span>
-                    <span class="rating-label">Poor</span>
                 </div>
                 <div class="rating-item" data-rating="2">
                     <span class="rating-emoji">🌟🌟</span>
-                    <span class="rating-label">Fair</span>
                 </div>
                 <div class="rating-item" data-rating="3">
                     <span class="rating-emoji">🌟🌟🌟</span>
-                    <span class="rating-label">Good</span>
                 </div>
                 <div class="rating-item" data-rating="4">
                     <span class="rating-emoji">🌟🌟🌟🌟</span>
-                    <span class="rating-label">Very Good</span>
                 </div>
                 <div class="rating-item" data-rating="5">
                     <span class="rating-emoji">🌟🌟🌟🌟🌟</span>
-                    <span class="rating-label">Excellent</span>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h3>Your Feedback</h3>
-            <label>What did you like most?</label>
+            <h3>Atsiliepimas</h3>
+            <label>Kas labiausiai patiko?</label>
             <select id="likeSelect">
-                <option value="" disabled selected>Select an option</option>
-                <option value="gameplay">Gameplay & Mechanics</option>
-                <option value="design">Visual Design & Theme</option>
-                <option value="features">Features & Tools</option>
-                <option value="other">Other</option>
+                <option value="" disabled selected>Labiausiai patiko...</option>
+                <option value="gameplay">Žaidimo eiga</option>
+                <option value="design">Vizualaus dizaino kryptis</option>
+                <option value="features">Įvairūs vizualizavimo komponentai</option>
+                <option value="other">Kita...</option>
             </select>
 
-            <label>Your Review</label>
-            <textarea id="reviewInput" placeholder="Tell us about your experience... What did you enjoy? What could be improved?"></textarea>
+            <label>Papildomas laukas</label>
+            <textarea id="reviewInput" placeholder=" hmm "></textarea>
         </div>
 
         <div class="card">
-            <h3>Submit Review</h3>
+            <h3>Pateikti atsiliepimą</h3>
             <div class="button-group">
-                <button class="btn" id="submitBtn">Submit Review</button>
-                <button class="btn btn-outline" id="resetBtn">Reset Form</button>
+                <button class="btn" id="submitBtn">Pateikti</button>
+                <button class="btn btn-outline" id="resetBtn">Ištrinti pasirinkimus</button>
             </div>
         </div>
     </main>
@@ -482,8 +476,6 @@
         function navigateTo(path) {
             window.location.href = path;
         }
-
-        // Rating selection
         const ratingItems = document.querySelectorAll('.rating-item');
         let selectedRating = 0;
 
@@ -494,8 +486,6 @@
                 selectedRating = item.getAttribute('data-rating');
             });
         });
-
-        // Reset form
         document.getElementById('resetBtn').addEventListener('click', () => {
             document.getElementById('likeSelect').value = '';
             document.getElementById('reviewInput').value = '';
@@ -503,8 +493,6 @@
             ratingItems.forEach(i => i.classList.remove('selected'));
             selectedRating = 0;
         });
-
-        // Submit review (simulated)
         document.getElementById('submitBtn').addEventListener('click', () => {
             if (!selectedRating) {
                 alert('Please select a rating');
@@ -519,14 +507,11 @@
                 likedMost: likedMost || 'Not specified',
                 review: review || 'No review text'
             };
-
-            // Show success message (simulated submission)
             alert('Thank you for your review!\n\n' +
-                `Rating: ${'🌟'.repeat(selectedRating)}\n` +
-                `Liked most: ${reviewData.likedMost}\n` +
-                `Review: ${reviewData.review.substring(0, 50)}${reviewData.review.length > 50 ? '...' : ''}`);
+                `${'🌟'.repeat(selectedRating)}\n` +
+                `${reviewData.likedMost}\n` +
+                `${reviewData.review.substring(0, 50)}${reviewData.review.length > 50 ? '...' : ''}`);
 
-            // Reset form after submission
             document.getElementById('resetBtn').click();
         });
     </script>

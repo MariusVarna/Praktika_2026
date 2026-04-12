@@ -502,7 +502,7 @@
 
         .rc-stats {
             display: grid;
-            grid-template-columns: repeat(4,1fr);
+            grid-template-columns: repeat(3,1fr);
             gap: 6px;
             margin-bottom: 10px;
         }
@@ -1078,7 +1078,7 @@
         <div class="sb-item" onclick="nav('/pages/admin.html')">Administravimas</div>
         <div class="sb-item" onclick="nav('/pages/join.html')">Prisijungimas</div>
         <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
-        <div class="sb-item" onclick="nav('/pages/settings.html')">⚙Parinktys</div>
+        <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
     </div>
     <div class="overlay" id="overlay"></div>
 
@@ -1121,11 +1121,11 @@
         <div id="previous" class="tab-content"><div id="previousList"></div></div>
     </main>
 
-    <!-- PROJECTOR MODAL -->
+    <!-- INTERIM RESULTS MODAL -->
     <div class="modal-bd" id="projectorModal">
         <div class="modal" style="max-width:660px;">
             <div class="modal-hd">
-                <h2>📺 Tarpiniai rezultatai — projektorius</h2>
+                <h2>Tarpiniai rezultatai </h2>
                 <button class="modal-close" onclick="closeModal('projectorModal')">×</button>
             </div>
             <div class="modal-body" id="projectorBody"></div>
@@ -1161,6 +1161,18 @@
                 if (saved) sessions = JSON.parse(saved);
                 const savedPrev = sessionStorage.getItem('adminPrevSessions');
                 if (savedPrev) prevSessions = JSON.parse(savedPrev);
+                [...sessions, ...prevSessions].forEach(session => {
+                    if (session.teams) {
+                        session.teams.forEach(team => {
+                            if (!team.batteryCapacity) {
+                                team.batteryCapacity = session.maxPower || 100;
+                            }
+                            if (team.batteryStored === undefined) {
+                                team.batteryStored = 20;
+                            }
+                        });
+                    }
+                });
             } catch (e) {
                 sessions = [];
                 prevSessions = [];
@@ -1206,7 +1218,7 @@
                 penaltyPrice: +document.getElementById('penaltyPrice').value || 150,
                 marketPrice: 70,
                 demand: 500,
-                weather: 'Giedra',
+                weather: '',
                 createdAt: new Date().toLocaleString(),
                 completedAt: null,
                 teams: [],
@@ -1221,7 +1233,6 @@
             switchTab('active', document.querySelectorAll('.tbtn')[1]);
             renderActiveSessions();
         }
-
         // ── ACTIVE LIST ────────────────────────────────
         function renderActiveSessions() {
             const el = document.getElementById('activeList');
@@ -1240,13 +1251,11 @@
                   </div>
                 </div>`).join('');
         }
-
         // ── MANAGE ─────────────────────────────────────
         function switchAdminRound(round) {
             selectedRound = round;
             renderManage();
         }
-
         function openManage(id) {
             activeSessionId = id;
             selectedRound = null;
@@ -1254,7 +1263,6 @@
             switchTab('manage', document.getElementById('manageTabBtn'));
             renderManage();
         }
-
         function renderManage() {
             const s = sessions.find(x => x.id === activeSessionId);
             if (!s) { document.getElementById('manageContent').innerHTML = '<div class="card" style="text-align:center;color:#999;">Sesija nerasta</div>'; return; }
@@ -1293,12 +1301,11 @@
                   <div class="rc">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                       <h3 style="margin-bottom:0;">Raundo valdymas</h3>
-                      <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">📺 Projektorius</button>
+                      <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">Tarpiniai rezultatai</button>
                     </div>
                     <div class="rc-stats">
                       <div class="rc-stat"><div class="v">${s.currentRound || '—'}</div><div class="l">Diena</div></div>
                       <div class="rc-stat"><div class="v">${s.numRounds}</div><div class="l">Iš viso</div></div>
-                      <div class="rc-stat"><div class="v">${s.currentDay}</div><div class="l">Diena</div></div>
                       <div class="rc-stat"><div class="v">${s.teams.length}</div><div class="l">Komandos</div></div>
                     </div>
                     <div><span class="bets-pill ${s.betsOpen ? 'bets-open-p' : 'bets-closed-p'}">${s.betsOpen ? '✅ Statymai atidaryti' : '🔒 Statymai uždaryti'}</span></div>
@@ -1312,13 +1319,14 @@
                 </div>
                 <div class="two-col">
                   <div class="card">
-                    <h3>👥 Aktyvūs vartotojai (${s.teams.length})</h3>
+                    <h3>Visos komandos (${s.teams.length})</h3>
                     <div class="scroll-panel">
                       ${s.teams.length ? s.teams.map(t => `
                         <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')">
                           <div class="ua">${t.name.slice(0, 2).toUpperCase()}</div>
                           <span class="un">${escapeHtml(t.name)}</span>
                           <span class="ub">$${(t.balance || 0).toLocaleString()}</span>
+                          <span class="ub" style="color:#f39c12;"> ${(t.batteryStored || 0).toFixed(0)}/${t.batteryCapacity || s.maxPower || 100} MW</span>
                           <div class="online-dot"></div>
                         </div>`).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
                     </div>
@@ -1369,7 +1377,6 @@
               `;
             setTimeout(() => renderAdminChart(s), 50);
         }
-
         // ── ROUND ACTIONS ──────────────────────────────
         function startRound(id) {
             const s = sessions.find(x => x.id === id); if (!s) return;
@@ -1377,7 +1384,6 @@
             s.roundStarted = true; s.betsOpen = false;
             saveState(); toast(`▶ Raundas ${s.currentRound + 1} pradėtas`); renderManage();
         }
-
         function endRound(id) {
             const s = sessions.find(x => x.id === id); if (!s) return;
             const finishedRound = s.currentRound + 1;
@@ -1387,35 +1393,68 @@
             saveState(); toast(`Raundas ${finishedRound} baigtas`); renderManage();
             setTimeout(() => openProjector(id), 400);
         }
-
         function openBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = true; saveState(); toast('Statymai atidaryti'); renderManage(); }
         function closeBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = false; saveState(); toast('Statymai uždaryti'); renderManage(); }
         function addExtraRound(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.numRounds++; saveState(); toast('Iš viso raundų: ' + s.numRounds); renderManage(); }
-        function startSession(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'active'; s.currentRound = 0; s.currentDay = s.startDay; s.roundStarted = false; saveState(); toast('▶ Sesija pradėta!'); openManage(id); }
+        function startSession(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'active'; s.currentRound = 1; s.currentDay = s.startDay; s.roundStarted = false; saveState(); toast('▶ Sesija pradėta!'); openManage(id); }
         function finishSession(id) { if (!confirm('Ar tikrai baigti sesiją?')) return; const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'finished'; s.completedAt = new Date().toLocaleString(); prevSessions.push(s); sessions = sessions.filter(x => x.id !== id); saveState(); toast('Sesija baigta'); document.getElementById('manageTabBtn').style.display = 'none'; switchTab('previous', document.querySelectorAll('.tbtn')[3]); renderPreviousSessions(); }
         function archiveSession(id) { if (!confirm('Archyvuoti?')) return; const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'finished'; s.completedAt = new Date().toLocaleString(); prevSessions.push(s); sessions = sessions.filter(x => x.id !== id); saveState(); toast('Archyvuota'); renderActiveSessions(); renderPreviousSessions(); }
-
         // ── DEMO TEAM ──────────────────────────────────
         function addDemoTeam(id) {
             const s = sessions.find(x => x.id === id); if (!s) return;
             const n = s.teams.length + 1, tid = 'team_' + Date.now();
             const demoBids = [];
             const demoBidRows = {};
+            const batteryCapacity = s.maxPower || 100;
+
             for (let r = 1; r <= Math.max(s.currentRound + 1, 1); r++) {
-                const basePrice = Math.floor(55 + Math.random() * 30);
-                const rows = Array.from({ length: 24 }, (_, h) => ({
-                    price: +(basePrice + (Math.random() * 10 - 5)).toFixed(1),
-                    mw: Math.floor(5 + Math.random() * 40),
-                    type: Math.random() > 0.35 ? 'buy' : 'sell'
-                }));
-                demoBidRows[r] = rows;
-                demoBids.push({ round: r, price: basePrice, mw: rows[0].mw, type: 'buy', submitted: r <= s.currentRound + 1 });
+                const rows = Array.from({ length: 24 }, (_, hour) => {
+                    const numBids = Math.floor(Math.random() * 3) + 1; // 1 to 3 bids per hour
+                    const hourBids = [];
+                    for (let b = 0; b < numBids; b++) {
+                        let price;
+                        if (b === 0) price = 51 + Math.random() * 20;       // lower price range
+                        else if (b === 1) price = 56 + Math.random() * 20;  // mid price range
+                        else price = 61 + Math.random() * 20;               // higher price range
+                        price = price + (Math.random() * 10 - 5);           // random offsets
+                        price = Math.max(20, Math.min(150, price));
+
+                        const mw = Math.floor(5 + Math.random() * (batteryCapacity * 0.3)); // up to 30% of capacity
+                        const type = Math.random() > 0.5 ? 'buy' : 'sell';
+                        hourBids.push({
+                            price: +price.toFixed(1),
+                            mw: mw,
+                            type: type
+                        });
+                    }
+                    hourBids.sort((a, b) => a.price - b.price);
+                    return hourBids;
+                });
+
+                // For backward compatibility, also store a single bid representation
+                const singleBidRows = rows.map(hourBids => {
+                    // Use the first bid as the main bid for line chart
+                    return hourBids[0] || { price: 0, mw: 0, type: 'buy' };
+                });
+                demoBidRows[r] = rows;  // Store array of bids per hour
+                demoBids.push({ round: r, price: singleBidRows[0]?.price || 70, mw: singleBidRows[0]?.mw || 10, type: 'buy', submitted: r <= s.currentRound + 1 });
             }
-            s.teams.push({ id: tid, name: 'Komanda ' + n, password: 'pw' + n + Math.floor(Math.random() * 900 + 100), balance: 10000 + Math.floor(Math.random() * 5000), bids: demoBids, roundHistory: [], bidRows: demoBidRows });
+
+            s.teams.push({
+                id: tid,
+                name: 'Komanda ' + n,
+                password: 'pw' + n + Math.floor(Math.random() * 900 + 100),
+                balance: 10000 + Math.floor(Math.random() * 5000),
+                bids: demoBids,
+                roundHistory: [],
+                bidRows: demoBidRows,
+                batteryStored: 20,
+                batteryCapacity: batteryCapacity
+            });
+
             if (s.currentRound > 0) s.transactions.push({ day: s.currentDay, round: s.currentRound, teamName: 'Komanda ' + n, teamId: tid, type: 'buy', mw: Math.floor(20 + Math.random() * 40), price: Math.floor(60 + Math.random() * 30) });
             saveState(); renderManage();
         }
-
         // ── PLAYER GAME VIEW MODAL ─────────────────────
         function openPlayerModal(sessionId, teamId) {
             const s = sessions.find(x => x.id === sessionId); if (!s) return;
@@ -1486,9 +1525,7 @@
             document.getElementById('playerModal').classList.add('open');
             pgvShow(t.id, sessionId, cr || 1);
         }
-
         let pgvChartInstance = null;
-
         function pgvShow(teamId, sessionId, round) {
             const s = sessions.find(x => x.id === sessionId); if (!s) return;
             const t = s.teams.find(x => x.id === teamId); if (!t) return;
@@ -1519,11 +1556,22 @@
 
             const bid = (t.bids || []).find(b => b.round === round);
             let rows = (t.bidRows && t.bidRows[round]);
-            if (!rows || !rows.length) {
+
+            // Handle the new format: rows is now an array of arrays (multiple bids per hour)
+            if (rows && rows.length && Array.isArray(rows[0])) {
+                // rows is already in the new format (array of arrays)
+                rows = rows;
+            } else if (rows && !Array.isArray(rows[0])) {
+                // Old format: convert to new format (single bid per hour)
+                const oldRows = rows;
                 rows = Array.from({ length: NUM_HOURS }, (_, i) => {
-                    if (i === 0 && bid) return { price: bid.price, mw: bid.mw, type: bid.type };
-                    return { price: 0, mw: 0, type: 'buy' };
+                    const old = oldRows[i];
+                    if (old && old.price) return [old];
+                    return [];
                 });
+            } else if (!rows || !rows.length) {
+                // Fallback
+                rows = Array.from({ length: NUM_HOURS }, () => []);
             }
 
             const chartTitle = document.getElementById('pgvChartTitle');
@@ -1534,6 +1582,14 @@
                 if (pgvChartInstance) { pgvChartInstance.destroy(); pgvChartInstance = null; }
                 const labels = Array.from({ length: NUM_HOURS }, (_, h) => String(h).padStart(2, '0') + ':00');
                 const bidLine = rows.map(r => r && r.price ? +r.price : null);
+                const allBids = [];
+                for (let h = 0; h < rows.length; h++) {
+                    const r = rows[h];
+                    if (r && r.price) {
+                        allBids.push({ hour: h, price: r.price, mw: r.mw, type: r.type });
+                    }
+                }
+
                 pgvChartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -1551,7 +1607,46 @@
                             x: { ticks: { font: { size: 8 }, maxRotation: 45 }, grid: { display: false } }
                         },
                         animation: { duration: 200 }
-                    }
+                    },
+                    plugins: [{
+                        id: 'multiBidDots',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, scales } = chart;
+                            // Flatten all bids for chart dots
+                            const allBidsForChart = [];
+                            for (let h = 0; h < rows.length; h++) {
+                                const hourBids = rows[h];
+                                if (hourBids && hourBids.length) {
+                                    hourBids.forEach(bid => {
+                                        if (bid && bid.price) {
+                                            allBidsForChart.push({ hour: h, price: bid.price, mw: bid.mw, type: bid.type });
+                                        }
+                                    });
+                                }
+                            }
+                            allBidsForChart.forEach(bid => {
+                                const x = scales.x.getPixelForValue(bid.hour);
+                                const y = scales.y.getPixelForValue(bid.price);
+                                if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
+                                    y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                                    ctx.fillStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
+                                    ctx.fill();
+                                    ctx.strokeStyle = 'white';
+                                    ctx.lineWidth = 1.5;
+                                    ctx.stroke();
+                                    ctx.fillStyle = 'white';
+                                    ctx.font = 'bold 8px sans-serif';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'middle';
+                                    ctx.fillText(bid.mw, x, y);
+                                    ctx.restore();
+                                }
+                            });
+                        }
+                    }]
                 });
             }
 
@@ -1561,28 +1656,115 @@
                     : `<span style="font-size:10px;background:#f5f1e8;color:#999;padding:2px 7px;border-radius:12px;">Tuščia</span>`;
 
             const bidListEl = document.getElementById('pgvBidList');
-            if (bidListEl) bidListEl.innerHTML = `
-                <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">${bidStatus}
-                  <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">D${round}${isPast ? ' (baigta)' : ' (aktyvi)'}</span>
-                </div>
-                <div style="border:1px solid #e8dfd4;border-radius:8px;overflow:hidden;">
-                  <div style="display:grid;grid-template-columns:40px 1fr 1fr 64px;background:#f5f1e8;padding:4px 8px;font-size:10px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;">
-                    <span>Val.</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span>
-                  </div>
-                  <div style="max-height:220px;overflow-y:auto;">
-                    ${rows.map((r, i) => `
-                      <div style="display:grid;grid-template-columns:40px 1fr 1fr 64px;align-items:center;padding:3px 8px;border-bottom:1px solid #f5f1e8;font-size:11px;background:${r && r.price ? '#fffdf0' : 'white'};">
-                        <span style="color:#aaa;font-size:10px;font-family:monospace;">${String(i).padStart(2, '0')}:00</span>
-                        <span style="color:${r && r.price ? '#2f4a75' : '#ccc'};font-weight:${r && r.price ? '600' : '400'}">${r && r.price ? r.price + ' $' : '—'}</span>
-                        <span style="color:#555;">${r && r.mw ? r.mw + ' MW' : '—'}</span>
-                        <span style="color:${r && r.type === 'buy' ? '#27ae60' : '#e74c3c'};font-size:10px;font-weight:600;">${r && r.price ? (r.type === 'buy' ? 'pirk.' : 'pard.') : '—'}</span>
-                      </div>`).join('')}
-                  </div>
-                  <div style="display:grid;grid-template-columns:40px 1fr 1fr 64px;padding:4px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;">
-                    <span></span><span>Iš viso</span><span>${rows.reduce((s, r) => s + (+r?.mw || 0), 0)} MW</span><span></span>
-                  </div>
-                </div>
-              `;
+            if (bidListEl) {
+                let currentBattery = t.batteryStored || 0;
+                let cumulativeBattery = currentBattery;
+                const batteryHistory = [];
+
+                // Calculate net effect per hour and store battery after each hour
+                for (let i = 0; i < rows.length; i++) {
+                    const hourBids = rows[i];
+                    let netMW = 0;
+
+                    if (hourBids && hourBids.length) {
+                        for (const r of hourBids) {
+                            if (r && r.price) {
+                                if (r.type === 'buy') netMW += r.mw;
+                                else if (r.type === 'sell') netMW -= r.mw;
+                            }
+                        }
+                    }
+
+                    cumulativeBattery += netMW;
+                    const capacity = t.batteryCapacity || s.maxPower || 100;
+                    cumulativeBattery = Math.min(Math.max(cumulativeBattery, 0), capacity);
+                    batteryHistory.push(cumulativeBattery);
+                }
+
+                // Prepare data for each hour: summary + detailed bids
+                const hourData = [];
+                for (let h = 0; h < rows.length; h++) {
+                    const hourBids = rows[h];
+                    const netMW = hourBids && hourBids.length ? hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0) : 0;
+                    const totalMW = hourBids && hourBids.length ? hourBids.reduce((sum, b) => sum + b.mw, 0) : 0;
+                    const bidCount = hourBids && hourBids.length ? hourBids.length : 0;
+                    const batteryAfter = batteryHistory[h];
+
+                    hourData.push({
+                        hour: h,
+                        netMW: netMW,
+                        totalMW: totalMW,
+                        bidCount: bidCount,
+                        batteryAfter: batteryAfter,
+                        bids: hourBids && hourBids.length ? hourBids : []
+                    });
+                }
+
+                // Generate HTML with collapsible rows
+                bidListEl.innerHTML = `
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">${bidStatus}
+            <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">D${round}${isPast ? ' (baigta)' : ' (aktyvi)'}</span>
+            <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(t.batteryStored || 0).toFixed(0)} MW</span>
+            <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">${hourData.reduce((sum, h) => sum + h.bidCount, 0)} pasiūlymų</span>
+        </div>
+        <div style="border:1px solid #e8dfd4;border-radius:8px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;background:#f5f1e8;padding:8px 8px;font-size:10px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;">
+                <span></span>
+                <span>Val.</span>
+                <span>Net MW</span>
+                <span>Iš viso MW</span>
+                <span>Statymų #</span>
+                <span>Talpa</span>
+            </div>
+            <div style="max-height:400px;overflow-y:auto;">
+                ${hourData.map((hour, idx) => {
+                    const isExpanded = false; // Start collapsed
+                    const hourId = `hour_${round}_${hour.hour}`;
+                    const netColor = hour.netMW > 0 ? '#27ae60' : (hour.netMW < 0 ? '#e74c3c' : '#888');
+                    const netPrefix = hour.netMW > 0 ? '+' : '';
+
+                    return `
+                        <div style="border-bottom:1px solid #f0ebe0;">
+                            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;align-items:center;padding:8px 8px;background:white;cursor:pointer;" onclick="toggleHourBids('${hourId}')">
+                                <span style="font-size:16px;color:#2f4a75;" id="${hourId}_icon">▶</span>
+                                <span style="font-weight:600;color:#2f4a75;">${String(hour.hour).padStart(2, '0')}:00</span>
+                                <span style="color:${netColor};font-weight:600;">${netPrefix}${hour.netMW} MW</span>
+                                <span style="color:#555;">${hour.totalMW} MW</span>
+                                <span style="color:#f39c12;">${hour.bidCount}</span>
+                                <span style="color:#f39c12;font-weight:600;">${hour.batteryAfter.toFixed(0)}</span>
+                            </div>
+                            <div id="${hourId}" style="display:none;background:#fafaf8;border-top:1px solid #e8dfd4;">
+                                <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;background:#e8dfd4;padding:6px 8px;font-size:9px;font-weight:700;color:#2f4a75;border-bottom:1px solid #d4cec2;">
+                                    <span></span>
+                                    <span>#</span>
+                                    <span>Kaina $/MWh</span>
+                                    <span>Galia MW</span>
+                                    <span>Tipas</span>
+                                </div>
+                                ${hour.bids.map((bid, bidIdx) => `
+                                    <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;align-items:center;padding:6px 8px;border-bottom:1px solid #f0ebe0;font-size:11px;">
+                                        <span style="color:#aaa;">↳</span>
+                                        <span style="color:#888;">#${bidIdx + 1}</span>
+                                        <span style="color:#2f4a75;font-weight:600;">${bid.price} $</span>
+                                        <span style="color:#555;">${bid.mw} MW</span>
+                                        <span style="color:${bid.type === 'buy' ? '#27ae60' : '#e74c3c'};font-weight:600;">${bid.type === 'buy' ? 'pirk.' : 'pard.'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;padding:8px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;">
+                <span></span><span>IŠ VISO</span>
+                <span>${hourData.reduce((sum, h) => sum + h.netMW, 0)} MW</span>
+                <span>${hourData.reduce((sum, h) => sum + h.totalMW, 0)} MW</span>
+                <span>${hourData.reduce((sum, h) => sum + h.bidCount, 0)}</span>
+                <span style="color:#f39c12;">${batteryHistory[batteryHistory.length - 1]?.toFixed(0) || (t.batteryStored || 0)}</span>
+            </div>
+        </div>
+    `;
+            }
 
             const histEl = document.getElementById('pgvRoundHistory');
             if (histEl && (t.roundHistory || []).length) {
@@ -1597,8 +1779,7 @@
                   </table>`;
             } else if (histEl) histEl.innerHTML = '';
         }
-
-        // ── PROJECTOR ──────────────────────────────────
+        // ── INTERIM RESULTS ──────────────────────────────────
         function openProjector(sessionId) {
             const s = sessionId
                 ? (sessions.find(x => x.id === sessionId) || sessions[0])
@@ -1606,53 +1787,249 @@
                 || sessions.find(x => x.status === 'active')
                 || sessions[0];
 
-            let html = '';
             if (!s) {
-                html = '<p style="color:#888;text-align:center;padding:32px;">Nėra aktyvių sesijų.</p>';
-            } else {
-                const sorted = [...s.teams].sort((a, b) => (b.balance || 0) - (a.balance || 0));
-                const lastRound = Math.max(s.currentRound - 1, 0);
-                html = `
-                  <div class="proj-screen" style="padding:20px;">
-                    <div class="proj-title">${escapeHtml(s.gameName)}</div>
-                    <div class="proj-sub">Diena ${lastRound || s.currentRound} / ${s.numRounds} &nbsp;·&nbsp; PIN: ${s.pin}</div>
-                    <div style="position:relative;height:300px;margin:14px 0 8px;"><canvas id="projChart"></canvas></div>
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;">
-                      ${s.teams.map((t, i) => `<span style="font-size:11px;color:#ddd;display:flex;align-items:center;gap:4px;">
-                        <span style="display:inline-block;width:14px;height:3px;background:${TEAM_COLORS[i % TEAM_COLORS.length]};border-radius:2px;"></span>${escapeHtml(t.name)}
-                      </span>`).join('')}
-                    </div>
-                    <div class="proj-rd">
-                      <h3 style="color:#999;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Einamosios pozicijos</h3>
-                      <table class="proj-table">
-                        <thead><tr><th>#</th><th>Komanda</th><th>Balansas</th><th>D${lastRound || s.currentRound} pokytis</th></tr></thead>
-                        <tbody>${sorted.length ? sorted.map((t, i) => {
-                    const lrh = (t.roundHistory || []).find(r => r.round === lastRound);
-                    const chg = lrh ? lrh.profit : 0;
-                    return `<tr>
-                            <td style="color:${TEAM_COLORS[s.teams.indexOf(t) % TEAM_COLORS.length]};font-weight:700;">${i + 1}</td>
-                            <td class="c-white">${escapeHtml(t.name)}</td>
-                            <td class="c-pos">$${(t.balance || 0).toLocaleString()}</td>
-                            <td class="${chg >= 0 ? 'c-pos' : 'c-neg'}">${chg >= 0 ? '+' : ''}$${Math.abs(chg || 0).toLocaleString()}</td>
-                          </tr>`;
-                }).join('') : '<tr><td colspan="4" style="color:#666;text-align:center;padding:10px;">Nėra komandų</td></tr>'}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div class="proj-market" style="margin-top:10px;">
-                      <div class="proj-mstat"><div class="v">${s.marketPrice} $/MWh</div><div class="l">Vid. kaina</div></div>
-                      <div class="proj-mstat"><div class="v">${s.demand} MW</div><div class="l">Paklausa</div></div>
-                      <div class="proj-mstat"><div class="v">${s.weather}</div><div class="l">Oras</div></div>
-                      <div class="proj-mstat"><div class="v">${sorted.length}</div><div class="l">Komandos</div></div>
-                    </div>
-                  </div>`;
+                toast('Nėra aktyvių sesijų');
+                return;
             }
 
-            document.getElementById('projectorBody').innerHTML = html;
-            document.getElementById('projectorModal').classList.add('open');
-            if (s) setTimeout(() => renderChartInto('projChart', s), 80);
+            const lastRound = Math.max(s.currentRound - 1, 1);
+            const sortedTeams = [...s.teams].sort((a, b) => (b.balance || 0) - (a.balance || 0));
+            const top3 = sortedTeams.slice(0, 3);
+
+            const modalId = 'projectorModal_' + Date.now();
+
+            const html = `
+        <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) closeProjectorModal('${modalId}')">
+            <div style="background:white;border-radius:20px;max-width:1000px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+                <div style="padding:18px 24px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);border-radius:20px 20px 0 0;">
+                    <div>
+                        <div style="font-weight:700;font-size:20px;color:white;">Tarpiniai rezultatai</div>
+                        <div style="font-size:13px;color:#a8d8ff;margin-top:4px;">${escapeHtml(s.gameName)} · Diena ${lastRound} / ${s.numRounds}</div>
+                    </div>
+                    <button onclick="closeProjectorModal('${modalId}')" style="background:rgba(255,255,255,.2);border:none;font-size:20px;cursor:pointer;color:white;padding:6px 12px;border-radius:8px;">×</button>
+                </div>
+                <div style="padding:20px;overflow-y:auto;flex:1;">
+                    
+                    <!-- CHART SECTION (ABOVE PODIUM) -->
+                    <div style="margin-bottom:24px;">
+                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Praėjusios dienos #${lastRound} pasiūlymai</div>
+                        <div style="background:#f9f7f3;border-radius:12px;padding:16px;">
+                            <div style="position:relative;height:300px;">
+                                <canvas id="projectorChart_${modalId}"></canvas>
+                            </div>
+                            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;">
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2f4a75;"></span><span>Rinkos kaina</span></div>
+                                ${top3.map((team, idx) => `
+                                    <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:${TEAM_COLORS[idx % TEAM_COLORS.length]}"></span><span>${escapeHtml(team.name)}</span></div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- PODIUM SECTION (BELOW CHART) -->
+                    <div style="margin-bottom:24px;">
+                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;text-align:center;">Top 3</div>
+                        <div style="display:flex;align-items:flex-end;justify-content:center;gap:12px;">
+                            ${renderPodiumStep(top3[1], 2)}
+                            ${renderPodiumStep(top3[0], 1)}
+                            ${renderPodiumStep(top3[2], 3)}
+                        </div>
+                    </div>
+                    
+                    <!-- LEADERBOARD TABLE -->
+                    <div style="margin-bottom:24px;">
+                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Visos komandos</div>
+                        <div style="border:1px solid #e8dfd4;border-radius:12px;overflow:hidden;">
+                            <table style="width:100%;">
+                                <thead style="background:#f5f1e8;">
+                                    <tr>
+                                        <th style="padding:10px 12px;font-size:11px;">#</th>
+                                        <th style="padding:10px 12px;font-size:11px;text-align:left;">Komanda</th>
+                                        <th style="padding:10px 12px;font-size:11px;text-align:right;">Balansas</th>
+                                        <th style="padding:10px 12px;font-size:11px;text-align:right;">Pokytis</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${sortedTeams.map((team, idx) => {
+                const lastRoundProfit = getRoundProfit(team, lastRound);
+                const isTop3 = idx < 3;
+                return `
+                                            <tr style="border-bottom:1px solid #f0ebe0;${isTop3 ? 'background:#fef9e7;' : ''}">
+                                                <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#2f4a75;text-align:center;">${idx + 1}</td>
+                                                <td style="padding:10px 12px;font-size:13px;font-weight:${isTop3 ? '700' : '400'};color:${isTop3 ? '#2f4a75' : '#555'};">${escapeHtml(team.name)}</td>
+                                                <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#2f4a75;text-align:right;">$${(team.balance || 0).toLocaleString()}</td>
+                                                <td style="padding:10px 12px;font-size:13px;font-weight:600;color:${lastRoundProfit >= 0 ? '#27ae60' : '#e74c3c'};text-align:right;">${lastRoundProfit >= 0 ? '+' : ''}$${Math.abs(lastRoundProfit).toLocaleString()}</td>
+                                            </tr>
+                                        `;
+            }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+            setTimeout(() => {
+                const canvas = document.getElementById(`projectorChart_${modalId}`);
+                if (canvas) {
+                    renderInterimResultChart(canvas, s, top3, lastRound);
+                }
+            }, 50);
+        }
+        function renderInterimResultChart(canvas, s, top3Teams, round) {
+            if (window.projectorChartInstance) {
+                try { window.projectorChartInstance.destroy(); } catch (e) { }
+            }
+            // Get market prices for the round
+            const prices = getOrGenPrices(s, round);
+            const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+            // Build datasets for top 3 teams only
+            const teamDatasets = top3Teams.map((t, ti) => {
+                const bidData = Array(24).fill(null);
+                const netMWData = Array(24).fill(0);
+
+                const bidsForRound = t.bidRows && t.bidRows[round];
+
+                if (bidsForRound) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        const hourData = bidsForRound[hour];
+                        let netMW = 0;
+                        let bestPrice = null;
+
+                        if (hourData) {
+                            if (Array.isArray(hourData) && hourData.length > 0) {
+                                // Calculate net MW
+                                hourData.forEach(bid => {
+                                    if (bid && bid.price) {
+                                        if (bid.type === 'buy') netMW += bid.mw;
+                                        else if (bid.type === 'sell') netMW -= bid.mw;
+                                    }
+                                });
+                                const sortedByPrice = [...hourData].sort((a, b) => a.price - b.price);
+                                bestPrice = sortedByPrice[0]?.price;
+                            } else if (hourData.price) {
+                                netMW = hourData.type === 'buy' ? hourData.mw : -hourData.mw;
+                                bestPrice = hourData.price;
+                            }
+                        }
+
+                        netMWData[hour] = netMW;
+                        if (bestPrice) bidData[hour] = bestPrice;
+                    }
+                }
+
+                const color = TEAM_COLORS[ti % TEAM_COLORS.length];
+
+                return {
+                    label: t.name,
+                    data: bidData,
+                    netMW: netMWData,
+                    type: 'line',
+                    borderColor: color,
+                    backgroundColor: 'transparent',
+                    pointBackgroundColor: color,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: 2,
+                    tension: 0.2,
+                    spanGaps: false,
+                    order: ti + 1
+                };
+            });
+
+            window.projectorChartInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Rinkos kaina',
+                            data: prices,
+                            backgroundColor: 'rgba(47,74,117,.35)',
+                            borderColor: '#2f4a75',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            type: 'bar',
+                            order: 20,
+                            yAxisID: 'y'
+                        },
+                        ...teamDatasets
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (evt, elements, chart) => {
+                        const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+                        if (pts.length) {
+                            const hour = pts[0].index;
+                            openHourDetailModal(s, round, hour);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
+                                label: (context) => {
+                                    const dataset = context.dataset;
+                                    const hour = context.dataIndex;
+                                    const netMW = dataset.netMW ? dataset.netMW[hour] : 0;
+                                    const price = context.raw;
+                                    if (price === null) return null;
+                                    const direction = netMW > 0 ? 'pirkimas' : (netMW < 0 ? 'pardavimas' : '');
+                                    return `${dataset.label}: ${price} $/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: { font: { size: 10 }, callback: v => v + '$' },
+                            grid: { color: '#f0ebe0' }
+                        },
+                        x: {
+                            ticks: { font: { size: 9 }, maxRotation: 45 },
+                            grid: { display: false }
+                        }
+                    },
+                    animation: { duration: 300 }
+                },
+                plugins: [bidDirectionPlugin]
+            });
         }
 
+        function renderPodiumStep(team, rank) {
+            if (!team) return `<div style="width:100px;text-align:center;"></div>`;
+            const height = rank === 1 ? '80px' : rank === 2 ? '60px' : '45px';
+            const colors = rank === 1 ? '#f1c40f' : rank === 2 ? '#bdc3c7' : '#e67e22';
+            return `
+        <div style="text-align:center;flex:1;max-width:120px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,${colors},${rank === 1 ? '#d4ac0d' : rank === 2 ? '#95a5a6' : '#ca6f1e'});display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-weight:700;font-size:16px;">${team.name.slice(0, 2).toUpperCase()}</div>
+            <div style="font-size:12px;font-weight:700;color:#333;">${escapeHtml(team.name)}</div>
+            <div style="font-size:14px;font-weight:700;color:#2f4a75;">$${(team.balance || 0).toLocaleString()}</div>
+            <div style="background:${colors};height:${height};width:100%;border-radius:8px 8px 0 0;margin-top:6px;"></div>
+        </div>
+    `;
+        }
+        function getRoundProfit(team, round) {
+            const history = (team.roundHistory || []).find(r => r.round === round);
+            return history ? history.profit || 0 : 0;
+        }
+        function closeProjectorModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.remove();
+            if (window.projectorChartInstance) {
+                try { window.projectorChartInstance.destroy(); } catch (e) { }
+                window.projectorChartInstance = null;
+            }
+        }
+        
         // ── PREVIOUS ───────────────────────────────────
         function renderPreviousSessions() {
             const el = document.getElementById('previousList');
@@ -1670,14 +2047,12 @@
         }
         function viewArchived(id) { const s = prevSessions.find(x => x.id == id); if (!s) return; if (!sessions.find(x => x.id == id)) sessions.push({ ...s }); activeSessionId = s.id; document.getElementById('manageTabBtn').style.display = ''; switchTab('manage', document.getElementById('manageTabBtn')); renderManage(); }
         function deleteArchived(id) { if (!confirm('Ištrinti visam laikui?')) return; prevSessions = prevSessions.filter(x => x.id != id); saveState(); renderPreviousSessions(); }
-
         // ── CHART (24h, read-only, team bid overlays, clickable hours) ───
         const TEAM_COLORS = [
             '#e74c3c', '#27ae60', '#9b59b6', '#e67e22', '#1abc9c',
             '#e91e63', '#ff9800', '#00bcd4', '#8bc34a', '#ff5722'
         ];
         let adminChartInstance = null;
-
         function getOrGenPrices(s, round) {
             if (!s.marketPrices) s.marketPrices = {};
             if (!s.marketPrices[round]) {
@@ -1691,51 +2066,47 @@
         const bidDirectionPlugin = {
             id: 'bidDirectionPlugin',
 
-            beforeDatasetsDraw(chart) {
+            afterDatasetsDraw(chart) {
                 const { ctx } = chart;
 
                 chart.data.datasets.forEach((dataset, datasetIndex) => {
-                    if (!dataset.bidMeta) return;
-
+                    if (datasetIndex === 0) return;
+                    const netMW = dataset.netMW;
+                    if (!netMW) return;
                     const meta = chart.getDatasetMeta(datasetIndex);
-
-                    meta.data.forEach((point, index) => {
-                        const metaEntry = dataset.bidMeta[index];
-                        if (!metaEntry) return;
-
-                        const { type, mw } = metaEntry;
-
-                        const x = point.x;
-                        const y = point.y;
-
-                        ctx.save();
-                        ctx.lineWidth = 3;
-
-                        const baseLength = 2;
-                        const extra = Math.min(mw * 5, 10);
-                        const length = baseLength + extra;
-
-
-                        if (type === 'buy') {
-                            ctx.strokeStyle = 'green';
+                    if (!meta || !meta.data) return;
+                    if (meta.hidden) return;
+                    if (!dataset.hidden) {
+                        meta.data.forEach((point, index) => {
+                            const netValue = netMW[index];
+                            if (netValue === 0 || !netValue) return;
+                            const x = point.x;
+                            const y = point.y;
+                            if (!x || !y) return;
+                            ctx.save();
+                            const maxLength = 40;
+                            const minLength = 8;
+                            const length = Math.min(Math.abs(netValue) * 1.5, maxLength);
+                            const finalLength = Math.max(minLength, length);
 
                             ctx.beginPath();
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(x, y - length); // upward
+                            ctx.lineWidth = 3;
+
+                            // Buy upward, sell downward
+                            if (netValue > 0) {
+                                ctx.strokeStyle = '#27ae60';
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x, y - finalLength);
+                            } else {
+                                ctx.strokeStyle = '#e74c3c';
+                                ctx.moveTo(x, y);
+                                ctx.lineTo(x, y + finalLength);
+                            }
+
                             ctx.stroke();
-                        }
-
-                        if (type === 'sell') {
-                            ctx.strokeStyle = 'red';
-
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(x, y + length); // downward
-                            ctx.stroke();
-                        }
-
-                        ctx.restore();
-                    });
+                            ctx.restore();
+                        });
+                    }
                 });
             }
         };
@@ -1749,20 +2120,37 @@
 
             const teamDatasets = s.teams.map((t, ti) => {
                 const bidData = Array(24).fill(null);
-                const bidMeta = Array(24).fill(null);
+                const netMWData = Array(24).fill(0); // Store net MW effect per hour
 
-                const submitted = (t.bids || []).find(b => b.round === round && b.submitted);
+                const bidsForRound = t.bidRows && t.bidRows[round];
 
-                if (submitted && t.bidRows && t.bidRows[round]) {
-                    t.bidRows[round].forEach((row, i) => {
-                        if (row && row.price) {
-                            bidData[i] = +row.price;
-                            bidMeta[i] = {
-                                type: row.type,
-                                mw: row.mw
-                            }; // store buy/sell and price
+                if (bidsForRound) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        const hourData = bidsForRound[hour];
+                        let netMW = 0;
+                        let bestPrice = null;
+
+                        if (hourData) {
+                            if (Array.isArray(hourData) && hourData.length > 0) {
+                                // Calculate net MW
+                                hourData.forEach(bid => {
+                                    if (bid && bid.price) {
+                                        if (bid.type === 'buy') netMW += bid.mw;
+                                        else if (bid.type === 'sell') netMW -= bid.mw;
+                                    }
+                                });
+                                const sortedByPrice = [...hourData].sort((a, b) => a.price - b.price);
+                                bestPrice = sortedByPrice[0]?.price;
+                            }
+                            else if (hourData.price) {
+                                netMW = hourData.type === 'buy' ? hourData.mw : -hourData.mw;
+                                bestPrice = hourData.price;
+                            }
                         }
-                    });
+
+                        netMWData[hour] = netMW;
+                        if (bestPrice) bidData[hour] = bestPrice;
+                    }
                 }
 
                 const color = TEAM_COLORS[ti % TEAM_COLORS.length];
@@ -1770,22 +2158,19 @@
                 return {
                     label: t.name,
                     data: bidData,
-                    bidMeta, // attach metadata
-
+                    netMW: netMWData,  // Store net MW for tooltip
                     type: 'line',
                     borderColor: color,
                     backgroundColor: 'transparent',
                     pointBackgroundColor: color,
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                     borderWidth: 2,
                     tension: 0.2,
                     spanGaps: false,
                     order: ti + 1
                 };
             }).filter(ds => ds.data.some(v => v !== null));
-
-
 
             adminChartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -1811,15 +2196,14 @@
                         tooltip: {
                             callbacks: {
                                 title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
-                                afterBody: items => {
-                                    const h = items[0].dataIndex;
-                                    return s.teams.filter(t => {
-                                        const b = t.bidRows && t.bidRows[round] && t.bidRows[round][h];
-                                        return b && b.price;
-                                    }).map(t => {
-                                        const r = t.bidRows[round][h];
-                                        return `${t.name}: ${r.price} $/MWh · ${r.mw} MW (${r.type === 'buy' ? 'pirk.' : 'pard.'})`;
-                                    });
+                                label: (context) => {
+                                    const dataset = context.dataset;
+                                    const hour = context.dataIndex;
+                                    const netMW = dataset.netMW ? dataset.netMW[hour] : 0;
+                                    const price = context.raw;
+                                    if (price === null) return null;
+                                    const direction = netMW > 0 ? 'pirkimas' : (netMW < 0 ? 'pardavimas' : '');
+                                    return `${dataset.label}: ${price} $/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
                                 }
                             }
                         }
@@ -1830,61 +2214,22 @@
                     },
                     animation: { duration: 300 }
                 },
-                plugins: [bidDirectionPlugin]
+                plugins: [bidDirectionPlugin] 
             });
-        }
-
-        // ── HOUR DETAIL POPUP (admin clicking chart bar) with Supply Stack Chart ──
-        let hourSupplyChartInstance = null;
-
-        function generateSupplyStackForHour(round, hour) {
-            let seed = round * 31 + hour * 7;
-            const rng = () => {
-                seed = (seed * 16807) % 2147483647;
-                return (seed - 1) / 2147483646;
-            };
-
-            const groups = [
-                { name: 'Vėjas', color: '#4A90E2', base: 200 },
-                { name: 'Saulė', color: '#F5A623', base: 150 },
-                { name: 'Dujos', color: '#7B8D8E', base: 175 },
-                { name: 'Vanduo', color: '#2ECC71', base: 120 },
-                { name: 'Kita', color: '#9B59B6', base: 165 }
-            ];
-
-            const dayMults = [
-                [0.8, 0.9, 1.0, 1.1, 1.2],
-                [0.7, 1.0, 1.1, 0.9, 1.3],
-                [1.2, 0.8, 1.1, 0.9, 1.0],
-                [1.1, 1.2, 0.7, 1.0, 0.9],
-                [1.0, 1.1, 0.9, 1.2, 0.8]
-            ];
-            const mult = dayMults[(round - 1) % dayMults.length];
-
-            const labels = [];
-            const values = [];
-            const colors = [];
-
-            groups.forEach((g, gi) => {
-                for (let i = 0; i < 6; i++) {
-                    labels.push(`${g.name} ${i + 1}`);
-                    const hourFactor = 0.7 + (hour / 24) * 0.6;
-                    const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
-                    values.push(Math.max(10, value));
-                    colors.push(g.color);
+            setTimeout(() => {
+                if (adminChartInstance) {
+                    // Hide all team datasets (skip the first dataset which is market price)
+                    adminChartInstance.data.datasets.forEach((dataset, index) => {
+                        if (index > 0) {
+                            adminChartInstance.setDatasetVisibility(index, false);
+                        }
+                    });
+                    adminChartInstance.update();
                 }
-            });
-
-            const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
-            combined.sort((a, b) => a.value - b.value);
-
-            return {
-                labels: combined.map(c => c.label),
-                values: combined.map(c => c.value),
-                colors: combined.map(c => c.color)
-            };
+            }, 100);
         }
-
+        // ── HOUR DETAIL POPUP ──
+        let hourSupplyChartInstance = null;
         function renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour) {
             if (hourSupplyChartInstance) {
                 try {
@@ -1999,106 +2344,184 @@
 
             return { clearingIndex, clearingPrice, clearingQuantity, cumulativeSums };
         }
+        function generateDemandCurve(maxQuantity, basePrice, round, hour) {
+            const points = [];
+            const numPoints = 6;
+            for (let i = 0; i <= numPoints; i++) {
+                const price = basePrice + (1 - (i / numPoints)) * 50;
+                const quantity = maxQuantity * (0.2 + (i / numPoints) * 0.8);
+                points.push({ x: Math.round(quantity), y: Math.round(price) });
+            }
+            const seed = round * hour;
+            points.forEach(p => {
+                p.x = Math.max(10, p.x + (seed % 20) - 10);
+                p.y = Math.max(20, p.y + (seed % 15) - 7);
+            });
+            return points.sort((a, b) => a.x - b.x);
+        }
         function openHourDetailModal(s, round, hour) {
             const label = String(hour).padStart(2, '0') + ':00–' + String(hour + 1).padStart(2, '0') + ':00';
             const prices = s.marketPrices && s.marketPrices[round] ? s.marketPrices[round] : [];
             const mp = prices[hour] || s.marketPrice || 70;
 
-            // Get demand for this hour
+            // Get demand for this hour (add default if not present)
             const demand = s.demand || 500;
 
             const supplyData = generateSupplyStackForHour(round, hour);
             const totalSupply = supplyData.values.reduce((sum, v) => sum + v, 0);
 
+            // Calculate total demand from team bids
+            let totalBuyDemand = 0;
+            let totalSellSupply = 0;
+
             const rows = s.teams.map((t, ri) => {
-                const r = (t.bidRows && t.bidRows[round]) ? t.bidRows[round][hour] : null;
+                let bidData = null;
+
+                // Try to get bids for this round and hour
+                if (t.bidRows && t.bidRows[round]) {
+                    const hourBids = t.bidRows[round][hour];
+                    // Handle both array format and single object format
+                    if (hourBids) {
+                        if (Array.isArray(hourBids) && hourBids.length > 0) {
+                            // Take the first bid as the primary one for display
+                            bidData = hourBids[0];
+                            // Calculate totals
+                            hourBids.forEach(bid => {
+                                if (bid.type === 'buy') totalBuyDemand += bid.mw;
+                                if (bid.type === 'sell') totalSellSupply += bid.mw;
+                            });
+                        } else if (hourBids.price) {
+                            bidData = hourBids;
+                            if (bidData.type === 'buy') totalBuyDemand += bidData.mw;
+                            if (bidData.type === 'sell') totalSellSupply += bidData.mw;
+                        }
+                    }
+                }
+
                 const submitted = (t.bids || []).some(b => b.round === round && b.submitted);
-                return { name: t.name, row: r, submitted };
+
+                return {
+                    name: t.name,
+                    bid: bidData,
+                    submitted,
+                    teamIndex: ri
+                };
             });
-            let totalDemand = 0;
-            let totalDemand2 = 0;
-            s.teams.forEach(team => {
-                const bidRows = team.bidRows && team.bidRows[round];
-                const bid = bidRows && bidRows[hour];
-                if (bid.type === 'buy') {
-                    totalDemand += bid.mw;
-                }
-                if (bid.type === 'sell') {
-                    totalDemand2 += bid.mw;
-                }
-            });
+
             const modalId = 'hourDetailPopup_' + Date.now();
 
             const html = `
-            <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) this.remove()">
-              <div style="background:white;border-radius:16px;max-width:750px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+        <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) this.remove()">
+            <div style="background:white;border-radius:16px;max-width:750px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
                 <div style="padding:16px 20px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;">
-                  <div>
-                    <div style="font-weight:700;font-size:16px;color:#2f4a75;">Diena ${round} · ${label}</div>
-                    <div style="font-size:12px;color:#888;margin-top:4px;">Clearing kaina: <strong>${typeof mp === 'number' ? mp.toFixed(2) : mp} $/MWh</strong></div>
-                  </div>
-                  <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:4px 8px;">×</button>
+                    <div>
+                        <div style="font-weight:700;font-size:16px;color:#2f4a75;">Diena ${round} · ${label}</div>
+                        <div style="font-size:12px;color:#888;margin-top:4px;">Rinkos kaina: <strong>${typeof mp === 'number' ? mp.toFixed(2) : mp} $/MWh</strong></div>
+                    </div>
+                    <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:4px 8px;">×</button>
                 </div>
                 <div style="padding:20px;overflow-y:auto;flex:1;">
-                  <div style="margin-bottom:20px;">
-                    <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
-                    <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
-                      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
-                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
-                      </div>
-                      <div style="position:relative;height:220px;">
-                        <canvas id="supplyChart_${modalId}"></canvas>
-                      </div>
-
-                      <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;" id="supplyStats_${modalId}">
-                          <span>Iš viso parduodama: <strong>${totalSupply} MW</strong></span>
-                          <span>Iš viso perkama: <strong>${totalDemand} MW</strong></span>
-                          <span>Iš viso parduodama: <strong>${totalDemand2} MW</strong></span>
-                          <span>Min: <strong>${Math.min(...supplyData.values)} MW</strong></span>
-                          <span>Max: <strong>${Math.max(...supplyData.values)} MW</strong></span>
-                      </div>
+                    <div style="margin-bottom:20px;">
+                        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
+                        <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
+                            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
+                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
+                            </div>
+                            <div style="position:relative;height:220px;">
+                                <canvas id="supplyChart_${modalId}"></canvas>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
+                                <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
+                                <span>Paklausa (pirkimas): <strong>${totalBuyDemand} MW</strong></span>
+                                <span>Pasiūla (pardavimas): <strong>${totalSellSupply} MW</strong></span>
+                            </div>
+                        </div>
                     </div>
-                  </div>
-                  <div style="margin-top:20px;">
-                    <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Komandų pasiūlymai</div>
-                    ${rows.length ? rows.map((row, ri) => `
-                      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid #e8dfd4;">
-                        <span style="width:10px;height:10px;border-radius:50%;background:${TEAM_COLORS[ri % TEAM_COLORS.length]};flex-shrink:0;"></span>
-                        <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(row.name)}</span>
-                        ${row.row && row.row.price ? `
-                          <span style="font-size:12px;color:#2f4a75;font-weight:600;">${row.row.price} $/MWh</span>
-                          <span style="font-size:11px;color:#555;">${row.row.mw} MW</span>
-                          <span style="font-size:11px;font-weight:600;color:${row.row.type === 'buy' ? '#27ae60' : '#e74c3c'};">${row.row.type === 'buy' ? 'pirk.' : 'pard.'}</span>
-                          ${row.submitted ? '<span style="font-size:10px;background:#e8f8f0;color:#1e8449;padding:2px 8px;border-radius:12px;">pateikta</span>' : ''}
-                        ` : '<span style="color:#ccc;font-size:11px;">— nepateikta</span>'}
-                      </div>`).join('') : '<p style="color:#bbb;text-align:center;padding:16px;font-size:12px;">Nėra komandų</p>'}
-                  </div>
+                    <div style="margin-top:20px;">
+                        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Komandų pasiūlymai šią valandą</div>
+                        ${rows.length ? rows.map((row, ri) => {
+                const color = TEAM_COLORS[row.teamIndex % TEAM_COLORS.length];
+                return `
+                                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid #e8dfd4;">
+                                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+                                    <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(row.name)}</span>
+                                    ${row.bid && row.bid.price ? `
+                                        <span style="font-size:12px;color:#2f4a75;font-weight:600;">${row.bid.price} $/MWh</span>
+                                        <span style="font-size:11px;color:#555;">${row.bid.mw} MW</span>
+                                        <span style="font-size:11px;font-weight:600;color:${row.bid.type === 'buy' ? '#27ae60' : '#e74c3c'};">${row.bid.type === 'buy' ? 'pirkimas' : 'pardavimas'}</span>
+                                        ${row.submitted ? '<span style="font-size:10px;background:#e8f8f0;color:#1e8449;padding:2px 8px;border-radius:12px;">pateikta</span>' : '<span style="font-size:10px;background:#fef9e7;color:#d68910;padding:2px 8px;border-radius:12px;">juodraštis</span>'}
+                                    ` : '<span style="color:#ccc;font-size:11px;">— nėra pasiūlymo</span>'}
+                                </div>
+                            `;
+            }).join('') : '<p style="color:#bbb;text-align:center;padding:16px;font-size:12px;">Nėra komandų</p>'}
+                    </div>
                 </div>
-              </div>
-            </div>`;
+            </div>
+        </div>`;
 
             document.body.insertAdjacentHTML('beforeend', html);
 
             setTimeout(() => {
                 const canvas = document.getElementById(`supplyChart_${modalId}`);
                 if (canvas) {
-                    // Generate demand curve with 5-8 points
-                    const basePrice = s.marketPrice || 70;
                     const maxQuantity = totalSupply * 1.2;
-                    const demandPoints = generateDemandCurve(maxQuantity, basePrice, round, hour);
-
-                    const result = renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour);
-
-                    const statsDiv = document.getElementById(`supplyStats_${modalId}`);
+                    const demandPoints = generateDemandCurve(maxQuantity, mp, round, hour);
+                    renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour);
                 }
             }, 50);
         }
+        function generateSupplyStackForHour(round, hour) {
+            let seed = round * 31 + hour * 7;
+            const rng = () => {
+                seed = (seed * 16807) % 2147483647;
+                return (seed - 1) / 2147483646;
+            };
 
-        // Render chart into projector canvas
+            const groups = [
+                { name: 'Vėjas', color: '#4A90E2', base: 200 },
+                { name: 'Saulė', color: '#F5A623', base: 150 },
+                { name: 'Dujos', color: '#7B8D8E', base: 175 },
+                { name: 'Vanduo', color: '#2ECC71', base: 120 },
+                { name: 'Kita', color: '#9B59B6', base: 165 }
+            ];
+
+            const dayMults = [
+                [0.8, 0.9, 1.0, 1.1, 1.2],
+                [0.7, 1.0, 1.1, 0.9, 1.3],
+                [1.2, 0.8, 1.1, 0.9, 1.0],
+                [1.1, 1.2, 0.7, 1.0, 0.9],
+                [1.0, 1.1, 0.9, 1.2, 0.8]
+            ];
+            const mult = dayMults[(round - 1) % dayMults.length];
+
+            const labels = [];
+            const values = [];
+            const colors = [];
+
+            groups.forEach((g, gi) => {
+                for (let i = 0; i < 6; i++) {
+                    labels.push(`${g.name} ${i + 1}`);
+                    const hourFactor = 0.7 + (hour / 24) * 0.6;
+                    const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
+                    values.push(Math.max(10, value));
+                    colors.push(g.color);
+                }
+            });
+
+            const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
+            combined.sort((a, b) => a.value - b.value);
+
+            return {
+                labels: combined.map(c => c.label),
+                values: combined.map(c => c.value),
+                colors: combined.map(c => c.color)
+            };
+        }
+        // Render chart into interim result canvas
         function renderChartInto(canvasId, s) {
             const ctx = document.getElementById(canvasId); if (!ctx) return;
             const round = Math.max(s.currentRound - 1, s.currentRound || 1);
@@ -2142,11 +2565,23 @@
                 }
             });
         }
-
         // ── HELPERS ────────────────────────────────────
+        function toggleHourBids(hourId) {
+            const content = document.getElementById(hourId);
+            const icon = document.getElementById(hourId + '_icon');
+
+            if (content) {
+                if (content.style.display === 'none' || content.style.display === '') {
+                    content.style.display = 'block';
+                    if (icon) icon.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    if (icon) icon.textContent = '▶';
+                }
+            }
+        }
         // Draw demand curve overlay on the supply chart
         let demandCurveDrawn = false;
-
         function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex, values) {
             if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
 
@@ -2224,54 +2659,31 @@
             ctx.restore();
         }
         // excess function
-        function generateDemandCurve(maxQuantity, basePrice, round, hour) {
-            const points = [];
-            let seed = round * 31 + hour * 17;
-            const rng = () => {
-                seed = (seed * 16807) % 2147483647;
-                return (seed - 1) / 2147483646;
-            };
-            const numPoints = 5 + Math.floor(rng() * 4); // 5 to 8 points
-            for (let i = 0; i <= numPoints; i++) {
-                const t = i / numPoints; // 0 to 1
-                // Quantity: from low (0) to high (maxQuantity * 1.2)
-                const quantity = Math.round(maxQuantity * 1.2 * t);
-                // Price: from high (basePrice * 1.5) down to low (basePrice * 0.5)
-                const price = (basePrice * 1.5) * (1 - t * 0.7);
-
-                // Add some random variation
-                const priceVariation = 0.9 + rng() * 0.2;
-                const finalPrice = Math.max(15, Math.round(price * priceVariation * 10) / 10);
-
-                if (quantity <= maxQuantity * 1.2) {
-                    points.push({ x: quantity, y: finalPrice });
-                }
-            }
-            // Sort by quantity ascending
-            points.sort((a, b) => a.x - b.x);
-            // Remove duplicates
-            const unique = [];
-            const seenX = new Set();
-            for (let i = 0; i < points.length; i++) {
-                if (!seenX.has(points[i].x)) {
-                    seenX.add(points[i].x);
-                    unique.push(points[i]);
-                }
-            }
-            return unique;
-        }
-        //// --- maybe
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-
         function getCurrentBid(t, r) { return (t.bids || []).find(b => b.round === r) || null; }
         function calcBidStatus(s) { let sub = 0, dft = 0, non = 0; s.teams.forEach(t => { const b = getCurrentBid(t, s.currentRound); if (!b) non++; else if (b.submitted) sub++; else dft++; }); return { submitted: sub, draft: dft, none: non }; }
         function statusLabel(st) { return { waiting: 'Laukiama', active: 'Aktyvi', finished: 'Baigta' }[st] || st; }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('open');
+            if (id === 'playerModal' && pgvChartInstance) {
+                pgvChartInstance.destroy();
+                pgvChartInstance = null;
+            }
+            if (window.projectorChartInstance) {
+                try { window.projectorChartInstance.destroy(); } catch (e) { }
+                window.projectorChartInstance = null;
+            }
+        }
+        /*
         function closeModal(id) { document.getElementById(id).classList.remove('open'); if (id === 'playerModal' && pgvChartInstance) { pgvChartInstance.destroy(); pgvChartInstance = null; } }
+        */
         function closeAllModals() {
             document.querySelectorAll('.modal-bd').forEach(m => m.classList.remove('open'));
             if (pgvChartInstance) {
@@ -2288,7 +2700,6 @@
         function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
         function nav(path) { window.location.href = path; }
         function logout() { if (confirm('Atsijungti?')) { sessionStorage.removeItem('isAdmin'); window.location.href = '/pages/login.html'; } }
-
         // ── INIT ───────────────────────────────────────
         loadState();
         renderActiveSessions();
