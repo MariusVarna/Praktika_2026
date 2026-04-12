@@ -10,3 +10,6 @@ ENV/
 .vscode/
 .idea/
 *.xlsx
+debug_enrich.py
+test_e2e_api.py
+reset_admin.py

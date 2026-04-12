@@ -10,6 +10,7 @@ class Bid(Base):
     round_id = Column(Integer, ForeignKey("rounds.id"))
     hour = Column(Integer) # 0-23
     volume_mwh = Column(Float)
+    filled_volume = Column(Float, default=0.0) # Actual volume cleared in the market
     price = Column(Float)
     bid_type = Column(Boolean) # True for 'buy' (charge), False for 'sell' (discharge)
 

@@ -14,7 +14,7 @@ class SessionService:
         self.db = db
         self.market_engine = MarketEngine()
 
-    def create_session(self, session_in: schemas.SessionCreate) -> models.Session:
+    def create_session(self, session_in: schemas.SessionCreate) -> schemas.SessionResponse:
         # FIX: Add validation for battery_initial_mwh <= battery_max_mwh
         if session_in.battery_initial_mwh > session_in.battery_max_mwh:
             raise ValueError("Initial battery capacity cannot exceed max battery capacity")
@@ -28,9 +28,11 @@ class SessionService:
 
         db_session = models.Session(
             admin_id=session_in.admin_id,
+            game_name=session_in.game_name,
             join_code=code,
             start_day=session_in.start_day,
             duration_days=session_in.duration_days,
+            bandwidth=session_in.bandwidth,
             start_budget=session_in.start_budget,
             penalty_k=session_in.penalty_k,
             penalty_b=session_in.penalty_b,
@@ -45,12 +47,103 @@ class SessionService:
             max_solar_mw=session_in.max_solar_mw,
             max_demand_mw=session_in.max_demand_mw,
             forecast_error_margin=session_in.forecast_error_margin,
-            status="pending"
+            status="waiting"
         )
         self.db.add(db_session)
         self.db.commit()
         self.db.refresh(db_session)
-        return db_session
+        return self._enrich_session(db_session)
+
+    def list_sessions(self, admin_id: str) -> List[schemas.SessionResponse]:
+        sessions = self.db.query(models.Session).filter(models.Session.admin_id == admin_id).all()
+        return [self._enrich_session(s) for s in sessions]
+
+    def get_session(self, session_id: int) -> schemas.SessionResponse:
+        session = self.db.query(models.Session).filter(models.Session.id == session_id).first()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        return self._enrich_session(session)
+
+    def get_session_by_pin(self, pin: str) -> schemas.SessionResponse:
+        # Strict match (just handle casing and whitespace for usability)
+        strict_pin = pin.strip().upper()
+        session = self.db.query(models.Session).filter(models.Session.join_code == strict_pin).first()
+        
+        if not session:
+            raise HTTPException(status_code=404, detail="Session with this PIN not found")
+        return self._enrich_session(session)
+
+    def _enrich_session(self, session: models.Session) -> schemas.SessionResponse:
+        # Calculate current round and day
+        current_round_num = 1
+        latest_calc_round = None
+        if session.rounds:
+            current_round_num = max(r.round_number for r in session.rounds)
+            calc_rounds = [r for r in session.rounds if r.status == "calculated"]
+            if calc_rounds:
+                latest_calc_round = max(calc_rounds, key=lambda r: r.round_number)
+
+        current_day = session.start_day + current_round_num - 1
+        
+        # Dynamic stats from last round
+        m_price = 70.0 # Standard fallback
+        m_demand = 0.0
+        if latest_calc_round and latest_calc_round.results:
+            prices = [res.clearing_price for res in latest_calc_round.results]
+            vols = [res.total_volume_cleared for res in latest_calc_round.results]
+            if prices:
+                m_price = round(sum(prices) / len(prices), 2)
+            m_demand = round(sum(vols), 1)
+
+        # Get last 15 transactions
+        recent_txs = []
+        try:
+            tx_data = (self.db.query(models.Bid, models.User, models.Round)
+                .join(models.User, models.Bid.user_id == models.User.id)
+                .join(models.Round, models.Bid.round_id == models.Round.id)
+                .filter(models.User.session_id == session.id, models.Bid.filled_volume > 1e-6)
+                .order_by(models.Bid.id.desc())
+                .limit(15).all())
+            
+            for b, u, r in tx_data:
+                recent_txs.append({
+                    "id": b.id,
+                    "type": "buy" if b.bid_type else "sell",
+                    "teamName": u.name,
+                    "mw": round(b.filled_volume, 2),
+                    "price": b.price,
+                    "round": r.round_number
+                })
+        except Exception:
+            pass # Fallback for empty/new DBs
+
+        return schemas.SessionResponse.model_validate({
+            **{c.name: getattr(session, c.name) for c in session.__table__.columns},
+            "current_round": current_round_num,
+            "current_day": current_day,
+            "market_price": m_price,
+            "demand": m_demand,
+            "weather": "Giedra", # Seed data profiles imply weather but let's keep simple string for now
+            "teams": [
+                {
+                    **{c.name: getattr(u, c.name) for c in u.__table__.columns},
+                    "state": u.state,
+                    "bids": [
+                        {
+                            **{c.name: getattr(b, c.name) for c in b.__table__.columns},
+                            "round": b.round.round_number,
+                            "mw": b.volume_mwh,
+                            "price": b.price,
+                            "type": "buy" if b.bid_type else "sell",
+                            "submitted": True,
+                            "filled_volume": b.filled_volume
+                        } for b in u.bids
+                    ]
+                } for u in session.users
+            ],
+            "rounds": session.rounds,
+            "transactions": recent_txs
+        })
 
     def get_forecast(self, session_id: int, round_id: int) -> schemas.ForecastingResponse:
         session = self.db.query(models.Session).filter(models.Session.id == session_id).first()
@@ -58,11 +151,11 @@ class SessionService:
             raise HTTPException(status_code=404, detail="Session not found")
         
         # FIX: Use round.round_number not round_id (DB PK)
-        round = self.db.query(models.Round).filter(models.Round.id == round_id).first()
-        if not round or round.session_id != session_id:
+        round_obj = self.db.query(models.Round).filter(models.Round.id == round_id).first()
+        if not round_obj or round_obj.session_id != session_id:
             raise HTTPException(status_code=404, detail="Round not found in session")
         
-        day_to_use = session.start_day + round.round_number - 1
+        day_to_use = session.start_day + round_obj.round_number - 1
         day_data = get_day_seed(day_to_use)
         
         if not day_data:
@@ -141,4 +234,6 @@ class SessionService:
         return {"session_id": session_id, "standings": standings_data}
 
     def _generate_join_code(self, length=6):
-        return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+        # Exclude ambiguous characters (0, O, 1, I) to prevent user confusion
+        chars = "".join([c for c in string.ascii_uppercase + string.digits if c not in '0OI1'])
+        return ''.join(random.choices(chars, k=length))

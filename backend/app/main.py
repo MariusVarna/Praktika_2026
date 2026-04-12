@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.api import sessions, admin, players, bids
+from app.api import sessions, admin, players, bids, admin_auth
 from app.websockets import manager
 import logging
 import signal
@@ -14,16 +14,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Electricity Market Game API")
 
-# FIX: Add graceful shutdown handler for signal management
-def shutdown_handler(signum, frame):
-    """Gracefully shut down server and close DB connections."""
-    logger.warning(f"Received signal {signum}, initiating graceful shutdown...")
-    # Close database connection pool and websocket connections
-    engine.dispose()
-    sys.exit(0)
 
-signal.signal(signal.SIGTERM, shutdown_handler)
-signal.signal(signal.SIGINT, shutdown_handler)
 
 # Setup CORS
 app.add_middleware(
@@ -35,6 +26,7 @@ app.add_middleware(
 )
 
 # Include Routers
+app.include_router(admin_auth.router, prefix="/api/admin/auth", tags=["auth"])
 app.include_router(sessions.router, prefix="/api/sessions", tags=["sessions"])
 app.include_router(admin.router, prefix="/api/admin/sessions", tags=["admin"])
 app.include_router(players.router, prefix="/api/players", tags=["players"])

@@ -11,17 +11,21 @@ class BatteryService:
     """
     
     @staticmethod
-    def apply_charge(current_battery_mwh: float, charge_needed: float, battery_max_mwh: float) -> tuple[float, bool]:
-        """Apply charging with efficiency factor.
+    def apply_charge(current_battery_mwh: float, charge_needed: float, battery_max_mwh: float, bandwidth_mw: float = 1e9) -> tuple[float, bool]:
+        """Apply charging with efficiency factor and bandwidth constraint.
         
         Args:
             current_battery_mwh: Current battery level (MWh)
             charge_needed: Energy to charge (already efficiency-adjusted, MWh)
             battery_max_mwh: Battery capacity limit (MWh)
+            bandwidth_mw: Max charge rate allowed (MW/h)
             
         Returns:
-            (new_battery_level, charge_succeeded) - succeeded=False if over-capacity
+            (new_battery_level, charge_succeeded) - succeeded=False if over-capacity or over-bandwidth
         """
+        if charge_needed > bandwidth_mw:
+            return current_battery_mwh, False
+
         new_level = current_battery_mwh + charge_needed
         if new_level <= battery_max_mwh:
             return round(new_level, 4), True
@@ -29,16 +33,20 @@ class BatteryService:
             return current_battery_mwh, False
 
     @staticmethod
-    def apply_discharge(current_battery_mwh: float, discharge_needed: float) -> tuple[float, bool]:
-        """Apply discharging with constraint validation.
+    def apply_discharge(current_battery_mwh: float, discharge_needed: float, bandwidth_mw: float = 1e9) -> tuple[float, bool]:
+        """Apply discharging with constraint and bandwidth validation.
         
         Args:
             current_battery_mwh: Current battery level (MWh)
             discharge_needed: Energy to discharge (accounting for efficiency, MWh)
+            bandwidth_mw: Max discharge rate allowed (MW/h)
             
         Returns:
-            (new_battery_level, discharge_succeeded) - succeeded=False if insufficient battery
+            (new_battery_level, discharge_succeeded) - succeeded=False if insufficient battery or over-bandwidth
         """
+        if discharge_needed > bandwidth_mw:
+            return current_battery_mwh, False
+
         if current_battery_mwh >= discharge_needed:
             new_level = current_battery_mwh - discharge_needed
             return round(new_level, 4), True

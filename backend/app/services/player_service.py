@@ -23,10 +23,11 @@ class PlayerService:
         ).first()
         
         if existing_user:
-            raise HTTPException(status_code=400, detail="Team name already taken in this session")
+            if user_in.password and existing_user.password == user_in.password:
+                return existing_user
+            raise HTTPException(status_code=400, detail="Team name already taken or wrong password")
 
-        # Create User
-        db_user = models.User(name=user_in.name, session_id=session.id)
+        db_user = models.User(name=user_in.name, password=user_in.password, session_id=session.id)
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)

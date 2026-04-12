@@ -13,8 +13,8 @@
  *   <script src="/js/api.js"></script>
  */
 
-//const API_BASE = window.API_BASE || 'http://localhost:8000';
-const API_BASE = (window.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+// For local development on Mac/Linux, 127.0.0.1 is more reliable than localhost (which might try IPv6)
+const API_BASE = (window.API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
 /**
  * WebSocket Base URL (derived from API_BASE)
@@ -32,11 +32,11 @@ console.log('[API] Configured endpoints:', { API_BASE, WS_BASE });
  * Stored in sessionStorage (cleared when browser tab closes)
  */
 const KEYS = {
-    ADMIN_ID: 'adminId',       // Admin authentication token (returned on session create)
+    ADMIN_ID: 'adminId',        // Admin authentication token (the username)
+    ADMIN_USERNAME: 'adminUser', // Admin username
     SESSION_ID: 'sessionId',     // Active session database ID
     JOIN_CODE: 'joinCode',      // 6-digit PIN code to join session
     USER_ID: 'userId',        // Player's user ID (returned on join)
-    // TEAM_ID: 'teamId',       // Player's team ID
     TEAM_NAME: 'teamName',      // Player's team name
     ROUND_ID: 'roundId',       // Current round database ID
     ROUND_NUM: 'roundNum',      // Current round number (1-based)
@@ -44,16 +44,9 @@ const KEYS = {
 
 // ── HELPER FUNCTIONS ─────────────────────────────────────────────────────────
 
-/**
- * Generic fetch wrapper with error handling
- * 
- * @param {string} path - API endpoint path (something like '/api/sessions/')
- * @param {object} options - Fetch options (method, body, headers)
- * @returns {Promise<object|null>} Parsed JSON response or null for 204
- * @throws {Error} With error message from API or generic error
- */
 async function apiFetch(path, options = {}) {
     const url = API_BASE + path;
+    const adminId = sessionStorage.getItem(KEYS.ADMIN_ID);
 
     const defaults = {
         headers: {
@@ -61,225 +54,124 @@ async function apiFetch(path, options = {}) {
         },
     };
 
-    const merged = { ...defaults, ...options };
-
-    // Auto-stringify body if it's an object
-    if (merged.body && typeof merged.body !== 'string') {
-        merged.body = JSON.stringify(merged.body);
+    if (adminId) {
+        defaults.headers['admin-id'] = adminId;
     }
 
-    console.log(`[API] ${merged.method || 'GET'} ${path}`, merged.body ? JSON.parse(merged.body) : '');
+    const merged = { ...defaults, ...options };
+    merged.headers = { ...defaults.headers, ...options.headers };
 
+    // Auto-stringify body if it's an object
+    if (merged.body && typeof merged.body !== 'string' && !(merged.body instanceof FormData)) {
+        merged.body = JSON.stringify(merged.body);
+    }
+// ... (log lines removed for brevity in snippet)
     try {
         const res = await fetch(url, merged);
-
-        // Handle errors
         if (!res.ok) {
             let detail = res.statusText;
             try {
                 const errorData = await res.json();
                 detail = errorData.detail || detail;
-            } catch (_) {
-                // If response isn't JSON, use statusText
-            }
-            console.error(`[API] Error ${res.status}:`, detail);
+            } catch (_) {}
             throw new Error(detail);
         }
-
-        // Handle no-content responses
-        if (res.status === 204) {
-            console.log('[API] 204 No Content');
-            return null;
-        }
-
-        const data = await res.json();
-        console.log('[API] Response:', data);
-        return data;
-
+        if (res.status === 204) return null;
+        return await res.json();
     } catch (error) {
         console.error('[API] Request failed:', error);
         throw error;
     }
 }
 
+// ── AUTH API ─────────────────────────────────────────────────────────────────
+
+const Auth = {
+    register(username, password) {
+        return apiFetch('/api/admin/auth/register', {
+            method: 'POST',
+            body: { username, password }
+        });
+    },
+    async login(username, password) {
+        const res = await apiFetch('/api/admin/auth/login', {
+            method: 'POST',
+            body: { username, password }
+        });
+        if (res && res.admin_token) {
+            sessionStorage.setItem(KEYS.ADMIN_ID, res.admin_token);
+            sessionStorage.setItem(KEYS.ADMIN_USERNAME, res.username);
+        }
+        return res;
+    },
+    logout() {
+        sessionStorage.removeItem(KEYS.ADMIN_ID);
+        sessionStorage.removeItem(KEYS.ADMIN_USERNAME);
+    }
+};
+
 // ── SESSION API ──────────────────────────────────────────────────────────────
 
-/**
- * Session Management Endpoints
- * Handle creation, deletion, and querying of game sessions
- */
 const Sessions = {
-
-    /**
-     * Create a new game session
-     * 
-     * POST /api/sessions/
-     * 
-     * @param {object} payload - Session configuration
-     * @param {string} payload.gameName - Display name for the game
-     * @param {number} payload.startDay - Starting day number
-     * @param {number} payload.numRounds - Total number of rounds
-     * @param {number} payload.maxPower - Battery capacity (MW)
-     * @param {number} payload.bandwidth - Bandwidth (MW)
-     * @param {number} payload.efficiency - Battery efficiency (%)
-     * @param {number} payload.penaltyPrice - Penalty for incorrect bids ($/MWh)
-     * 
-     * @returns {Promise<object>} Session object with generated PIN code
-     * 
-     * Format:
-     *   const session = await Sessions.create({
-     *     gameName: "El marketo por favor",
-     *     startDay: 1,
-     *     numRounds: 5,
-     *     maxPower: 100,
-     *     bandwidth: 50,
-     *     efficiency: 90,
-     *     penaltyPrice: 150
-     *   });
-     *   console.log('Session PIN:', session.pin);
-     */
-    create(payload) {
+    create(data) {
+        const payload = {
+            admin_id: sessionStorage.getItem(KEYS.ADMIN_ID),
+            game_name: data.gameName || 'Naujas žaidimas',
+            start_day: data.startDay || 1,
+            duration_days: data.numRounds || 5,
+            bandwidth: data.bandwidth || 50,
+            start_budget: data.startBudget || 10000,
+            penalty_k: data.penaltyK || 0.5,
+            penalty_b: data.penaltyB || 5.0,
+            pro_rata_enabled: data.proRata !== undefined ? data.proRata : true,
+            battery_max_mwh: data.maxPower || 100,
+            battery_initial_mwh: data.initialPower || 20,
+            battery_efficiency_charge: (data.efficiency || 90) / 100,
+            battery_efficiency_discharge: (data.efficiency || 90) / 100,
+            penalty_price: data.penaltyPrice || 150,
+            base_demand_mw: data.baseDemand || 500,
+            max_wind_mw: data.maxWind || 1000,
+            max_solar_mw: data.maxSolar || 1000,
+            max_demand_mw: data.maxDemand || 1000,
+            forecast_error_margin: 0.15
+        };
         return apiFetch('/api/sessions/', {
             method: 'POST',
             body: payload
         });
     },
-
-    /**
-     * Get market forecast for a specific round
-     * 
-     * GET /api/sessions/{sessionId}/round/{roundId}/forecast
-     * 
-     * @param {number} sessionId - Session database ID
-     * @param {number} roundId - Round number
-     * 
-     * @returns {Promise<object>} Forecast data with 24 hourly prices
-     * 
-     * Format:
-     *   {
-     *     marketPrice: 70,
-     *     demand: 500,
-     *     weather: "Giedra",
-     *     hourlyPrices: [65.2, 63.8, ...] // 24 values
-     *   }
-     */
+    getMy() {
+        return apiFetch('/api/sessions/my');
+    },
+    get(id) {
+        return apiFetch(`/api/sessions/${id}`);
+    },
+    getByPin(pin) {
+        return apiFetch(`/api/sessions/pin/${pin}`);
+    },
     getForecast(sessionId, roundId) {
         return apiFetch(`/api/sessions/${sessionId}/round/${roundId}/forecast`);
     },
-
-    /**
-     * Delete/archive a session
-     * 
-     * DELETE /api/sessions/{sessionId}?admin_id={adminId}
-     * 
-     * @param {number} sessionId - Session database ID
-     * @param {string} adminId - Admin authentication token
-     * 
-     * @returns {Promise<null>} 204 No Content on success
-     * 
-     * Note: Requires admin_id for authorization
-     */
-    delete(sessionId, adminId) {
-        return apiFetch(
-            `/api/sessions/${sessionId}?admin_id=${encodeURIComponent(adminId)}`,
-            { method: 'DELETE' }
-        );
+    delete(sessionId) {
+        return apiFetch(`/api/sessions/${sessionId}`, { method: 'DELETE' });
     },
 };
 
 // ── ADMIN API ────────────────────────────────────────────────────────────────
 
-/**
- * Admin Control Endpoints
- * Manage game flow: start session, calculate rounds, advance to next round
- * All endpoints require admin_id for authorization
- */
 const Admin = {
-
-    /**
-     * Start the game session (creates round 1)
-     * 
-     * POST /api/admin/sessions/{sessionId}/start?admin_id={adminId}
-     * 
-     * @param {number} sessionId - Session database ID
-     * @param {string} adminId - Admin authentication token
-     * 
-     * @returns {Promise<object>} Updated session with status='active'
-     * 
-     *   - Sets session.status = 'active'
-     *   - Sets session.currentRound = 1
-     *   - Broadcasts WebSocket update to all connected clients
-     */
-    startSession(sessionId, adminId) {
-        return apiFetch(
-            `/api/admin/sessions/${sessionId}/start?admin_id=${encodeURIComponent(adminId)}`,
-            { method: 'POST' }
-        );
+    startSession(sessionId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/start`, { method: 'POST' });
     },
-
-    /**
-     * End bidding and calculate results for a round
-     * 
-     * POST /api/admin/sessions/{sessionId}/round/{roundId}/calculate?admin_id={adminId}
-     * 
-     * @param {number} sessionId - Session database ID
-     * @param {number} roundId - Round number to calculate
-     * @param {string} adminId - Admin authentication token
-     * 
-     * @returns {Promise<object>} Calculation results with transactions and balances
-     * 
-     * Response format:
-     *   {
-     *     success: true,
-     *     results: {
-     *       clearingPrice: 68.5,
-     *       transactions: [{teamId, teamName, type, mw, price, profit}, ...],
-     *       teamBalances: {teamId: newBalance, ...}
-     *     }
-     *   }
-     * 
-     *   - Matches all team bids to market prices
-     *   - Calculates clearing prices per hour
-     *   - Updates team balances based on trades
-     *   - Records all transactions
-     *   - Closes betting (betsOpen = false)
-     */
-    calculateRound(sessionId, roundId, adminId) {
-        return apiFetch(
-            `/api/admin/sessions/${sessionId}/round/${roundId}/calculate?admin_id=${encodeURIComponent(adminId)}`,
-            { method: 'POST' }
-        );
+    calculateRound(sessionId, roundId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/round/${roundId}/calculate`, { method: 'POST' });
     },
-
-    /**
-     * Advance to the next round
-     * 
-     * POST /api/admin/sessions/{sessionId}/next?admin_id={adminId}
-     * 
-     * @param {number} sessionId - Session database ID
-     * @param {string} adminId - Admin authentication token
-     * 
-     * @returns {Promise<object>} New round info
-     * 
-     * Response format:
-     *   {
-     *     success: true,
-     *     newRound: 2,
-     *     newDay: 2
-     *   }
-     * 
-     *   - Increments session.currentRound
-     *   - Updates session.currentDay
-     *   - Sets roundStarted = false
-     *   - Generates new market conditions (price, demand, weather)
-     *   - Broadcasts update via WebSocket
-     */
-    nextRound(sessionId, adminId) {
-        return apiFetch(
-            `/api/admin/sessions/${sessionId}/next?admin_id=${encodeURIComponent(adminId)}`,
-            { method: 'POST' }
-        );
+    nextRound(sessionId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/next`, { method: 'POST' });
     },
+    getResults(sessionId, roundId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/round/${roundId}/results`);
+    }
 };
 
 // ── PLAYER API ───────────────────────────────────────────────────────────────
@@ -324,15 +216,19 @@ const Players = {
      *   - 404: Invalid PIN code
      *   - 409: Team name already taken (different password)
      */
-    join(name, joinCode) {
+    join(name, joinCode, password) {
         return apiFetch('/api/players/join', {
             method: 'POST',
             body: {
                 name,
-                join_code: joinCode
+                join_code: joinCode,
+                password
             }
         });
     },
+    getState(playerId) {
+        return apiFetch(`/api/players/${playerId}/state`);
+    }
 };
 
 // ── BIDS API ─────────────────────────────────────────────────────────────────
@@ -380,7 +276,7 @@ const Bids = {
     submit(userId, roundId, bidsArray) {
         // Filter out invalid bids before sending
         const cleanBids = bidsArray.filter(b =>
-            b.price > 0 && b.volume_mwh > 0
+            b.price !== undefined && b.volume_mwh > 0
         );
 
         return apiFetch(
@@ -567,6 +463,7 @@ const State = {
  * Allows usage in plain HTML scripts without module imports
  */
 window.API = {
+    Auth,
     Sessions,
     Admin,
     Players,

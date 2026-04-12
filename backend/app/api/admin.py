@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app import models
-from app.schemas import schemas
+from app import models, schemas
 from app.websockets import manager
 from app.services.round_service import RoundService
 from typing import Optional
@@ -18,7 +17,7 @@ async def start_session(session_id: int, admin_id: Optional[str] = Header(defaul
     if not session or session.admin_id != admin_id:
         raise HTTPException(status_code=404, detail="Session not found or unauthorized")
         
-    if session.status != "pending":
+    if session.status not in ["pending", "waiting"]:
         raise HTTPException(status_code=400, detail="Session already started")
         
     session.status = "active"

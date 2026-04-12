@@ -1145,38 +1145,71 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="/js/api.js"></script>
     <script>
         // ── STATE ──────────────────────────────────────
         let selectedRound = null;
         let sessions = [], prevSessions = [], activeSessionId = null;
 
         function saveState() {
-            sessionStorage.setItem('adminSessions', JSON.stringify(sessions));
-            sessionStorage.setItem('adminPrevSessions', JSON.stringify(prevSessions));
+            // Local persistence is now handled by the Backend.
+            // We just trigger renders here.
+            renderActiveSessions();
+            renderPreviousSessions();
         }
 
-        function loadState() {
+        async function loadState() {
             try {
-                const saved = sessionStorage.getItem('adminSessions');
-                if (saved) sessions = JSON.parse(saved);
-                const savedPrev = sessionStorage.getItem('adminPrevSessions');
-                if (savedPrev) prevSessions = JSON.parse(savedPrev);
-                [...sessions, ...prevSessions].forEach(session => {
-                    if (session.teams) {
-                        session.teams.forEach(team => {
-                            if (!team.batteryCapacity) {
-                                team.batteryCapacity = session.maxPower || 100;
-                            }
-                            if (team.batteryStored === undefined) {
-                                team.batteryStored = 20;
-                            }
-                        });
+                const results = await API.Sessions.getMy();
+                // Map backend fields to frontend UI expectations
+                const mapSession = s => {
+                    const latestRound = s.rounds && s.rounds.length ? s.rounds[s.rounds.length - 1] : null;
+                    const roundStatus = latestRound ? latestRound.status : null; // 'bidding' or 'calculated'
+                    const betsOpen = roundStatus === 'bidding';
+                    
+                    return {
+                        ...s,
+                        pin: s.join_code,
+                        gameName: s.game_name,
+                        numRounds: s.duration_days,
+                        currentRound: s.current_round,
+                        currentDay: s.current_day,
+                        marketPrice: s.market_price || 0,
+                        demand: s.demand || 0,
+                        weather: s.weather || '',
+                        createdAt: new Date(s.created_at).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short' }),
+                        teams: s.teams || [],
+                        transactions: s.transactions || [],
+                        roundStatus: roundStatus,
+                        betsOpen: betsOpen,
+                        round_id: latestRound ? latestRound.id : null
+                    };
+                };
+                sessions = results.filter(s => s.status !== 'finished').map(mapSession);
+                prevSessions = results.filter(s => s.status === 'finished').map(mapSession);
+
+                // Initialize real-time updates
+                sessions.forEach(s => startAdminWS(s.id));
+                saveState();
+            } catch (e) {
+                console.error('Failed to load sessions:', e);
+                toast('Klaida užkraunant duomenis');
+            }
+        }
+
+        let adminWS = {};
+        function startAdminWS(sessionId) {
+            if (adminWS[sessionId]) return;
+            try {
+                adminWS[sessionId] = window.WS.open(sessionId, {
+                    onMessage: (data) => {
+                        console.log('[AdminWS] Message:', data);
+                        if (data.event === 'TEAM_JOINED' || data.event === 'BID_SUBMITTED') {
+                            loadState(); // Refresh everything
+                        }
                     }
                 });
-            } catch (e) {
-                sessions = [];
-                prevSessions = [];
-            }
+            } catch (e) { console.error('WS failed', e); }
         }
 
         // ── SIDEBAR ────────────────────────────────────
@@ -1195,43 +1228,32 @@
             if (el) el.classList.add('active');
         }
 
-        // ── CREATE SESSION ─────────────────────────────
-        function createSession() {
+        async function createSession() {
             const gn = document.getElementById('gameName').value.trim();
             if (!gn) { toast('Įveskite žaidimo pavadinimą'); return; }
-            const pin = String(Math.floor(100000 + Math.random() * 900000));
-            const sd = +document.getElementById('startDay').value || 1;
-            const s = {
-                id: Date.now(),
-                pin: pin,
+            
+            const payload = {
                 gameName: gn,
-                status: 'waiting',
-                startDay: sd,
+                startDay: +document.getElementById('startDay').value || 1,
                 numRounds: +document.getElementById('numRounds').value || 5,
-                currentRound: 0,
-                currentDay: sd,
-                roundStarted: false,
-                betsOpen: false,
                 maxPower: +document.getElementById('maxPower').value || 100,
                 bandwidth: +document.getElementById('bandwidth').value || 50,
                 efficiency: +document.getElementById('efficiency').value || 85,
                 penaltyPrice: +document.getElementById('penaltyPrice').value || 150,
-                marketPrice: 70,
-                demand: 500,
-                weather: '',
-                createdAt: new Date().toLocaleString(),
-                completedAt: null,
-                teams: [],
-                transactions: [],
-                roundHistory: [],
-                marketPrices: {}
+                startBudget: +document.getElementById('startBudget')?.value || 10000,
+                penaltyK: 0.5,
+                penaltyB: 5.0
             };
-            sessions.push(s);
-            saveState();
-            document.getElementById('gameName').value = '';
-            toast('Sesija sukurta! PIN: ' + pin);
-            switchTab('active', document.querySelectorAll('.tbtn')[1]);
-            renderActiveSessions();
+
+            try {
+                const newSession = await API.Sessions.create(payload);
+                toast('Sesija sukurta! PIN: ' + newSession.join_code);
+                document.getElementById('gameName').value = '';
+                await loadState();
+                switchTab('active', document.querySelectorAll('.tbtn')[1]);
+            } catch (err) {
+                toast('Klaida kūrant sesiją: ' + err.message);
+            }
         }
         // ── ACTIVE LIST ────────────────────────────────
         function renderActiveSessions() {
@@ -1310,10 +1332,9 @@
                     </div>
                     <div><span class="bets-pill ${s.betsOpen ? 'bets-open-p' : 'bets-closed-p'}">${s.betsOpen ? '✅ Statymai atidaryti' : '🔒 Statymai uždaryti'}</span></div>
                     <div class="btn-grp" style="margin-top:10px;">
-                      ${isActive && !s.roundStarted ? `<button class="btn btn-start-round" onclick="startRound(${s.id})">▶ Pradėti raundą</button>` : ''}
-                      ${isActive && s.roundStarted ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">⏹ Baigti raundą</button>` : ''}
-                      ${isActive && s.roundStarted && !s.betsOpen ? `<button class="btn btn-success btn-sm" onclick="openBets(${s.id})">Atidaryti statymus</button>` : ''}
-                      ${isActive && s.roundStarted && s.betsOpen ? `<button class="btn btn-warn btn-sm" onclick="closeBets(${s.id})">Uždaryti statymus</button>` : ''}
+                      ${(s.status === 'waiting' || s.status === 'pending') ? `<button class="btn btn-success btn-lg btn-full" onclick="startSession(${s.id})" style="margin-bottom:12px;font-size:16px;">▶ Pradėti žaidimą</button>` : ''}
+                      ${s.status === 'active' && (!s.roundStatus || s.roundStatus === 'calculated') ? `<button class="btn btn-start-round" onclick="goToNextRound(${s.id})">▶ Kitas raundas</button>` : ''}
+                      ${s.status === 'active' && s.roundStatus === 'bidding' ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">⏹ Baigti raundą</button>` : ''}
                     </div>
                   </div>
                 </div>
@@ -1330,7 +1351,6 @@
                           <div class="online-dot"></div>
                         </div>`).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
                     </div>
-                    <button class="btn btn-sec btn-sm btn-full" onclick="addDemoTeam(${s.id})">+ Demo komanda</button>
                   </div>
                   <div class="card">
                     <h3>Statymų būsena — R${s.currentRound || '?'}</h3>
@@ -1378,82 +1398,66 @@
             setTimeout(() => renderAdminChart(s), 50);
         }
         // ── ROUND ACTIONS ──────────────────────────────
-        function startRound(id) {
-            const s = sessions.find(x => x.id === id); if (!s) return;
-            if (s.currentRound >= s.numRounds) { toast('Visi raundai baigti!'); return; }
-            s.roundStarted = true; s.betsOpen = false;
-            saveState(); toast(`▶ Raundas ${s.currentRound + 1} pradėtas`); renderManage();
+        async function startRound(id) {
+            goToNextRound(id); // Delegates to the robust next round logic
         }
-        function endRound(id) {
+
+        async function endRound(id) {
             const s = sessions.find(x => x.id === id); if (!s) return;
-            const finishedRound = s.currentRound + 1;
-            s.roundHistory.push({ round: finishedRound, day: s.currentDay, marketPrice: s.marketPrice, demand: s.demand, weather: s.weather });
-            s.betsOpen = false; s.roundStarted = false; s.currentRound++; s.currentDay = s.startDay + s.currentRound - 1;
-            s.teams.forEach(t => { const d = Math.floor(Math.random() * 6000 - 1000); t.balance = (t.balance || 0) + d; t.roundHistory = t.roundHistory || []; t.roundHistory.push({ round: finishedRound, balance: t.balance, profit: d }); });
-            saveState(); toast(`Raundas ${finishedRound} baigtas`); renderManage();
-            setTimeout(() => openProjector(id), 400);
+            const rid = s.round_id || (s.rounds && s.rounds.length ? s.rounds[s.rounds.length-1].id : null);
+            if (!rid) { toast('Nerastas raundo ID'); return; }
+
+            try {
+                toast('🧮 Skaičiuojami rezultatai...');
+                const result = await API.Admin.calculateRound(id, rid);
+                toast('✅ Raundas baigtas');
+                await loadState();
+                renderManage();
+                
+                if (result.session_finished) {
+                    toast('🏁 Sesija baigta!');
+                } else {
+                    // Auto-advance to next round in state (optional, or wait for explicit click)
+                    // await API.Admin.nextRound(id);
+                }
+            } catch (err) {
+                toast('Klaida skaičiuojant: ' + err.message);
+            }
+        }
+
+        async function goToNextRound(id) {
+            try {
+                await API.Admin.nextRound(id);
+                toast('⏭ Pradedamas naujas raundas');
+                await loadState();
+                renderManage();
+            } catch (err) {
+                toast('Klaida pereinant į kitą raundą: ' + err.message);
+            }
         }
         function openBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = true; saveState(); toast('Statymai atidaryti'); renderManage(); }
         function closeBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = false; saveState(); toast('Statymai uždaryti'); renderManage(); }
         function addExtraRound(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.numRounds++; saveState(); toast('Iš viso raundų: ' + s.numRounds); renderManage(); }
-        function startSession(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'active'; s.currentRound = 1; s.currentDay = s.startDay; s.roundStarted = false; saveState(); toast('▶ Sesija pradėta!'); openManage(id); }
-        function finishSession(id) { if (!confirm('Ar tikrai baigti sesiją?')) return; const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'finished'; s.completedAt = new Date().toLocaleString(); prevSessions.push(s); sessions = sessions.filter(x => x.id !== id); saveState(); toast('Sesija baigta'); document.getElementById('manageTabBtn').style.display = 'none'; switchTab('previous', document.querySelectorAll('.tbtn')[3]); renderPreviousSessions(); }
-        function archiveSession(id) { if (!confirm('Archyvuoti?')) return; const s = sessions.find(x => x.id === id); if (!s) return; s.status = 'finished'; s.completedAt = new Date().toLocaleString(); prevSessions.push(s); sessions = sessions.filter(x => x.id !== id); saveState(); toast('Archyvuota'); renderActiveSessions(); renderPreviousSessions(); }
-        // ── DEMO TEAM ──────────────────────────────────
-        function addDemoTeam(id) {
-            const s = sessions.find(x => x.id === id); if (!s) return;
-            const n = s.teams.length + 1, tid = 'team_' + Date.now();
-            const demoBids = [];
-            const demoBidRows = {};
-            const batteryCapacity = s.maxPower || 100;
-
-            for (let r = 1; r <= Math.max(s.currentRound + 1, 1); r++) {
-                const rows = Array.from({ length: 24 }, (_, hour) => {
-                    const numBids = Math.floor(Math.random() * 3) + 1; // 1 to 3 bids per hour
-                    const hourBids = [];
-                    for (let b = 0; b < numBids; b++) {
-                        let price;
-                        if (b === 0) price = 51 + Math.random() * 20;       // lower price range
-                        else if (b === 1) price = 56 + Math.random() * 20;  // mid price range
-                        else price = 61 + Math.random() * 20;               // higher price range
-                        price = price + (Math.random() * 10 - 5);           // random offsets
-                        price = Math.max(20, Math.min(150, price));
-
-                        const mw = Math.floor(5 + Math.random() * (batteryCapacity * 0.3)); // up to 30% of capacity
-                        const type = Math.random() > 0.5 ? 'buy' : 'sell';
-                        hourBids.push({
-                            price: +price.toFixed(1),
-                            mw: mw,
-                            type: type
-                        });
-                    }
-                    hourBids.sort((a, b) => a.price - b.price);
-                    return hourBids;
-                });
-
-                // For backward compatibility, also store a single bid representation
-                const singleBidRows = rows.map(hourBids => {
-                    // Use the first bid as the main bid for line chart
-                    return hourBids[0] || { price: 0, mw: 0, type: 'buy' };
-                });
-                demoBidRows[r] = rows;  // Store array of bids per hour
-                demoBids.push({ round: r, price: singleBidRows[0]?.price || 70, mw: singleBidRows[0]?.mw || 10, type: 'buy', submitted: r <= s.currentRound + 1 });
+        async function startSession(id) {
+            try {
+                await API.Admin.startSession(id);
+                toast('▶ Sesija pradėta!');
+                await loadState();
+                openManage(id);
+            } catch (err) {
+                toast('Klaida: ' + err.message);
             }
+        }
 
-            s.teams.push({
-                id: tid,
-                name: 'Komanda ' + n,
-                password: 'pw' + n + Math.floor(Math.random() * 900 + 100),
-                balance: 10000 + Math.floor(Math.random() * 5000),
-                bids: demoBids,
-                roundHistory: [],
-                bidRows: demoBidRows,
-                batteryStored: 20,
-                batteryCapacity: batteryCapacity
-            });
-
-            if (s.currentRound > 0) s.transactions.push({ day: s.currentDay, round: s.currentRound, teamName: 'Komanda ' + n, teamId: tid, type: 'buy', mw: Math.floor(20 + Math.random() * 40), price: Math.floor(60 + Math.random() * 30) });
-            saveState(); renderManage();
+        async function archiveSession(id) {
+            if (!confirm('Ar tikrai norite archyvuoti (ištrinti) šią sesiją?')) return;
+            try {
+                await API.Sessions.delete(id);
+                toast('Sesija archyvuota');
+                await loadState();
+            } catch (err) {
+                toast('Klaida archyvuojant: ' + err.message);
+            }
         }
         // ── PLAYER GAME VIEW MODAL ─────────────────────
         function openPlayerModal(sessionId, teamId) {
@@ -1463,17 +1467,6 @@
 
             if (!s.marketPrices) s.marketPrices = {};
             const NUM_HOURS = 24;
-            function getHourlyPrices(round) {
-                if (!s.marketPrices[round]) {
-                    const base = (s.roundHistory.find(r => r.round === round) || s).marketPrice || 70;
-                    s.marketPrices[round] = Array.from({ length: NUM_HOURS }, (_, h) => {
-                        const curve = [0.82, 0.78, 0.76, 0.75, 0.77, 0.85, 0.95, 1.08, 1.12, 1.10, 1.06, 1.04, 1.02, 1.00, 0.99, 1.01, 1.05, 1.13, 1.18, 1.14, 1.08, 1.00, 0.93, 0.87];
-                        return +(base * curve[h] * (0.92 + Math.random() * 0.16)).toFixed(2);
-                    });
-                }
-                return s.marketPrices[round];
-            }
-
             const cr = s.currentRound, nr = s.numRounds;
             const bids = t.bids || [];
             const totalSubmitted = bids.filter(b => b.submitted).length;
@@ -1526,7 +1519,7 @@
             pgvShow(t.id, sessionId, cr || 1);
         }
         let pgvChartInstance = null;
-        function pgvShow(teamId, sessionId, round) {
+        async function pgvShow(teamId, sessionId, round) {
             const s = sessions.find(x => x.id === sessionId); if (!s) return;
             const t = s.teams.find(x => x.id === teamId); if (!t) return;
             const NUM_HOURS = 24;
@@ -1545,14 +1538,7 @@
             const weather = rh ? rh.weather : s.weather;
             const isPast = round < s.currentRound;
 
-            if (!s.marketPrices) s.marketPrices = {};
-            if (!s.marketPrices[round]) {
-                s.marketPrices[round] = Array.from({ length: NUM_HOURS }, (_, h) => {
-                    const curve = [0.82, 0.78, 0.76, 0.75, 0.77, 0.85, 0.95, 1.08, 1.12, 1.10, 1.06, 1.04, 1.02, 1.00, 0.99, 1.01, 1.05, 1.13, 1.18, 1.14, 1.08, 1.00, 0.93, 0.87];
-                    return +(mp * curve[h] * (0.92 + Math.random() * 0.16)).toFixed(2);
-                });
-            }
-            const hourlyPrices = s.marketPrices[round];
+            const hourlyPrices = await getOrGenPrices(s, round);
 
             const bid = (t.bids || []).find(b => b.round === round);
             let rows = (t.bidRows && t.bidRows[round]);
@@ -1880,12 +1866,12 @@
                 }
             }, 50);
         }
-        function renderInterimResultChart(canvas, s, top3Teams, round) {
+        async function renderInterimResultChart(canvas, s, top3Teams, round) {
             if (window.projectorChartInstance) {
                 try { window.projectorChartInstance.destroy(); } catch (e) { }
             }
             // Get market prices for the round
-            const prices = getOrGenPrices(s, round);
+            const prices = await getOrGenPrices(s, round);
             const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
             // Build datasets for top 3 teams only
             const teamDatasets = top3Teams.map((t, ti) => {
@@ -2053,13 +2039,33 @@
             '#e91e63', '#ff9800', '#00bcd4', '#8bc34a', '#ff5722'
         ];
         let adminChartInstance = null;
-        function getOrGenPrices(s, round) {
+        async function getOrGenPrices(s, round) {
             if (!s.marketPrices) s.marketPrices = {};
             if (!s.marketPrices[round]) {
-                const rh = (s.roundHistory || []).find(r => r.round === round);
-                const base = rh ? rh.marketPrice : (s.marketPrice || 70);
-                const curve = [0.82, 0.78, 0.76, 0.75, 0.77, 0.85, 0.95, 1.08, 1.12, 1.10, 1.06, 1.04, 1.02, 1.00, 0.99, 1.01, 1.05, 1.13, 1.18, 1.14, 1.08, 1.00, 0.93, 0.87];
-                s.marketPrices[round] = Array.from({ length: 24 }, (_, h) => +(base * curve[h] * (0.92 + Math.random() * 0.16)).toFixed(2));
+                const roundObj = (s.rounds || []).find(r => r.round_number === round);
+                if (roundObj && roundObj.status === 'calculated') {
+                    try {
+                        const res = await API.Admin.getResults(s.id, roundObj.id);
+                        if (res && res.market_clearing) {
+                            s.marketPrices[round] = res.market_clearing.map(mc => mc.clearing_price);
+                        }
+                    } catch (e) { console.warn('Failed to load results for round', round, e); }
+                }
+                
+                // Fallback to forecast if results not available or round is active
+                if (!s.marketPrices[round] && roundObj) {
+                    try {
+                        const res = await API.Sessions.getForecast(s.id, roundObj.id);
+                        if (res && res.forecast) {
+                            s.marketPrices[round] = res.forecast.map(f => f.predicted_price);
+                        }
+                    } catch (e) { console.warn('Failed to load forecast for round', round, e); }
+                }
+
+                // Hard fallback to avoid crash
+                if (!s.marketPrices[round]) {
+                    s.marketPrices[round] = Array(24).fill(s.marketPrice || 70);
+                }
             }
             return s.marketPrices[round];
         }
@@ -2110,12 +2116,12 @@
                 });
             }
         };
-        function renderAdminChart(s) {
+        async function renderAdminChart(s) {
             const ctx = document.getElementById('adminChart'); if (!ctx) return;
             if (adminChartInstance) { adminChartInstance.destroy(); adminChartInstance = null; }
-
+            
             const round = selectedRound || s.currentRound || 1;
-            const prices = getOrGenPrices(s, round);
+            const prices = await getOrGenPrices(s, round);
             const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
 
             const teamDatasets = s.teams.map((t, ti) => {
@@ -2522,10 +2528,10 @@
             };
         }
         // Render chart into interim result canvas
-        function renderChartInto(canvasId, s) {
+        async function renderChartInto(canvasId, s) {
             const ctx = document.getElementById(canvasId); if (!ctx) return;
             const round = Math.max(s.currentRound - 1, s.currentRound || 1);
-            const prices = getOrGenPrices(s, round);
+            const prices = await getOrGenPrices(s, round);
             const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
 
             const teamDatasets = s.teams.map((t, ti) => {

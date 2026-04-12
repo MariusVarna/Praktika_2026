@@ -7,3 +7,4 @@ from .team_state import TeamState
 from .penalty import Penalty
 from .player_round_stats import PlayerRoundStats
 from .audit_log import AuditLog
+from .admin import Admin

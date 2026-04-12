@@ -7,6 +7,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    password = Column(String, nullable=True)
     session_id = Column(Integer, ForeignKey("sessions.id"))
 
     session = relationship("Session", back_populates="users")

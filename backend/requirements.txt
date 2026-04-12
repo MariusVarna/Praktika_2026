@@ -8,3 +8,5 @@ websockets
 httpx
 pytest
 pytest-asyncio
+passlib[bcrypt]
+python-multipart

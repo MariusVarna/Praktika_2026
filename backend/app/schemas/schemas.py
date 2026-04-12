@@ -12,6 +12,21 @@ from app.utils.sanitization import (
 class AdminJoin(BaseModel):
     admin_id: str
 
+class AdminCreate(BaseModel):
+    username: str = Field(..., min_length=1, max_length=50)
+    password: str = Field(..., min_length=1, max_length=100)
+
+class AdminLogin(BaseModel):
+    username: str
+    password: str
+
+class AdminResponse(BaseModel):
+    id: int
+    username: str
+    admin_token: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 # --- Bids ---
 class BidCreate(BaseModel):
     hour: int = Field(..., ge=0, le=23)
@@ -23,6 +38,7 @@ class BidResponse(BidCreate):
     id: int
     user_id: int
     round_id: int
+    filled_volume: float = 0.0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -36,6 +52,7 @@ class TeamStateResponse(BaseModel):
 # --- User / Team ---
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
+    password: Optional[str] = Field(None, max_length=100)
     join_code: str = Field(..., min_length=1, max_length=10)
     
     @field_validator('name')
@@ -70,9 +87,11 @@ class RoundResponse(BaseModel):
 # --- Session ---
 class SessionCreate(BaseModel):
     admin_id: str = Field(..., min_length=1, max_length=255)
+    game_name: str = Field("Naujas žaidimas", min_length=1, max_length=255)
     start_day: int = Field(1, ge=1)
-    duration_days: int = Field(1, ge=1, le=365)
-    start_budget: float = Field(1000.0, ge=0.0)
+    duration_days: int = Field(5, ge=1, le=365)
+    bandwidth: float = Field(50.0, gt=0.0)
+    start_budget: float = Field(10000.0, ge=0.0)
     penalty_k: float = Field(0.5, ge=0.0)
     penalty_b: float = Field(5.0, ge=0.0)
     pro_rata_enabled: bool = True
@@ -96,10 +115,37 @@ class SessionCreate(BaseModel):
         # Use comprehensive alphanumeric sanitization
         return sanitize_alphanumeric(v, max_length=255, allow_underscore=True, allow_hyphen=True)
 
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    session_id: int
+    password: Optional[str] = None
+    state: Optional[TeamStateResponse] = None
+    bids: List[BidResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class TransactionResponse(BaseModel):
+    id: int
+    type: str # 'buy' or 'sell'
+    teamName: str
+    mw: float
+    price: float
+    round: int
+
 class SessionResponse(SessionCreate):
     id: int
     join_code: str
     status: str
+    created_at: datetime
+    current_round: int = 1
+    current_day: int = 1
+    market_price: float = 0.0
+    demand: float = 0.0
+    weather: str = "Giedra"
+    teams: List[UserResponse] = []
+    rounds: List[RoundResponse] = []
+    transactions: List[TransactionResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 

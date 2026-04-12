@@ -207,7 +207,8 @@ class RoundService:
                 ts.current_battery_mwh, charge_success = self.battery_service.apply_charge(
                     ts.current_battery_mwh, 
                     charge_needed, 
-                    session.battery_max_mwh
+                    session.battery_max_mwh,
+                    session.bandwidth
                 )
                 if charge_success:
                     profit = round(-(fill_volume * result.clearing_price), 2)
@@ -217,7 +218,8 @@ class RoundService:
                 discharge_needed = self.battery_service.calculate_discharge_available(fill_volume, session.battery_efficiency_discharge)
                 ts.current_battery_mwh, discharge_success = self.battery_service.apply_discharge(
                     ts.current_battery_mwh, 
-                    discharge_needed
+                    discharge_needed,
+                    session.bandwidth
                 )
                 if discharge_success:
                     profit = round(fill_volume * result.clearing_price, 2)
@@ -229,6 +231,10 @@ class RoundService:
 
             ts.total_profit = round(float(ts.total_profit) + profit - total_penalty, 2)
             self.db.add(ts)
+
+            # Persist filled volume to the bid record for transaction history
+            bid.filled_volume = fill_volume
+            self.db.add(bid)
 
             # Initialize per-round aggregators if needed
             profit_acc[bid.user_id] = profit_acc.get(bid.user_id, 0.0) + profit

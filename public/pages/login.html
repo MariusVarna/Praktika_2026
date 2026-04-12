@@ -64,6 +64,8 @@
     </div>
   </div>
 </main>
+
+<script src="/js/api.js"></script>
 <script>
 const loginBtn = document.getElementById('loginBtn');
 const errorMsg = document.getElementById('errorMsg');
@@ -75,19 +77,29 @@ document.getElementById('usernameInput').addEventListener('keydown', e => { if(e
   document.getElementById(id).addEventListener('input', () => errorMsg.classList.remove('show'));
 });
 
-function login() {
+async function login() {
   const u = document.getElementById('usernameInput').value.trim();
   const p = document.getElementById('passwordInput').value;
-  if (u === 'admin' && p === 'admin123') {
-    sessionStorage.setItem('isAdmin','1');
-    sessionStorage.setItem('adminUser', u);
-    window.location.href = '/pages/admin.html';
-  } else {
-    errorMsg.classList.add('show');
-    const card = document.getElementById('loginCard');
-    card.classList.add('shake');
-    setTimeout(() => card.classList.remove('shake'), 400);
+  
+  if (!u || !p) {
+    showError('Įveskite duomenis');
+    return;
   }
+
+  try {
+    await API.Auth.login(u, p);
+    window.location.href = '/pages/admin.html';
+  } catch (err) {
+    showError('Neteisingas slapyvardis arba slaptažodis');
+  }
+}
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.classList.add('show');
+  const card = document.getElementById('loginCard');
+  card.classList.add('shake');
+  setTimeout(() => card.classList.remove('shake'), 400);
 }
 </script>
 </body>
