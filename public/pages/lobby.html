@@ -1,144 +1,465 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="lt">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Game Lobby</title>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lobby — Pavadinimas</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #f5f1e8 0%, #f0ebe0 100%); background-attachment: fixed; color: #333; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-    body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E"); background-size: 50px 50px; pointer-events: none; z-index: 0; }
-    body > * { position: relative; z-index: 1; }
-    header { background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%); height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); flex-shrink: 0; z-index: 50; }
-    .header-left { display: flex; align-items: center; gap: 15px; }
-    .menu-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.3s ease; }
-    .menu-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .app-name { color: white; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; }
-    .header-icon { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; cursor: pointer; transition: background 0.3s ease; }
-    .header-icon:hover { background: rgba(255, 255, 255, 0.3); }
-    .sidebar { position: fixed; left: 0; top: 70px; width: 280px; height: calc(100vh - 70px); background: white; border-right: 1px solid #e0d9cc; z-index: 100; transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); }
-    .sidebar.active { transform: translateX(0); }
-    .sidebar-header { padding: 20px; border-bottom: 1px solid #e0d9cc; background: #fafaf8; }
-    .sidebar-header h2 { font-size: 18px; font-weight: 600; color: #2f4a75; letter-spacing: 0.3px; }
-    .sidebar-item { padding: 16px 20px; cursor: pointer; transition: all 0.2s ease; color: #555; font-weight: 500; font-size: 15px; border-left: 3px solid transparent; user-select: none; }
-    .sidebar-item:hover { background: #f5f1e8; color: #2f4a75; border-left-color: #2f4a75; padding-left: 24px; }
-    .overlay { position: fixed; top: 70px; left: 0; width: 100%; height: calc(100vh - 70px); background: rgba(0, 0, 0, 0); z-index: 99; opacity: 0; pointer-events: none; transition: all 0.3s ease; }
-    .overlay.active { background: rgba(0, 0, 0, 0.4); opacity: 1; pointer-events: all; }
-    main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; gap: 20px; }
-    .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e8dfd4; }
-    .card h2 { font-size: 24px; font-weight: 600; color: #2f4a75; margin-bottom: 15px; }
-    .card h3 { font-size: 16px; font-weight: 600; color: #2f4a75; margin-bottom: 12px; }
-    .pin-display { font-size: 48px; font-weight: 700; color: #2f4a75; font-family: 'Courier New', monospace; letter-spacing: 8px; text-align: center; margin: 20px 0; padding: 20px; background: #f5f1e8; border-radius: 12px; border: 2px solid #d4cec2; }
-    .status-badge { display: inline-block; background: linear-gradient(135deg, #2f4a75 0%, #1f3a55 100%); color: white; padding: 8px 16px; border-radius: 12px; font-weight: 600; text-align: center; margin: 10px 0; font-size: 13px; }
-    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #e8dfd4; }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-label { color: #666; font-weight: 500; font-size: 14px; }
-    .stat-value { color: #2f4a75; font-weight: 600; font-size: 16px; }
-    @media (max-width: 480px) { main { padding: 15px; gap: 15px; } .card { padding: 16px; border-radius: 14px; } .pin-display { font-size: 36px; letter-spacing: 6px; } }
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{width:100%;height:100%;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);background-attachment:fixed;color:#333;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
+    body>*{position:relative;z-index:1;}
+
+    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);flex-shrink:0;z-index:50;}
+    .hl{display:flex;align-items:center;gap:10px;}
+    .menu-btn{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:6px;border-radius:7px;transition:background .2s;line-height:1;}
+    .menu-btn:hover{background:rgba(255,255,255,.1);}
+    .logo{color:white;font-size:15px;font-weight:700;}
+    .pin-hdr{font-family:'Courier New',monospace;font-size:13px;color:#a8d8ff;font-weight:700;letter-spacing:3px;}
+
+    .sidebar{position:fixed;left:0;top:56px;width:240px;height:calc(100vh - 56px);background:white;border-right:1px solid #e0d9cc;z-index:100;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:2px 0 8px rgba(0,0,0,.1);}
+    .sidebar.active{transform:translateX(0);}
+    .sb-head{padding:14px 18px;border-bottom:1px solid #e0d9cc;background:#fafaf8;}
+    .sb-head h2{font-size:14px;font-weight:700;color:#2f4a75;}
+    .sb-item{padding:12px 18px;cursor:pointer;transition:all .18s;color:#555;font-weight:500;font-size:13px;border-left:3px solid transparent;}
+    .sb-item:hover{background:#f5f1e8;color:#2f4a75;border-left-color:#2f4a75;padding-left:22px;}
+    .overlay{position:fixed;top:56px;left:0;width:100%;height:calc(100vh - 56px);background:rgba(0,0,0,0);z-index:99;opacity:0;pointer-events:none;transition:all .3s;}
+    .overlay.active{background:rgba(0,0,0,.4);opacity:1;pointer-events:all;}
+
+    main{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+
+    /* ── CARDS ── */
+    .card{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e8dfd4;}
+    .card h2{font-size:16px;font-weight:700;color:#2f4a75;margin-bottom:4px;}
+    .card h3{font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;}
+    .card-sub{font-size:11px;color:#999;margin-bottom:12px;}
+
+    /* ── SESSION INFO ── */
+    .sess-pin{font-family:'Courier New',monospace;font-size:28px;font-weight:700;color:#2f4a75;letter-spacing:7px;text-align:center;padding:12px;background:#e8f0fb;border-radius:10px;margin:10px 0;}
+    .sess-stats{display:flex;gap:0;border:1px solid #e8dfd4;border-radius:9px;overflow:hidden;margin-bottom:4px;}
+    .s-stat{flex:1;text-align:center;padding:8px 6px;border-right:1px solid #e8dfd4;}
+    .s-stat:last-child{border-right:none;}
+    .s-stat .v{font-size:14px;font-weight:700;color:#2f4a75;}
+    .s-stat .l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+
+    /* ── TABS inside card ── */
+    .ctabs{display:flex;border-bottom:2px solid #e8dfd4;margin-bottom:14px;}
+    .ctab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:600;color:#999;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
+    .ctab.active{color:#2f4a75;border-bottom-color:#2f4a75;}
+
+    /* ── FORMS ── */
+    label{display:block;font-size:11px;font-weight:600;color:#666;margin-bottom:3px;}
+    input[type=text],input[type=password]{width:100%;padding:9px 12px;border:1.5px solid #d4cec2;border-radius:8px;background:#fafaf8;color:#333;font-size:13px;transition:all .18s;}
+    input:focus{outline:none;border-color:#2f4a75;background:white;box-shadow:0 0 0 2px rgba(47,74,117,.1);}
+    .form-row{margin-bottom:10px;}
+
+    /* ── BUTTONS ── */
+    .btn{padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:all .18s;width:100%;margin-top:4px;}
+    .btn-primary{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);color:white;}
+    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(47,74,117,.3);}
+    .btn-sec{background:#e8dfd4;color:#555;}
+    .btn-sec:hover{background:#ddd5c8;}
+
+    /* ── BID MODE TOGGLE ── */
+    .bid-mode-box{border:1.5px solid #e0d9cc;border-radius:10px;padding:12px;margin-top:4px;}
+    .bid-mode-box h4{font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
+    .mode-option{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;border:1.5px solid #e0d9cc;margin-bottom:6px;cursor:pointer;transition:all .15s;}
+    .mode-option:last-child{margin-bottom:0;}
+    .mode-option.selected{border-color:#2f4a75;background:#eef4ff;}
+    .mode-option input[type=radio]{margin-top:2px;flex-shrink:0;accent-color:#2f4a75;}
+    .mode-option .m-title{font-size:12px;font-weight:700;color:#2f4a75;}
+    .mode-option .m-desc{font-size:10px;color:#888;margin-top:2px;}
+
+    /* ── PASSWORD REVEAL ── */
+    .pw-generated{background:#e8f8f0;border:1px solid #a9dfbf;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
+    .pw-generated.visible{display:block;}
+    .pw-label{font-size:10px;font-weight:700;color:#1e8449;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+    .pw-value{font-family:'Courier New',monospace;font-size:20px;font-weight:700;color:#1e8449;letter-spacing:3px;}
+    .pw-note{font-size:10px;color:#555;margin-top:4px;}
+
+    /* ── TEAM LIST ── */
+    .team-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-top:6px;}
+    .team-list::-webkit-scrollbar{width:4px;}
+    .team-list::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
+    .team-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border:1px solid #e8dfd4;border-radius:8px;}
+    .team-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#2f4a75,#1f3a55);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;flex-shrink:0;}
+    .team-name{font-size:13px;font-weight:600;color:#333;flex:1;}
+    .team-mode{font-size:10px;color:#888;}
+    .team-members{font-size:10px;color:#2f4a75;font-weight:600;}
+    .team-badge-joined{background:#e8f8f0;color:#1e8449;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid #a9dfbf;}
+
+    /* ── WAITING STATE ── */
+    .waiting-pulse{display:flex;align-items:center;gap:8px;padding:10px;background:#f9f7f3;border-radius:8px;border:1px solid #e0d9cc;}
+    .pulse-dot{width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 1.4s ease-in-out infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+    .waiting-text{font-size:12px;color:#555;}
+
+    /* ── ERROR ── */
+    .field-error{font-size:11px;color:#e74c3c;margin-top:3px;}
+
+    /* ── TOAST ── */
+    .toast{position:fixed;bottom:14px;right:14px;background:#2f4a75;color:white;padding:8px 13px;border-radius:8px;font-size:12px;font-weight:600;z-index:500;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
+    .toast.show{opacity:1;transform:translateY(0);}
+
+    ::-webkit-scrollbar{width:5px;height:5px;}
+    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
   </style>
 </head>
-
 <body>
 
 <header>
-  <div class="header-left">
+  <div class="hl">
     <button class="menu-btn" id="menuBtn">☰</button>
-    <div class="app-name">Pavadinimas</div>
+    <span class="logo">Pavadinimas</span>
+    <span class="pin-hdr" id="pinHdr"></span>
   </div>
-  <div class="header-icon">U</div>
 </header>
 
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h2>Navigation</h2>
-    </div>
-    <div class="sidebar-menu">
-        <div class="sidebar-item" onclick="navigateTo('../pages/join.html')">Pin kodas</div>
-        <div class="sidebar-item" onclick="navigateTo('../pages/help.html')">Žinynas</div>
-        <div class="sidebar-item" onclick="navigateTo('../pages/settings.html')">Parinktys</div>
-        <div class="sidebar-item" onclick="navigateTo('../pages/review.html')">Atsiliepimai</div>
-    </div>
+  <div class="sb-head"><h2>Navigacija</h2></div>
+  <div class="sb-item" onclick="nav('/pages/join.html')">Kitas PIN</div>
+  <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
+  <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
 </div>
-
 <div class="overlay" id="overlay"></div>
 
-<main>
-  <div class="card">
-    <h2>Game Lobby</h2>
-    <div class="pin-display" id="pinDisplay">—</div>
-    <p style="color: #666; text-align: center; margin-bottom: 15px;">Waiting for game to start...</p>
-    <span class="status-badge">Ready</span>
-  </div>
-
-  <div class="card">
-    <h3>Players</h3>
-    <div id="playersList">
-      <p style="color: #999; text-align: center; padding: 20px 0;">No players yet</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Game Status</h3>
-    <div class="stat-row">
-      <span class="stat-label">Status</span>
-      <span class="stat-value" id="statusValue">Waiting</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-label">Participants</span>
-      <span class="stat-value" id="countValue">0</span>
-    </div>
-  </div>
+<main id="mainArea">
+  <!-- populated by JS based on state -->
 </main>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  const menuBtn = document.getElementById('menuBtn');
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('overlay');
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let session = null;
+let myTeam = null;
+const pin = sessionStorage.getItem('gamePin') || new URLSearchParams(location.search).get('pin') || '123456';
 
-  menuBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-  });
+function loadSession() {
+  try {
+    const sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
+    session = sessions.find(s => s.pin === pin);
+  } catch(e){}
+  // Demo fallback
+  if (!session) {
+    session = {
+      id: 1, pin, gameName: 'Demo sesija', status: 'waiting',
+      currentRound: 0, numRounds: 5, teams: [], betsOpen: false
+    };
+  }
+  // Try restoring my team
+  const myId = sessionStorage.getItem('myTeamId');
+  if (myId) myTeam = session.teams.find(t => t.id === myId) || null;
+}
 
-  overlay.addEventListener('click', () => {
-    sidebar.classList.remove('active');
-    overlay.classList.remove('active');
-  });
+function saveSession() {
+  try {
+    let sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
+    const idx = sessions.findIndex(s => s.id === session.id);
+    if (idx >= 0) sessions[idx] = session;
+    else sessions.push(session);
+    sessionStorage.setItem('adminSessions', JSON.stringify(sessions));
+  } catch(e){}
+}
 
-  document.querySelectorAll('.sidebar-item').forEach(item => {
-    item.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    });
-  });
+// ══════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════
+function render() {
+  document.getElementById('pinHdr').textContent = pin;
+  if (myTeam) {
+    renderWaiting();
+  } else {
+    renderJoinCreate();
+  }
+}
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    }
-  });
+// ── IF ALREADY JOINED: waiting room ──────────
+function renderWaiting() {
+  const main = document.getElementById('mainArea');
+  main.innerHTML = `
+    <!-- Session info -->
+    <div class="card">
+      <h2>${session.gameName}</h2>
+      <p class="card-sub">Sesija · PIN ${pin}</p>
+      <div class="sess-pin">${pin}</div>
+      <div class="sess-stats">
+        <div class="s-stat"><div class="v">${session.teams.length}</div><div class="l">Komandos</div></div>
+        <div class="s-stat"><div class="v">${session.numRounds}</div><div class="l">Raundai</div></div>
+        <div class="s-stat"><div class="v">${session.status === 'active' ? 'Aktyvi' : 'Laukiama'}</div><div class="l">Statusas</div></div>
+      </div>
+    </div>
 
-  document.addEventListener('click', (e) => {
-    if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
-      sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    }
-  });
+    <!-- My team status -->
+    <div class="card">
+      <h3>Prisijungta: <span style="color:#2f4a75;">${myTeam.name}</span></h3>
+      <div class="waiting-pulse">
+        <div class="pulse-dot"></div>
+        <span class="waiting-text">${session.status === 'active' ? 'Žaidimas pradėtas!' : 'Laukiama, kol administratorius pradės žaidimą...'}</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#888;">
+        Lošimo režimas: <strong style="color:#2f4a75;">${myTeam.bidMode === 'single' ? 'Tik vienas narys' : 'Visi nariai'}</strong>
+      </div>
+      <!-- Password always visible after creation so captain can share it -->
+      <div style="margin-top:10px;background:#e8f8f0;border:1px solid #a9dfbf;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;color:#1e8449;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Komandos slaptažodis (dalinkitės su nariais)</div>
+        <div style="font-family:'Courier New',monospace;font-size:22px;font-weight:700;color:#1e8449;letter-spacing:4px;">${myTeam.password}</div>
+        <div style="font-size:10px;color:#555;margin-top:3px;">Kiti žaidėjai nematys šio slaptažodžio — tik jūsų komandos nariai.</div>
+      </div>
+      ${session.status === 'active' ?
+        `<button class="btn btn-primary" style="margin-top:12px;" onclick="nav('/pages/game.html')">▶ Į žaidimą</button>` :
+        ''}
+      <button class="btn btn-sec" style="margin-top:8px;" onclick="leaveTeam()">Palikti komandą</button>
+    </div>
 
-  const params = new URLSearchParams(window.location.search);
-  const pin = params.get('pin');
-  if (pin) {
-    document.getElementById('pinDisplay').textContent = pin;
+    <!-- Teams list -->
+    <div class="card">
+      <h3>Komandos (${session.teams.length})</h3>
+      <div class="team-list">
+        ${session.teams.length ? session.teams.map(t => `
+          <div class="team-item">
+            <div class="team-avatar">${t.name.slice(0,2).toUpperCase()}</div>
+            <div style="flex:1;">
+              <div class="team-name">${t.name} ${t.id === myTeam.id ? '<span class="team-badge-joined">Mano</span>' : ''}</div>
+              <div class="team-mode">${t.bidMode === 'single' ? 'Vienas narys renkasi' : 'Visi renka kartu'}</div>
+            </div>
+          </div>`).join('')
+        : '<p style="color:#bbb;font-size:12px;text-align:center;padding:8px;">Nėra komandų</p>'}
+      </div>
+    </div>
+  `;
+}
+
+// ── NOT YET JOINED: create or join ───────────
+let activeTab = 'create';
+function renderJoinCreate() {
+  const main = document.getElementById('mainArea');
+  main.innerHTML = `
+    <!-- Session info (compact) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#2f4a75;">${session.gameName}</div>
+          <div style="font-size:10px;color:#999;margin-top:1px;">${session.teams.length} komandos · ${session.numRounds} raundai</div>
+        </div>
+        <div class="sess-pin" style="font-size:18px;letter-spacing:4px;padding:6px 10px;margin:0;">${pin}</div>
+      </div>
+    </div>
+
+    <!-- Create / Join tabs -->
+    <div class="card">
+      <div class="ctabs">
+        <div class="ctab ${activeTab==='create'?'active':''}" onclick="setTab('create')">Sukurti komandą</div>
+        <div class="ctab ${activeTab==='join'?'active':''}" onclick="setTab('join')">Prisijungti</div>
+      </div>
+
+      ${activeTab === 'create' ? renderCreateForm() : renderJoinForm()}
+    </div>
+
+    <!-- Teams list -->
+    <div class="card">
+      <h3>Esamos komandos (${session.teams.length})</h3>
+      <div class="team-list">
+        ${session.teams.length ? session.teams.map(t => `
+          <div class="team-item">
+            <div class="team-avatar">${t.name.slice(0,2).toUpperCase()}</div>
+            <div>
+              <div class="team-name">${t.name}</div>
+              <div class="team-mode">${t.bidMode === 'single' ? 'Vienas narys renkasi' : 'Visi renka kartu'}</div>
+            </div>
+          </div>`).join('')
+        : '<p style="color:#bbb;font-size:12px;text-align:center;padding:8px;">Dar nėra komandų</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function renderCreateForm() {
+  return `
+    <div class="form-row">
+      <label>Komandos pavadinimas</label>
+      <input type="text" id="createName" placeholder="pvz. Greitieji elektronai" maxlength="30">
+      <div class="field-error" id="createNameErr"></div>
+    </div>
+
+    <div class="bid-mode-box">
+      <h4>Lošimo režimas — kas renka pasiūlymus?</h4>
+      <div class="mode-option selected" id="modeOpt_single" onclick="selectMode('single')">
+        <input type="radio" name="bidMode" value="single" checked>
+        <div>
+          <div class="m-title">Vienas narys</div>
+          <div class="m-desc">Tik komandos kapitonas (pirmasis prisijungęs) gali pateikti pasiūlymus. Kiti nariai mato ekraną, bet negali redaguoti.</div>
+        </div>
+      </div>
+      <div class="mode-option" id="modeOpt_all" onclick="selectMode('all')">
+        <input type="radio" name="bidMode" value="all">
+        <div>
+          <div class="m-title">Visi nariai</div>
+          <div class="m-desc">Bet kuris prisijungęs narys gali redaguoti ir pateikti pasiūlymus. Paskutinė pateikta versija galioja.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pw-generated" id="pwBox">
+      <div class="pw-label">Slaptažodis prisijungimui</div>
+      <div class="pw-value" id="pwValue">—</div>
+      <div class="pw-note">Pasidalinkite šiuo slaptažodžiu su savo komandos nariais. Kiti žaidėjai jo nematys.</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="createTeam()" style="margin-top:10px;">Sukurti komandą</button>
+  `;
+}
+
+function renderJoinForm() {
+  return `
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">Įveskite komandos pavadinimą ir slaptažodį, kurį gavo jūsų kapitonas.</p>
+    <div class="form-row">
+      <label>Komandos pavadinimas</label>
+      <input type="text" id="joinName" placeholder="Tiksliai kaip sukurta" list="teamNames">
+      <datalist id="teamNames">
+        ${session.teams.map(t=>`<option value="${escHtml(t.name)}">`).join('')}
+      </datalist>
+      <div class="field-error" id="joinNameErr"></div>
+    </div>
+    <div class="form-row">
+      <label>Komandos slaptažodis</label>
+      <input type="password" id="joinPw" placeholder="••••••">
+      <div class="field-error" id="joinPwErr"></div>
+    </div>
+    <button class="btn btn-primary" onclick="joinTeam()">Prisijungti prie komandos</button>
+  `;
+}
+
+// ── SELECTED BID MODE ─────────────────────────
+let selectedBidMode = 'single';
+function selectMode(mode) {
+  selectedBidMode = mode;
+  document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.mode-option input').forEach(el => { el.checked = el.value === mode; });
+  document.getElementById('modeOpt_'+mode)?.classList.add('selected');
+}
+
+// ── SET TAB ───────────────────────────────────
+function setTab(tab) {
+  activeTab = tab;
+  renderJoinCreate();
+}
+
+// ── CREATE TEAM ───────────────────────────────
+function createTeam() {
+  const name = document.getElementById('createName')?.value.trim();
+  if (!name) { document.getElementById('createNameErr').textContent = 'Įveskite komandos pavadinimą'; return; }
+  if (session.teams.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    document.getElementById('createNameErr').textContent = 'Toks pavadinimas jau užimtas'; return;
   }
 
-  function navigateTo(path) {
-    window.location.href = path;
+  // Generate a short random password (4 chars + 4 digits, readable)
+  const pw = genPassword();
+
+  // Show password BEFORE joining so user can note it
+  const pwBox = document.getElementById('pwBox');
+  const pwVal = document.getElementById('pwValue');
+  if (pwBox && pwVal) { pwBox.classList.add('visible'); pwVal.textContent = pw; }
+
+  const team = {
+    id: 'team_' + Date.now(),
+    name,
+    password: pw,
+    balance: 10000,
+    bids: [],
+    roundHistory: [],
+    bidRows: {},
+    bidMode: selectedBidMode,
+    members: 1,
+    createdAt: new Date().toLocaleString()
+  };
+  session.teams.push(team);
+  saveSession();
+
+  // Auto-join as captain
+  myTeam = team;
+  sessionStorage.setItem('myTeamId', team.id);
+  sessionStorage.setItem('gamePin', pin);
+
+  toast('Komanda sukurta! Slaptažodis: ' + pw);
+  // Render waiting room immediately (password is shown permanently there)
+  render();
+}
+
+// ── JOIN TEAM ─────────────────────────────────
+function joinTeam() {
+  const name = document.getElementById('joinName')?.value.trim();
+  const pw = document.getElementById('joinPw')?.value.trim();
+  let ok = true;
+  if (!name) { document.getElementById('joinNameErr').textContent = 'Įveskite pavadinimą'; ok = false; }
+  if (!pw) { document.getElementById('joinPwErr').textContent = 'Įveskite slaptažodį'; ok = false; }
+  if (!ok) return;
+
+  const team = session.teams.find(t => t.name.toLowerCase() === name.toLowerCase());
+  if (!team) { document.getElementById('joinNameErr').textContent = 'Komanda nerasta'; return; }
+  if (team.password !== pw) { document.getElementById('joinPwErr').textContent = 'Neteisingas slaptažodis'; return; }
+
+  // Check if bidMode allows additional members
+  if (team.bidMode === 'single' && (team.members || 1) >= 1) {
+    // Only one person can hold the "bidder" role, but anyone can join as observer
+    // We still allow joining — they just can't submit bids
   }
+
+  myTeam = team;
+  team.members = (team.members || 1) + 1;
+  saveSession();
+  sessionStorage.setItem('myTeamId', team.id);
+  sessionStorage.setItem('gamePin', pin);
+  toast('Prisijungta prie komandos: ' + team.name);
+  setTimeout(render, 600);
+}
+
+// ── LEAVE TEAM ────────────────────────────────
+function leaveTeam() {
+  if (!confirm('Palikti komandą?')) return;
+  myTeam = null;
+  sessionStorage.removeItem('myTeamId');
+  activeTab = 'create';
+  render();
+}
+
+// ── PASSWORD GENERATOR ────────────────────────
+function genPassword() {
+  const consonants = 'BCDFGHJKLMNPRSTVWXZ';
+  const vowels = 'AEIOU';
+  const digits = '0123456789';
+  let pw = '';
+  // Pattern: CVC + 3 digits  e.g. "RAV293"
+  pw += consonants[Math.floor(Math.random()*consonants.length)];
+  pw += vowels[Math.floor(Math.random()*vowels.length)];
+  pw += consonants[Math.floor(Math.random()*consonants.length)];
+  for (let i = 0; i < 3; i++) pw += digits[Math.floor(Math.random()*10)];
+  return pw;
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════════
+// SIDEBAR / NAV
+// ══════════════════════════════════════════════
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
+overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
+document.addEventListener('keydown', e => { if (e.key==='Escape') { sidebar.classList.remove('active'); overlay.classList.remove('active'); }});
+document.querySelectorAll('.sb-item').forEach(i => i.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); }));
+function nav(p) { window.location.href = p; }
+function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+loadSession();
+render();
 </script>
-
 </body>
 </html>
