@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: energy-trading-backend
+    env: python
+    region: frankfurt 
+    plan: starter 
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: energy-trading-db
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        value: prak2026-eb951.web.app,prak2026-eb951.firebaseapp.com
+    
+databases:
+  - name: energy-trading-db
+    plan: starter  # Free tier PostgreSQL
+    databaseName: energy_trading
+    user: energy_user

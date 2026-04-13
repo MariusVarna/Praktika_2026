@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\js\\api.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:js\\api.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\admin.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\admin.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\settings.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\settings.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -23,20 +31,12 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\game.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\admin.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\admin.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\join.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\join.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\help.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\help.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\js\\api.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:js\\api.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\results.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -62,7 +62,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 204,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -82,33 +82,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 1,
               "Title": "admin.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\admin.html",
               "RelativeDocumentMoniker": "pages\\admin.html",
               "ToolTip": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\admin.html",
               "RelativeToolTip": "pages\\admin.html",
-              "ViewState": "AgIAAOQHAAAAAAAAAAAtwP8HAAAVAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHsEAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
               "WhenOpened": "2026-03-04T14:09:31.346Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 0,
               "Title": "api.js",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\js\\api.js",
               "RelativeDocumentMoniker": "js\\api.js",
               "ToolTip": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\js\\api.js",
               "RelativeToolTip": "js\\api.js",
-              "ViewState": "AgIAAPYBAAAAAAAAAAAqwBICAAAHAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACUAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
               "WhenOpened": "2026-03-25T14:47:58.747Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "review.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\review.html",
               "RelativeDocumentMoniker": "pages\\review.html",
@@ -116,8 +116,7 @@
               "RelativeToolTip": "pages\\review.html",
               "ViewState": "AgIAANgBAAAAAAAAAAAQwAcCAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:23.169Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:23.169Z"
             },
             {
               "$type": "Document",
@@ -133,7 +132,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "settings.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\settings.html",
               "RelativeDocumentMoniker": "pages\\settings.html",
@@ -141,8 +140,7 @@
               "RelativeToolTip": "pages\\settings.html",
               "ViewState": "AgIAAEsAAAAAAAAAAAAQwFMAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:26.051Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:26.051Z"
             },
             {
               "$type": "Document",
@@ -170,7 +168,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "login.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\login.html",
               "RelativeDocumentMoniker": "pages\\login.html",
@@ -178,12 +176,11 @@
               "RelativeToolTip": "pages\\login.html",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAADLAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:29.121Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:29.121Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "lobby.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\lobby.html",
               "RelativeDocumentMoniker": "pages\\lobby.html",
@@ -191,12 +188,11 @@
               "RelativeToolTip": "pages\\lobby.html",
               "ViewState": "AgIAAKIBAAAAAAAAAAAQwLQBAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:29.511Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:29.511Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "join.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\join.html",
               "RelativeDocumentMoniker": "pages\\join.html",
@@ -204,12 +200,11 @@
               "RelativeToolTip": "pages\\join.html",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAALAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:29.912Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:29.912Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "help.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\help.html",
               "RelativeDocumentMoniker": "pages\\help.html",
@@ -217,12 +212,11 @@
               "RelativeToolTip": "pages\\help.html",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAALAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:30.299Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:30.299Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "game.html",
               "DocumentMoniker": "C:\\Users\\Lolita\\Desktop\\My project\\Praktika_2026\\public\\pages\\game.html",
               "RelativeDocumentMoniker": "pages\\game.html",
@@ -230,8 +224,7 @@
               "RelativeToolTip": "pages\\game.html",
               "ViewState": "AgIAAKoAAAAAAAAAAAAtwMAAAAALAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
-              "WhenOpened": "2026-03-04T14:09:30.833Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-04T14:09:30.833Z"
             }
           ]
         }

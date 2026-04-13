@@ -3,9 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.api import sessions, admin, players, bids, admin_auth
 from app.websockets import manager
+import os
 import logging
-import signal
-import sys
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +13,20 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Electricity Market Game API")
 
-
-
 # Setup CORS
+origins = os.getenv("CORS_ORIGINS", "http://localhost:5000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Since it's a game, allow all for now or specify frontend URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check for Render
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 # Include Routers
 app.include_router(admin_auth.router, prefix="/api/admin/auth", tags=["auth"])
