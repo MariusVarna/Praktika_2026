@@ -1426,7 +1426,7 @@
                   <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
                   <span style="font-size:10px;background:#eaf2ff;color:#2f4a75;padding:2px 7px;border-radius:12px;">Dabartinė vid. kaina: ${avgPrice.toFixed(2)} $/MWh</span>
                   <span style="font-size:10px;background:#e8f8f0;color:#27ae60;padding:2px 7px;border-radius:12px;">Balansas: $${(myTeam.balance || 0).toLocaleString()}</span>
-                  ${roundProfitDisplay ? `<span style="font-size:10px;background:${roundProfitDisplay.color === '#27ae60' ? '#e8f8f0' : '#fef5e8'};color:${roundProfitDisplay.color};padding:2px 7px;border-radius:12px;">📈 D${viewRound} pelnas: ${roundProfitDisplay.sign}$${Math.abs(roundProfitDisplay.profit).toLocaleString()}</span>` : ''}
+                  ${roundProfitDisplay ? `<span style="font-size:10px;background:${roundProfitDisplay.color === '#27ae60' ? '#e8f8f0' : '#fef5e8'};color:${roundProfitDisplay.color};padding:2px 7px;border-radius:12px;">D${viewRound} pelnas: ${roundProfitDisplay.sign}$${Math.abs(roundProfitDisplay.profit).toLocaleString()}</span>` : ''}
                 </div>
 
 
@@ -1834,6 +1834,35 @@
             }
         }
 
+        async function refreshBalance() {
+            if (!myTeam || !myTeam.id) return;
+            try {
+                const state = await API.Players.getState(myTeam.id);
+                if (state && state.total_profit !== undefined) {
+                    myTeam.balance = state.total_profit;
+
+                    // Update balance display in the UI
+                    const balanceElements = document.querySelectorAll('.stat-chip .v');
+                    balanceElements.forEach(el => {
+                        if (el.textContent.includes('$')) {
+                            el.textContent = `$${myTeam.balance.toLocaleString()}`;
+                            el.style.color = '#27ae60';
+                        }
+                    });
+
+                    // Update the bids card header balance
+                    const balanceChip = document.querySelector('.bid-card .bid-card-header + div span:last-child');
+                    if (balanceChip && balanceChip.textContent.includes('Balansas')) {
+                        const balanceSpan = balanceChip.parentElement;
+                        if (balanceSpan) {
+                            balanceSpan.innerHTML = `Balansas: $${myTeam.balance.toLocaleString()}`;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to refresh balance:', e);
+            }
+        }
         let playerWS = null;
         function startPlayerWS(sessionId) {
             if (playerWS) return;
@@ -1846,6 +1875,7 @@
                                 toast('Naujas raundas!');
                             } else if (data.event === 'ROUND_CALCULATED') {
                                 toast('Raundo rezultatai apskaičiuoti!');
+                                await refreshBalance();
                             }
                             await loadSession();
                             if (data.event === 'NEW_ROUND' && session && session.current_round) {

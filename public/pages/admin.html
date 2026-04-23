@@ -1122,7 +1122,7 @@
                 <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baterijos ir fiziniai apribojimai</h3>
                 <div class="fg">
                     <div><label>Maks. baterijos talpa (MWh)</label><input type="number" id="batteryMaxMwh" value="200" min="1" step="10"></div>
-                    <div><label>Pralaidumas (MW/h)</label><input type="number" id="bandwidth" value="50" min="1" step="5"></div>
+                    <div><label>Galia (MW)</label><input type="number" id="bandwidth" value="50" min="1" step="5"></div>
                 </div>
                 <div class="fg">
                     <div><label>Įkrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyCharge" value="0.9" min="0.01" max="1" step="0.01"></div>
@@ -1225,6 +1225,7 @@
 
                 // Initialize real-time updates
                 sessions.forEach(s => startAdminWS(s.id));
+                startAutoRefresh();
                 saveState();
             } catch (e) {
                 console.error('Failed to load sessions:', e);
@@ -1237,17 +1238,249 @@
             if (adminWS[sessionId]) return;
             try {
                 adminWS[sessionId] = window.WS.open(sessionId, {
-                    onMessage: (data) => {
+                    onMessage: async (data) => {
                         console.log('[AdminWS] Message:', data);
-                        if (data.event === 'TEAM_JOINED' || data.event === 'BID_SUBMITTED') {
-                            loadState(); // Refresh everything
-                            renderManage();
+
+                        if (data.event === 'TEAM_JOINED') {
+                            // New team joined - refresh teams list
+                            await loadState();
+                            if (activeSessionId === sessionId) {
+                                refreshTeamsList();
+                            }
+                        }
+                        else if (data.event === 'BID_SUBMITTED') {
+                            // Update bids without full refresh
+                            if (activeSessionId === sessionId) {
+                                updateBidStatus(data.user_id, data.bids);
+                                refreshBidsList();
+                            }
+                        }
+                        else if (data.event === 'ROUND_CALCULATED') {
+                            // Round completed - update prices and balances
+                            if (activeSessionId === sessionId) {
+                                await refreshRoundData(data.round_id);
+                                // Also refresh all team balances
+                                await refreshAllTeamBalances(sessionId);
+                                toast(`Raundas ${data.round_id} apskaičiuotas!`);
+                            }
+                            await loadState();
+                        }
+                        else if (data.event === 'NEW_ROUND') {
+                            toast(`Prasideda naujas raundas!`);
+                            if (activeSessionId === sessionId) {
+                                await refreshRoundData(data.round_id);
+                            }
                         }
                     }
                 });
             } catch (e) { console.error('WS failed', e); }
         }
+        async function refreshAllTeamBalances(sessionId) {
+            try {
+                const standings = await API.Sessions.getStandings(sessionId);
+                if (standings && standings.standings) {
+                    const s = sessions.find(x => x.id === sessionId);
+                    if (s) {
+                        for (const standing of standings.standings) {
+                            const team = s.teams.find(t => t.id === standing.user_id);
+                            if (team) {
+                                team.balance = standing.total_profit;
+                            }
+                        }
+                        refreshTeamsList();
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to refresh balances:', e);
+            }
+        }
+        // Helper functions for partial updates
+        function refreshTeamsList() {
+            if (!activeSessionId) return;
+            const s = sessions.find(x => x.id === activeSessionId);
+            if (!s) return;
 
+            // Update only the teams card
+            const teamsCard = document.querySelector('#manageContent .card:first-of-type + .card');
+            if (teamsCard) {
+                const bs = calcBidStatus(s);
+                const teamsHtml = s.teams.map(t => {
+                    const bid = getCurrentBid(t, s.currentRound);
+                    const st = bid ? (bid.submitted ? 'submitted' : 'draft') : 'none';
+                    const statusIcon = { submitted: '✅', draft: '✏️', none: '⏳' }[st];
+                    const statusText = { submitted: 'Pateikta', draft: 'Redaguoja', none: 'Laukia' }[st];
+                    const statusColor = { submitted: '#27ae60', draft: '#f39c12', none: '#999' }[st];
+                    const detail = bid ? `${bid.price.toFixed(2)}$ · ${bid.mw}MW` : '—';
+
+                    return `
+                <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')" style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; background:#fafaf8; border-radius:8px; border:1px solid #e8dfd4; cursor:pointer;">
+                    <div class="ua" style="flex-shrink:0;">${t.name.slice(0, 2).toUpperCase()}</div>
+                    <div style="flex:2; min-width:0;">
+                        <div style="font-weight:700; color:#2f4a75; font-size:13px;">${escapeHtml(t.name)}</div>
+                        <div style="font-size:10px; color:#888;">Balansas: $${(t.balance || 0).toLocaleString()}</div>
+                    </div>
+                    <div style="flex:1; text-align:right;">
+                        <div style="font-size:11px; font-weight:600; color:${statusColor};">${statusIcon} ${statusText}</div>
+                        <div style="font-size:10px; color:#2f4a75;">${detail}</div>
+                    </div>
+                    <div style="flex-shrink:0; width:8px; height:8px; border-radius:50%; background:${statusColor};"></div>
+                </div>
+            `;
+                }).join('');
+
+                const summaryHtml = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="margin-bottom:0;">👥 Komandos ir statymų būsena</h3>
+                <div class="bid-summary" style="margin-bottom:0;">
+                    <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
+                    <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
+                    <span class="bid-chip bc-non">— Laukia: ${bs.none}</span>
+                </div>
+            </div>
+            <div class="scroll-panel" style="max-height:300px;">
+                ${teamsHtml}
+            </div>
+        `;
+
+                teamsCard.innerHTML = summaryHtml;
+            }
+        }
+
+        function updateBidStatus(userId, newBids) {
+            // Find and update the specific team's bid status
+            const s = sessions.find(x => x.id === activeSessionId);
+            if (!s) return;
+
+            const team = s.teams.find(t => t.id === userId);
+            if (team) {
+                // Update team's bids
+                team.bids = newBids;
+                // Recalculate bid status
+                const bs = calcBidStatus(s);
+                // Update the summary numbers
+                const summaryDiv = document.querySelector('#manageContent .bid-summary');
+                if (summaryDiv) {
+                    summaryDiv.innerHTML = `
+                <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
+                <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
+                <span class="bid-chip bc-non">— Laukia: ${bs.none}</span>
+            `;
+                }
+                // Update the specific team row
+                const teamRow = document.querySelector(`#manageContent .up[onclick*="${userId}"]`);
+                if (teamRow) {
+                    const bid = getCurrentBid(team, s.currentRound);
+                    const st = bid ? (bid.submitted ? 'submitted' : 'draft') : 'none';
+                    const statusIcon = { submitted: '✅', draft: '✏️', none: '⏳' }[st];
+                    const statusText = { submitted: 'Pateikta', draft: 'Redaguoja', none: 'Laukia' }[st];
+                    const statusColor = { submitted: '#27ae60', draft: '#f39c12', none: '#999' }[st];
+                    const detail = bid ? `${bid.price.toFixed(2)}$ · ${bid.mw}MW` : '—';
+
+                    const statusDiv = teamRow.querySelector('div[style*="text-align:right"]');
+                    if (statusDiv) {
+                        statusDiv.innerHTML = `
+                    <div style="font-size:11px; font-weight:600; color:${statusColor};">${statusIcon} ${statusText}</div>
+                    <div style="font-size:10px; color:#2f4a75;">${detail}</div>
+                `;
+                    }
+                }
+            }
+        }
+
+        async function refreshRoundData(roundId) {
+            // Refresh only the chart and market prices for the specific round
+            const s = sessions.find(x => x.id === activeSessionId);
+            if (!s) return;
+
+            try {
+                const results = await API.Admin.getResults(s.id, roundId);
+                if (results && results.market_clearing) {
+                    // Update market prices for this round
+                    if (!s.marketPrices) s.marketPrices = {};
+                    s.marketPrices[results.round_number] = results.market_clearing.map(mc => mc.clearing_price);
+
+                    // Refresh the chart
+                    if (selectedRound === results.round_number || (!selectedRound && s.currentRound === results.round_number)) {
+                        renderAdminChart(s);
+                    }
+
+                    // Update team balances
+                    for (const playerResult of results.player_results) {
+                        const team = s.teams.find(t => t.id === playerResult.player_id);
+                        if (team) {
+                            team.balance = playerResult.round_profit;
+                        }
+                    }
+
+                    // Update the teams list display
+                    refreshTeamsList();
+
+                    toast(`Raundas ${results.round_number} rezultatai atnaujinti!`);
+                }
+            } catch (e) {
+                console.warn('Failed to refresh round data:', e);
+            }
+        }
+        let refreshInterval = null;
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(async () => {
+                if (activeSessionId) {
+                    // Silently refresh data without showing loading indicators
+                    try {
+                        const results = await API.Sessions.getMy();
+                        const mapSession = s => {
+                            const latestRound = s.rounds && s.rounds.length ? s.rounds[s.rounds.length - 1] : null;
+                            const roundStatus = latestRound ? latestRound.status : null;
+                            const betsOpen = roundStatus === 'bidding';
+                            return {
+                                ...s,
+                                pin: s.join_code,
+                                gameName: s.game_name,
+                                numRounds: s.duration_days,
+                                currentRound: s.current_round,
+                                currentDay: s.current_day,
+                                marketPrice: s.market_price || 0,
+                                demand: s.demand || 0,
+                                weather: s.weather || '',
+                                createdAt: new Date(s.created_at).toLocaleString('lt-LT', { dateStyle: 'short', timeStyle: 'short' }),
+                                teams: s.teams || [],
+                                transactions: s.transactions || [],
+                                roundStatus: roundStatus,
+                                betsOpen: betsOpen,
+                                round_id: latestRound ? latestRound.id : null
+                            };
+                        };
+                        const newSessions = results.filter(s => s.status !== 'finished').map(mapSession);
+                        const newPrevSessions = results.filter(s => s.status === 'finished').map(mapSession);
+
+                        // Update sessions quietly
+                        sessions = newSessions;
+                        prevSessions = newPrevSessions;
+
+                        // If viewing a session, update the display
+                        if (activeSessionId) {
+                            const currentSession = sessions.find(s => s.id === activeSessionId);
+                            if (currentSession) {
+                                renderManage();
+                            }
+                        }
+                        renderActiveSessions();
+                        renderPreviousSessions();
+                    } catch (e) {
+                        console.warn('Auto-refresh failed:', e);
+                    }
+                }
+            }, 10000); // Refresh every 10 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
         // ── SIDEBAR ────────────────────────────────────
         const menuBtn = document.getElementById('menuBtn'), sidebar = document.getElementById('sidebar'), overlay = document.getElementById('overlay');
         menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
@@ -1480,7 +1713,10 @@
                               <div class="rc">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                                   <h3 style="margin-bottom:0;">Raundo valdymas</h3>
-                                  <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">Tarpiniai rezultatai</button>
+                                  <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-primary btn-sm" onclick="validateAllBids()" style="font-size:11px;">Tikrinti pasiūlymus</button>
+                                    <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">Tarpiniai rezultatai</button>
+                                </div>
                                 </div>
                                 <div class="rc-stats">
                                   <div class="rc-stat"><div class="v">${s.currentRound || '—'}</div><div class="l">Diena</div></div>
@@ -1490,8 +1726,11 @@
                                 <div><span class="bets-pill ${s.betsOpen ? 'bets-open-p' : 'bets-closed-p'}">${s.betsOpen ? '✅ Statymai atidaryti' : '🔒 Statymai uždaryti'}</span></div>
                                 <div class="btn-grp" style="margin-top:10px;">
                                   ${(s.status === 'waiting' || s.status === 'pending') ? `<button class="btn btn-success btn-lg btn-full" onclick="startSession(${s.id})" style="margin-bottom:12px;font-size:16px;">▶ Pradėti žaidimą</button>` : ''}
-                                  ${s.status === 'active' && (!s.roundStatus || s.roundStatus === 'calculated') ? `<button class="btn btn-start-round" onclick="goToNextRound(${s.id})">▶ Kitas raundas</button>` : ''}
-                                  ${s.status === 'active' && s.roundStatus === 'bidding' ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">⏹ Baigti raundą</button>` : ''}
+                                  ${s.status === 'active' && (!s.roundStatus || s.roundStatus === 'calculated') ?
+                                                    `<button class="btn btn-start-round" onclick="goToNextRound(${s.id})" ${s.currentRound >= s.numRounds ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                                      ▶ Kitas raundas ${s.currentRound >= s.numRounds ? '(nėra) - pridėkite papildomą' : ''}
+                                    </button>` : ''}
+                                  ${s.status === 'active' && s.roundStatus === 'bidding' ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">Baigti raundą</button>` : ''}
                                 </div>
                               </div>
                             </div>
@@ -1573,20 +1812,235 @@
                 toast('Klaida skaičiuojant: ' + err.message);
             }
         }
-
+        async function finishSession(id) {
+            if (!confirm('Ar tikrai norite baigti šią sesiją? Po to nebegalės žaidėjai prisijungti.')) return;
+            try {
+                await API.Admin.endSession(id);
+                toast('Sesija baigta!');
+                await loadState();
+                switchTab('active', document.querySelectorAll('.tbtn')[1]);
+            } catch (err) {
+                toast('Klaida baigiant sesiją: ' + err.message);
+            }
+        }
         async function goToNextRound(id) {
             try {
                 await API.Admin.nextRound(id);
-                toast('⏭ Pradedamas naujas raundas');
+                toast('Pradedamas naujas raundas');
                 await loadState();
                 renderManage();
             } catch (err) {
                 toast('Klaida pereinant į kitą raundą: ' + err.message);
             }
         }
+        async function validateAllBids() {
+            const s = sessions.find(x => x.id === activeSessionId);
+            if (!s) {
+                toast('Nėra aktyvios sesijos');
+                return;
+            }
+
+            if (s.status !== 'active') {
+                toast('Sesija nėra aktyvi');
+                return;
+            }
+
+            if (!s.betsOpen) {
+                toast('Statymai šiuo metu uždaryti');
+                return;
+            }
+
+            toast('Tikrinami pasiūlymai...');
+
+            const validationResults = [];
+            let hasErrors = false;
+
+            for (const team of s.teams) {
+                const teamErrors = [];
+                const currentRound = s.currentRound;
+                const bids = getCurrentRoundBids(team, currentRound);
+
+                if (!bids || !bids.length) {
+                    teamErrors.push('Nėra pasiūlymų');
+                } else {
+                    // Check each bid
+                    for (const bid of bids) {
+                        // Check price range (example: between 0 and 500)
+                        if (bid.price < 0) {
+                            teamErrors.push(`Val. ${bid.hour}: Kaina negali būti neigiama (${bid.price})`);
+                            hasErrors = true;
+                        }
+                        if (bid.price > 500) {
+                            teamErrors.push(`Val. ${bid.hour}: Kaina per didelė (${bid.price} > 500)`);
+                            hasErrors = true;
+                        }
+
+                        // Check volume limits
+                        if (bid.mw <= 0) {
+                            teamErrors.push(`Val. ${bid.hour}: Kiekis turi būti teigiamas (${bid.mw})`);
+                            hasErrors = true;
+                        }
+                        if (bid.mw > 100) {
+                            teamErrors.push(`Val. ${bid.hour}: Kiekis per didelis (${bid.mw} > 100 MW per valandą)`);
+                            hasErrors = true;
+                        }
+                    }
+
+                    // Check battery constraints (cumulative)
+                    let batteryLevel = team.batteryStored || 0;
+                    const batteryCapacity = team.batteryCapacity || 100;
+
+                    for (let hour = 0; hour < 24; hour++) {
+                        const hourBids = bids.filter(b => b.hour === hour);
+                        let netChange = 0;
+                        for (const bid of hourBids) {
+                            if (bid.type === 'buy') netChange += bid.mw;
+                            else netChange -= bid.mw;
+                        }
+                        batteryLevel += netChange;
+
+                        if (batteryLevel < 0) {
+                            teamErrors.push(`Val. ${hour}: Baterija pasiektų neigiamą lygį (${batteryLevel.toFixed(0)} MWh)`);
+                            hasErrors = true;
+                        }
+                        if (batteryLevel > batteryCapacity) {
+                            teamErrors.push(`Val. ${hour}: Baterija būtų perpildyta (${batteryLevel.toFixed(0)} > ${batteryCapacity} MWh)`);
+                            hasErrors = true;
+                        }
+
+                        batteryLevel = Math.min(Math.max(batteryLevel, 0), batteryCapacity);
+                    }
+                }
+
+                if (teamErrors.length) {
+                    validationResults.push({
+                        teamName: team.name,
+                        teamId: team.id,
+                        errors: teamErrors
+                    });
+                }
+            }
+
+            // Display results
+            if (validationResults.length === 0) {
+                toast('✅ Visi pasiūlymai atitinka taisykles!');
+            } else {
+                showValidationModal(validationResults);
+            }
+        }
+        function getCurrentRoundBids(team, round) {
+            const allBids = [];
+
+            // Get from bidRows
+            if (team.bidRows && team.bidRows[round]) {
+                const rows = team.bidRows[round];
+                for (let hour = 0; hour < rows.length; hour++) {
+                    const hourBids = rows[hour];
+                    if (hourBids && hourBids.length) {
+                        hourBids.forEach(bid => {
+                            if (bid && bid.price && bid.mw) {
+                                allBids.push({
+                                    hour: hour,
+                                    price: bid.price,
+                                    mw: bid.mw,
+                                    type: bid.type
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+            // Or from bids array
+            else if (team.bids && team.bids.length) {
+                team.bids.forEach(bid => {
+                    if (bid.round === round && bid.price && (bid.volume_mwh || bid.mw)) {
+                        allBids.push({
+                            hour: bid.hour,
+                            price: bid.price,
+                            mw: bid.volume_mwh || bid.mw,
+                            type: bid.bid_type ? 'buy' : 'sell'
+                        });
+                    }
+                });
+            }
+
+            return allBids;
+        }
+        function showValidationModal(results) {
+            const modalId = 'validationModal_' + Date.now();
+
+            const html = `
+        <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) this.remove()">
+            <div style="background:white;border-radius:16px;max-width:700px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+                <div style="padding:16px 20px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;background:#e74c3c;border-radius:16px 16px 0 0;">
+                    <div>
+                        <div style="font-weight:700;font-size:18px;color:white;">⚠️ Pasiūlymų klaidos</div>
+                        <div style="font-size:12px;color:#ffb3ae;margin-top:4px;">Rasta ${results.length} komandų su klaidomis</div>
+                    </div>
+                    <button onclick="document.getElementById('${modalId}').remove()" style="background:white;border:none;font-size:20px;cursor:pointer;color:#e74c3c;padding:4px 8px;border-radius:8px;">×</button>
+                </div>
+                <div class="modal-body" style="padding:20px;overflow-y:auto;flex:1;">
+                    ${results.map(result => `
+                        <div style="margin-bottom:20px;border:1px solid #e8dfd4;border-radius:8px;overflow:hidden;">
+                            <div style="background:#f5f1e8;padding:10px 15px;font-weight:700;color:#2f4a75;display:flex;justify-content:space-between;align-items:center;">
+                                <span>${escapeHtml(result.teamName)}</span>
+                                <button class="btn btn-primary btn-xs" onclick="openPlayerModal(${activeSessionId},'${result.teamId}'); document.getElementById('${modalId}').remove();">Peržiūrėti</button>
+                            </div>
+                            <div style="padding:12px 15px;">
+                                ${result.errors.map(error => `
+                                    <div style="padding:6px 0;color:#e74c3c;font-size:12px;border-bottom:1px solid #f0ebe0;">
+                                        ❌ ${escapeHtml(error)}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="padding:16px 20px;border-top:1px solid #e0d9cc;display:flex;justify-content:flex-end;gap:10px;">
+                    <button class="btn btn-primary" onclick="document.getElementById('${modalId}').remove()">Uždaryti</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
         function openBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = true; saveState(); toast('Statymai atidaryti'); renderManage(); }
         function closeBets(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.betsOpen = false; saveState(); toast('Statymai uždaryti'); renderManage(); }
-        function addExtraRound(id) { const s = sessions.find(x => x.id === id); if (!s) return; s.numRounds++; saveState(); toast('Iš viso raundų: ' + s.numRounds); renderManage(); }
+        async function addExtraRound(id) {
+            if (!confirm('Pridėti papildomą raundą? Sesija bus pratęsta.')) return;
+
+            const s = sessions.find(x => x.id === id);
+            if (!s) return;
+
+            // Check if current round is calculated
+            if (s.roundStatus === 'bidding') {
+                toast('Pirmiausia užbaikite esamą raundą...');
+                return;
+            }
+
+            try {
+                // ONLY add the round - no other actions
+                const result = await API.Admin.addExtraRound(id);
+
+                if (result && result.round_number) {
+                    toast(`Papildomas raundas ${result.round_number} pridėtas!`);
+                } else {
+                    toast('Papildomas raundas pridėtas!');
+                }
+
+                // Reload the session to get updated round list
+                await loadState();
+
+                // If we're currently viewing this session, refresh the display
+                if (activeSessionId === id) {
+                    renderManage();
+                }
+
+            } catch (err) {
+                toast('Klaida pridedant raundą: ' + err.message);
+            }
+        }
         async function startSession(id) {
             try {
                 await API.Admin.startSession(id);
@@ -2473,37 +2927,53 @@
                 });
             }
         };
+        // Add this at the top with your other state variables
+        let visibleTeams = {}; // Store which teams are visible per session
+
+        // Update the renderAdminChart function to restore visibility
         async function renderAdminChart(s) {
-            const ctx = document.getElementById('adminChart'); if (!ctx) return;
-            if (adminChartInstance) { adminChartInstance.destroy(); adminChartInstance = null; }
+            const ctx = document.getElementById('adminChart');
+            if (!ctx) return;
+
+            // If chart exists, save current visibility before destroying
+            let savedVisibility = {};
+            if (adminChartInstance) {
+                // Save which datasets are currently visible
+                adminChartInstance.data.datasets.forEach((dataset, index) => {
+                    if (index > 0) { // Skip market price dataset (index 0)
+                        const meta = adminChartInstance.getDatasetMeta(index);
+                        if (meta && !meta.hidden) {
+                            savedVisibility[dataset.label] = true;
+                        }
+                    }
+                });
+                adminChartInstance.destroy();
+                adminChartInstance = null;
+            }
 
             const round = selectedRound || s.currentRound || 1;
             const prices = await getOrGenPrices(s, round);
             const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
 
             let allValues = [...prices];
-
-            // If any team datasets are visible, include their bid prices
-            if (adminChartInstance) {
-                // This is for initial render - add bid prices if they exist
-                s.teams.forEach(t => {
-                    const bidsForRound = t.bidRows && t.bidRows[round];
-                    if (bidsForRound) {
-                        for (let hour = 0; hour < 24; hour++) {
-                            const hourData = bidsForRound[hour];
-                            if (hourData) {
-                                if (Array.isArray(hourData) && hourData.length > 0) {
-                                    hourData.forEach(bid => {
-                                        if (bid && bid.price) allValues.push(bid.price);
-                                    });
-                                } else if (hourData.price) {
-                                    allValues.push(hourData.price);
-                                }
+            s.teams.forEach(t => {
+                const bidsForRound = t.bidRows && t.bidRows[round];
+                if (bidsForRound) {
+                    for (let hour = 0; hour < 24; hour++) {
+                        const hourData = bidsForRound[hour];
+                        if (hourData) {
+                            if (Array.isArray(hourData) && hourData.length > 0) {
+                                hourData.forEach(bid => {
+                                    if (bid && bid.price) allValues.push(bid.price);
+                                });
+                            } else if (hourData.price) {
+                                allValues.push(hourData.price);
                             }
                         }
                     }
-                });
-            }
+                }
+            });
+
             const minValue = Math.min(...allValues);
             const maxValue = Math.max(...allValues);
             const yAxisMin = Math.floor(minValue - 5);
@@ -2511,7 +2981,7 @@
 
             const teamDatasets = s.teams.map((t, ti) => {
                 const bidData = Array(24).fill(null);
-                const netMWData = Array(24).fill(0); // Store net MW effect per hour
+                const netMWData = Array(24).fill(0);
 
                 const bidsForRound = t.bidRows && t.bidRows[round];
 
@@ -2523,7 +2993,6 @@
 
                         if (hourData) {
                             if (Array.isArray(hourData) && hourData.length > 0) {
-                                // Calculate net MW
                                 hourData.forEach(bid => {
                                     if (bid && bid.price) {
                                         if (bid.type === 'buy') netMW += bid.mw;
@@ -2549,7 +3018,7 @@
                 return {
                     label: t.name,
                     data: bidData,
-                    netMW: netMWData,  // Store net MW for tooltip
+                    netMW: netMWData,
                     type: 'line',
                     borderColor: color,
                     backgroundColor: 'transparent',
@@ -2569,21 +3038,37 @@
                     labels,
                     datasets: [
                         {
-                            label: 'Rinkos kaina', data: prices,
-                            backgroundColor: 'rgba(47,74,117,.35)', borderColor: '#2f4a75', borderWidth: 1, borderRadius: 3,
-                            type: 'bar', order: 20
+                            label: 'Rinkos kaina',
+                            data: prices,
+                            backgroundColor: 'rgba(47,74,117,.35)',
+                            borderColor: '#2f4a75',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            type: 'bar',
+                            order: 20
                         },
                         ...teamDatasets
                     ]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
                     onClick: (evt, elements, chart) => {
                         const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
                         if (pts.length) openHourDetailModal(s, round, pts[0].index);
                     },
                     plugins: {
-                        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 10 },
+                                boxWidth: 12,
+                                padding: 8,
+                                // Make legend items clickable to toggle visibility
+                                usePointStyle: true
+                            }
+                        },
                         tooltip: {
                             callbacks: {
                                 title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
@@ -2594,30 +3079,84 @@
                                     const price = context.raw;
                                     if (price === null) return null;
                                     const direction = netMW > 0 ? 'pirkimas' : (netMW < 0 ? 'pardavimas' : '');
-                                    return `${dataset.label}: ${price} $/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
+                                    return `${dataset.label}: ${price.toFixed(2)} $/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
                                 }
                             }
                         }
                     },
                     scales: {
-                        y: { beginAtZero: false, min: yAxisMin, max: yAxisMax, ticks: { font: { size: 10 }, callback: v => v + '$' }, grid: { color: '#f0ebe0' } },
-                        x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+                        y: {
+                            beginAtZero: false,
+                            min: yAxisMin,
+                            max: yAxisMax,
+                            ticks: { font: { size: 10 }, callback: v => v + '$' },
+                            grid: { color: '#f0ebe0' }
+                        },
+                        x: {
+                            ticks: { font: { size: 9 }, maxRotation: 45 },
+                            grid: { display: false }
+                        }
                     },
                     animation: { duration: 300 }
                 },
                 plugins: [bidDirectionPlugin]
             });
+
+            // Restore previously visible teams
             setTimeout(() => {
                 if (adminChartInstance) {
-                    // Hide all team datasets (skip the first dataset which is market price)
+                    // Hide market price dataset if needed? Usually keep visible
                     adminChartInstance.data.datasets.forEach((dataset, index) => {
-                        if (index > 0) {
-                            adminChartInstance.setDatasetVisibility(index, false);
+                        if (index > 0) { // Skip market price
+                            const teamName = dataset.label;
+                            // If this team was visible before OR if no saved state (first load), show them
+                            if (savedVisibility[teamName] === undefined) {
+                                // First load - show all
+                                adminChartInstance.setDatasetVisibility(index, true);
+                            } else {
+                                // Restore previous visibility
+                                adminChartInstance.setDatasetVisibility(index, savedVisibility[teamName]);
+                            }
                         }
                     });
                     adminChartInstance.update();
                 }
             }, 100);
+        }
+
+        // Also add a function to manually toggle team visibility with persistence
+        function toggleTeamVisibility(teamName) {
+            if (!adminChartInstance) return;
+
+            // Find the dataset index for this team
+            const datasetIndex = adminChartInstance.data.datasets.findIndex(ds => ds.label === teamName);
+            if (datasetIndex === -1) return;
+
+            // Toggle visibility
+            const isVisible = !adminChartInstance.getDatasetMeta(datasetIndex).hidden;
+            adminChartInstance.setDatasetVisibility(datasetIndex, !isVisible);
+
+            // Save preference
+            if (!visibleTeams[activeSessionId]) visibleTeams[activeSessionId] = {};
+            visibleTeams[activeSessionId][teamName] = !isVisible;
+
+            adminChartInstance.update();
+        }
+
+        // Add legend click handler to enable toggling
+        function enableLegendToggle() {
+            if (!adminChartInstance) return;
+
+            const legendItems = document.querySelectorAll('.chartjs-legend li');
+            legendItems.forEach((item, index) => {
+                item.style.cursor = 'pointer';
+                item.addEventListener('click', () => {
+                    const datasetLabel = adminChartInstance.data.datasets[index]?.label;
+                    if (datasetLabel && datasetLabel !== 'Rinkos kaina') {
+                        toggleTeamVisibility(datasetLabel);
+                    }
+                });
+            });
         }
         // ── HOUR DETAIL POPUP ──
         let hourSupplyChartInstance = null;

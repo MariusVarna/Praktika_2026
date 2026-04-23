@@ -167,8 +167,9 @@ class RoundService:
             current_round.status = "calculated"
 
             # Auto-finish the session when the calculated round reaches planned duration
-            if current_round.round_number >= game_session.duration_days:
-                game_session.status = "finished"
+            # 
+            #if current_round.round_number >= game_session.duration_days:
+            #    game_session.status = "finished"
 
             self.db.commit()
             return current_round.round_number >= game_session.duration_days

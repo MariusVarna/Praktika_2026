@@ -106,6 +106,57 @@ async def end_session(session_id: int, admin_id: Optional[str] = Header(default=
     await manager.broadcast_to_session(session.id, {"event": "SESSION_FINISHED"})
     return {"status": "ok", "message": "Session finished successfully"}
 
+@router.post("/{session_id}/add_round", response_model=schemas.RoundResponse)
+async def add_extra_round(session_id: int, admin_id: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    """Admin adds an extra round to an active session. Does NOT auto-advance or calculate anything."""
+    if not admin_id:
+        raise HTTPException(status_code=401, detail="Admin authentication required")
+    
+    # Get the session
+    session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    if not session or session.admin_id != admin_id:
+        raise HTTPException(status_code=404, detail="Session not found or unauthorized")
+    
+    # Session must be active
+    if session.status != "active":
+        raise HTTPException(status_code=400, detail="Session must be active to add rounds")
+    
+    # Get the last round
+    last_round = db.query(models.Round).filter(
+        models.Round.session_id == session.id
+    ).order_by(models.Round.round_number.desc()).first()
+    
+    # Verify last round exists and is calculated
+    if not last_round:
+        raise HTTPException(status_code=400, detail="No rounds exist yet")
+    
+    if last_round.status != "calculated":
+        raise HTTPException(status_code=400, detail=f"Round {last_round.round_number} must be calculated before adding a new round")
+    
+    # Create new round
+    new_round_num = last_round.round_number + 1
+    new_round = models.Round(
+        session_id=session.id,
+        round_number=new_round_num,
+        status="bidding"  # New round starts in bidding state
+    )
+    db.add(new_round)
+    
+    # Update session duration_days to reflect the new total
+    session.duration_days = new_round_num
+    
+    db.commit()
+    db.refresh(new_round)
+    
+    # Broadcast to all players that a new round is available
+    await manager.broadcast_to_session(session.id, {
+        "event": "NEW_ROUND",
+        "round_id": new_round.id,
+        "round_number": new_round_num
+    })
+    
+    return new_round
+
 @router.get("/{session_id}/round/{round_id}/results", response_model=schemas.RoundResultsResponse)
 async def get_round_results(session_id: int, round_id: int, db: Session = Depends(get_db)):
     """

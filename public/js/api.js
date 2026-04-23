@@ -231,6 +231,12 @@ const Sessions = {
 // ── ADMIN API ────────────────────────────────────────────────────────────────
 
 const Admin = {
+    addExtraRound(sessionId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/add_round`, { method: 'POST' });
+    },
+    endSession(sessionId) {
+        return apiFetch(`/api/admin/sessions/${sessionId}/end`, { method: 'POST' });
+    },
     startSession(sessionId) {
         return apiFetch(`/api/admin/sessions/${sessionId}/start`, { method: 'POST' });
     },
