@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin — Pavadinimas</title>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.0/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.0.0/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1090,56 +1089,58 @@
     </div>
 
     <main>
-        <!-- CREATE -->
-        <div class="card">
-            <h2>Sukurti naują sesiją</h2>
-            <div class="fg full"><div><label>Žaidimo pavadinimas</label><input type="text" id="gameName" placeholder="pvz. Lithuanian Market 2026"></div></div>
-            <div class="fg">
-                <div><label>Pradžios diena</label><input type="number" id="startDay" value="1" min="1"></div>
-                <div><label>Trukmė dienomis</label><input type="number" id="numRounds" value="5" min="1" max="20"></div>
-            </div>
+        <!-- CREATE TAB -->
+        <div id="create" class="tab-content active">
+            <div class="card">
+                <h2>Sukurti naują sesiją</h2>
+                <div class="fg full"><div><label>Žaidimo pavadinimas</label><input type="text" id="gameName" placeholder="pvz. Lt. Market 2026"></div></div>
+                <div class="fg">
+                    <div><label>Pradžios diena</label><input type="number" id="startDay" value="1" min="1"></div>
+                    <div><label>Trukmė dienomis</label><input type="number" id="numRounds" value="5" min="1" max="20"></div>
+                </div>
 
-            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Rinkos botų parametrai</h3>
-            <div class="fg">
-                <div><label>Bazinė paklausa (MW)</label><input type="number" id="baseDemandMw" value="400" min="0" step="10"></div>
-                <div><label>Maksimali paklausa (MW)</label><input type="number" id="maxDemandMw" value="800" min="0" step="10"></div>
-            </div>
-            <div class="fg">
-                <div><label>Maks. vėjo galia (MW)</label><input type="number" id="maxWindMw" value="500" min="0" step="10"></div>
-                <div><label>Maks. saulės galia (MW)</label><input type="number" id="maxSolarMw" value="400" min="0" step="10"></div>
-            </div>
-            <div class="fg">
-                <div><label>Prognozės paklaida (0.00-1.00)</label><input type="number" id="forecastErrorMargin" value="0.15" min="0" max="1" step="0.01"></div>
-                <div></div>
-            </div>
+                <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Rinkos botų parametrai</h3>
+                <div class="fg">
+                    <div><label>Bazinė paklausa (MW)</label><input type="number" id="baseDemandMw" value="400" min="0" step="10"></div>
+                    <div><label>Maksimali paklausa (MW)</label><input type="number" id="maxDemandMw" value="800" min="0" step="10"></div>
+                </div>
+                <div class="fg">
+                    <div><label>Maks. vėjo galia (MW)</label><input type="number" id="maxWindMw" value="500" min="0" step="10"></div>
+                    <div><label>Maks. saulės galia (MW)</label><input type="number" id="maxSolarMw" value="400" min="0" step="10"></div>
+                </div>
+                <div class="fg">
+                    <div><label>Prognozės paklaida (0.00-1.00)</label><input type="number" id="forecastErrorMargin" value="0.15" min="0" max="1" step="0.01"></div>
+                    <div></div>
+                </div>
 
-            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Komandų pradinės pozicijos</h3>
-            <div class="fg">
-                <div><label>Pradinis biudžetas (€)</label><input type="number" id="startBudget" value="10000" min="0" step="100"></div>
-                <div><label>Pradinė baterijos energija (MWh)</label><input type="number" id="batteryInitialMwh" value="50" min="0" step="5"></div>
-            </div>
+                <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Komandų pradinės pozicijos</h3>
+                <div class="fg">
+                    <div><label>Pradinis biudžetas (€)</label><input type="number" id="startBudget" value="10000" min="0" step="100"></div>
+                    <div><label>Pradinė baterijos energija (MWh)</label><input type="number" id="batteryInitialMwh" value="50" min="0" step="5"></div>
+                </div>
 
-            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baterijos ir fiziniai apribojimai</h3>
-            <div class="fg">
-                <div><label>Maks. baterijos talpa (MWh)</label><input type="number" id="batteryMaxMwh" value="200" min="1" step="10"></div>
-                <div><label>Pralaidumas (MW/h)</label><input type="number" id="bandwidth" value="50" min="1" step="5"></div>
-            </div>
-            <div class="fg">
-                <div><label>Įkrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyCharge" value="0.9" min="0.01" max="1" step="0.01"></div>
-                <div><label>Iškrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyDischarge" value="0.9" min="0.01" max="1" step="0.01"></div>
-            </div>
+                <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baterijos ir fiziniai apribojimai</h3>
+                <div class="fg">
+                    <div><label>Maks. baterijos talpa (MWh)</label><input type="number" id="batteryMaxMwh" value="200" min="1" step="10"></div>
+                    <div><label>Pralaidumas (MW/h)</label><input type="number" id="bandwidth" value="50" min="1" step="5"></div>
+                </div>
+                <div class="fg">
+                    <div><label>Įkrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyCharge" value="0.9" min="0.01" max="1" step="0.01"></div>
+                    <div><label>Iškrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyDischarge" value="0.9" min="0.01" max="1" step="0.01"></div>
+                </div>
 
-            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baudos ir taisyklės</h3>
-            <div class="fg">
-                <div><label>Baudos kaina ($/MWh)</label><input type="number" id="penaltyPrice" value="150" min="0" step="10"></div>
-                <div><label>Baudos koeficientas k</label><input type="number" id="penaltyK" value="0.5" min="0" step="0.1"></div>
-            </div>
-            <div class="fg">
-                <div><label>Baudos koeficientas b</label><input type="number" id="penaltyB" value="5" min="0" step="1"></div>
-                <div><label><input type="checkbox" id="proRataEnabled" style="width:auto; margin-right:6px;"> Pro-Rata įjungta</label></div>
-            </div>
+                <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baudos ir taisyklės</h3>
+                <div class="fg">
+                    <div><label>Baudos kaina ($/MWh)</label><input type="number" id="penaltyPrice" value="150" min="0" step="10"></div>
+                    <div><label>Baudos koeficientas k</label><input type="number" id="penaltyK" value="0.5" min="0" step="0.1"></div>
+                </div>
+                <div class="fg">
+                    <div><label>Baudos koeficientas b</label><input type="number" id="penaltyB" value="5" min="0" step="1"></div>
+                    <div><label><input type="checkbox" id="proRataEnabled" style="width:auto; margin-right:6px;"> Pro-Rata įjungta</label></div>
+                </div>
 
-            <button class="btn btn-primary btn-full" onclick="createSession()">Sukurti sesiją</button>
+                <button class="btn btn-primary btn-full" onclick="createSession()">Sukurti sesiją</button>
+            </div>
         </div>
 
         <!-- ACTIVE LIST -->
@@ -1176,6 +1177,7 @@
 
     <div class="toast" id="toast"></div>
 
+    <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script>
         // ── STATE ──────────────────────────────────────
@@ -1197,7 +1199,7 @@
                     const latestRound = s.rounds && s.rounds.length ? s.rounds[s.rounds.length - 1] : null;
                     const roundStatus = latestRound ? latestRound.status : null; // 'bidding' or 'calculated'
                     const betsOpen = roundStatus === 'bidding';
-                    
+
                     return {
                         ...s,
                         pin: s.join_code,
@@ -1239,7 +1241,7 @@
                         console.log('[AdminWS] Message:', data);
                         if (data.event === 'TEAM_JOINED' || data.event === 'BID_SUBMITTED') {
                             loadState(); // Refresh everything
-                            renderManage(); 
+                            renderManage();
                         }
                     }
                 });
@@ -1297,24 +1299,24 @@
             } catch (err) {
                 toast('Klaida kūrant sesiją: ' + err.message);
             }
-        }/
+        }
         // ── ACTIVE LIST ────────────────────────────────
         function renderActiveSessions() {
             const el = document.getElementById('activeList');
             if (!sessions.length) { el.innerHTML = '<div class="card" style="text-align:center;color:#999;padding:24px;">Nėra aktyvių sesijų</div>'; return; }
             el.innerHTML = sessions.map(s => `
-                <div class="sc">
-                  <div class="sc-hd"><div><div class="sc-name">${escapeHtml(s.gameName)}</div><div class="sc-sub"><span class="dot dot-${s.status}"></span>${statusLabel(s.status)} · ${s.createdAt}</div></div><div style="font-size:11px;color:#888;">R${s.currentRound}/${s.numRounds}</div></div>
-                  <div class="pin-badge">${s.pin}</div>
-                  <div class="sr"><span class="sl">Komandos</span><span class="sv">${s.teams.length}</span></div>
-                  <div class="sr"><span class="sl">Diena</span><span class="sv">${s.currentDay}</span></div>
-                  <div class="btn-grp">
-                    ${s.status === 'waiting' ? `<button class="btn btn-success btn-sm" onclick="startSession(${s.id})">▶ Pradėti</button>` : ''}
-                    ${s.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="openManage(${s.id})">🎛 Valdyti</button>` : ''}
-                    <button class="btn btn-sec btn-sm" onclick="openManage(${s.id})">👁 Peržiūrėti</button>
-                    <button class="btn btn-danger btn-sm" onclick="archiveSession(${s.id})">📁 Archyvuoti</button>
-                  </div>
-                </div>`).join('');
+                            <div class="sc">
+                              <div class="sc-hd"><div><div class="sc-name">${escapeHtml(s.gameName)}</div><div class="sc-sub"><span class="dot dot-${s.status}"></span>${statusLabel(s.status)} · ${s.createdAt}</div></div><div style="font-size:11px;color:#888;">R${s.currentRound}/${s.numRounds}</div></div>
+                              <div class="pin-badge">${s.pin}</div>
+                              <div class="sr"><span class="sl">Komandos</span><span class="sv">${s.teams.length}</span></div>
+                              <div class="sr"><span class="sl">Diena</span><span class="sv">${s.currentDay}</span></div>
+                              <div class="btn-grp">
+                                ${s.status === 'waiting' ? `<button class="btn btn-success btn-sm" onclick="startSession(${s.id})">▶ Pradėti</button>` : ''}
+                                ${s.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="openManage(${s.id})">🎛 Valdyti</button>` : ''}
+                                <button class="btn btn-sec btn-sm" onclick="openManage(${s.id})">👁 Peržiūrėti</button>
+                                <button class="btn btn-danger btn-sm" onclick="archiveSession(${s.id})">📁 Archyvuoti</button>
+                              </div>
+                            </div>`).join('');
         }
         // ── MANAGE ─────────────────────────────────────
         function switchAdminRound(round) {
@@ -1336,108 +1338,108 @@
             const currentRound = selectedRound || s.currentRound || 1;
 
             const roundNavHTML = `
-                <div class="pgv-rounds">
-                  ${Array.from({ length: s.numRounds }, (_, i) => i + 1).map(r => `
-                    <button
-                      class="pgv-rbtn ${r === currentRound ? 'active' : ''} ${r < s.currentRound ? 'past' : ''}"
-                      onclick="switchAdminRound(${r})">
-                      ${r < s.currentRound ? '🔒 ' : ''}D${r}
-                    </button>
-                  `).join('')}
-                </div>
-              `;
+                            <div class="pgv-rounds">
+                              ${Array.from({ length: s.numRounds }, (_, i) => i + 1).map(r => `
+                                <button
+                                  class="pgv-rbtn ${r === currentRound ? 'active' : ''} ${r < s.currentRound ? 'past' : ''}"
+                                  onclick="switchAdminRound(${r})">
+                                  ${r < s.currentRound ? '🔒 ' : ''}D${r}
+                                </button>
+                              `).join('')}
+                            </div>
+                          `;
 
             document.getElementById('manageContent').innerHTML = `
-                ${roundNavHTML}
-                <div class="chart-card-wide">
-                  <h3>Rinkos kainos — Diena ${currentRound} (24 val.)
-                    <span style="font-size:10px;font-weight:500;color:#aaa;">Spustelėkite ant valandos · kiekviena linija = komanda</span>
-                  </h3>
-                  <div class="chart-wrap"><canvas id="adminChart"></canvas></div>
-                </div>
-                <div class="card">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;">
-                    <div>
-                      <h2 style="margin-bottom:2px;">${escapeHtml(s.gameName)}</h2>
-                      <div style="font-size:11px;color:#888;">PIN: <strong style="font-family:monospace;letter-spacing:2px;">${s.pin}</strong> · ${statusLabel(s.status)}</div>
-                    </div>
-                    <button class="btn btn-warn btn-sm" style="flex-shrink:0;align-self:flex-start;" onclick="addExtraRound(${s.id})" title="Pridėti papildomą raundą">➕ Papild. raundas</button>
-                  </div>
-                  <div class="rc">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <h3 style="margin-bottom:0;">Raundo valdymas</h3>
-                      <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">Tarpiniai rezultatai</button>
-                    </div>
-                    <div class="rc-stats">
-                      <div class="rc-stat"><div class="v">${s.currentRound || '—'}</div><div class="l">Diena</div></div>
-                      <div class="rc-stat"><div class="v">${s.numRounds}</div><div class="l">Iš viso</div></div>
-                      <div class="rc-stat"><div class="v">${s.teams.length}</div><div class="l">Komandos</div></div>
-                    </div>
-                    <div><span class="bets-pill ${s.betsOpen ? 'bets-open-p' : 'bets-closed-p'}">${s.betsOpen ? '✅ Statymai atidaryti' : '🔒 Statymai uždaryti'}</span></div>
-                    <div class="btn-grp" style="margin-top:10px;">
-                      ${(s.status === 'waiting' || s.status === 'pending') ? `<button class="btn btn-success btn-lg btn-full" onclick="startSession(${s.id})" style="margin-bottom:12px;font-size:16px;">▶ Pradėti žaidimą</button>` : ''}
-                      ${s.status === 'active' && (!s.roundStatus || s.roundStatus === 'calculated') ? `<button class="btn btn-start-round" onclick="goToNextRound(${s.id})">▶ Kitas raundas</button>` : ''}
-                      ${s.status === 'active' && s.roundStatus === 'bidding' ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">⏹ Baigti raundą</button>` : ''}
-                    </div>
-                  </div>
-                </div>
-                <div class="two-col">
-                  <div class="card">
-                    <h3>Visos komandos (${s.teams.length})</h3>
-                    <div class="scroll-panel">
-                      ${s.teams.length ? s.teams.map(t => `
-                        <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')">
-                          <div class="ua">${t.name.slice(0, 2).toUpperCase()}</div>
-                          <span class="un">${escapeHtml(t.name)}</span>
-                          <span class="ub">$${(t.balance || 0).toLocaleString()}</span>
-                          <span class="ub" style="color:#f39c12;"> ${(t.batteryStored || 0).toFixed(0)}/${t.batteryCapacity || s.maxPower || 100} MW</span>
-                          <div class="online-dot"></div>
-                        </div>`).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
-                    </div>
-                  </div>
-                  <div class="card">
-                    <h3>Statymų būsena — R${s.currentRound || '?'}</h3>
-                    <div class="bid-summary">
-                      <span class="bid-chip bc-sub">✅ ${bs.submitted}</span>
-                      <span class="bid-chip bc-dft">✏️ ${bs.draft}</span>
-                      <span class="bid-chip bc-non">— ${bs.none}</span>
-                    </div>
-                    <div class="scroll-panel">
-                      ${s.teams.length ? s.teams.map(t => {
+                            ${roundNavHTML}
+                            <div class="chart-card-wide">
+                              <h3>Rinkos kainos — Diena ${currentRound} (24 val.)
+                                <span style="font-size:10px;font-weight:500;color:#aaa;">Spustelėkite ant valandos · kiekviena linija = komanda</span>
+                              </h3>
+                              <div class="chart-wrap"><canvas id="adminChart"></canvas></div>
+                            </div>
+                            <div class="card">
+                              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;">
+                                <div>
+                                  <h2 style="margin-bottom:2px;">${escapeHtml(s.gameName)}</h2>
+                                  <div style="font-size:11px;color:#888;">PIN: <strong style="font-family:monospace;letter-spacing:2px;">${s.pin}</strong> · ${statusLabel(s.status)}</div>
+                                </div>
+                                <button class="btn btn-warn btn-sm" style="flex-shrink:0;align-self:flex-start;" onclick="addExtraRound(${s.id})" title="Pridėti papildomą raundą">➕ Papild. raundas</button>
+                              </div>
+                              <div class="rc">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                  <h3 style="margin-bottom:0;">Raundo valdymas</h3>
+                                  <button class="btn btn-primary btn-sm" onclick="openProjector()" style="font-size:11px;">Tarpiniai rezultatai</button>
+                                </div>
+                                <div class="rc-stats">
+                                  <div class="rc-stat"><div class="v">${s.currentRound || '—'}</div><div class="l">Diena</div></div>
+                                  <div class="rc-stat"><div class="v">${s.numRounds}</div><div class="l">Iš viso</div></div>
+                                  <div class="rc-stat"><div class="v">${s.teams.length}</div><div class="l">Komandos</div></div>
+                                </div>
+                                <div><span class="bets-pill ${s.betsOpen ? 'bets-open-p' : 'bets-closed-p'}">${s.betsOpen ? '✅ Statymai atidaryti' : '🔒 Statymai uždaryti'}</span></div>
+                                <div class="btn-grp" style="margin-top:10px;">
+                                  ${(s.status === 'waiting' || s.status === 'pending') ? `<button class="btn btn-success btn-lg btn-full" onclick="startSession(${s.id})" style="margin-bottom:12px;font-size:16px;">▶ Pradėti žaidimą</button>` : ''}
+                                  ${s.status === 'active' && (!s.roundStatus || s.roundStatus === 'calculated') ? `<button class="btn btn-start-round" onclick="goToNextRound(${s.id})">▶ Kitas raundas</button>` : ''}
+                                  ${s.status === 'active' && s.roundStatus === 'bidding' ? `<button class="btn btn-end-round" onclick="endRound(${s.id})">⏹ Baigti raundą</button>` : ''}
+                                </div>
+                              </div>
+                            </div>
+                            <div class="two-col">
+                              <div class="card">
+                                <h3>Visos komandos (${s.teams.length})</h3>
+                                <div class="scroll-panel">
+                                  ${s.teams.length ? s.teams.map(t => `
+                                    <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')">
+                                      <div class="ua">${t.name.slice(0, 2).toUpperCase()}</div>
+                                      <span class="un">${escapeHtml(t.name)}</span>
+                                      <span class="ub">$${(t.balance || 0).toLocaleString()}</span>
+                                      <span class="ub" style="color:#f39c12;"> ${(t.batteryStored || 0).toFixed(0)}/${t.batteryCapacity || s.maxPower || 100} MW</span>
+                                      <div class="online-dot"></div>
+                                    </div>`).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
+                                </div>
+                              </div>
+                              <div class="card">
+                                <h3>Statymų būsena — R${s.currentRound || '?'}</h3>
+                                <div class="bid-summary">
+                                  <span class="bid-chip bc-sub">✅ ${bs.submitted}</span>
+                                  <span class="bid-chip bc-dft">✏️ ${bs.draft}</span>
+                                  <span class="bid-chip bc-non">— ${bs.none}</span>
+                                </div>
+                                <div class="scroll-panel">
+                                  ${s.teams.length ? s.teams.map(t => {
                 const bid = getCurrentBid(t, s.currentRound);
                 const st = bid ? (bid.submitted ? 'submitted' : 'draft') : 'none';
                 const icon = { submitted: '✅', draft: '✏️', none: '—' }[st];
                 const detail = bid ? `${bid.price}$ · ${bid.mw}MW` : 'nėra';
                 return `<div class="bs-row" style="${st === 'none' ? 'opacity:.55' : ''}">
-                          <span style="font-size:13px;">${icon}</span>
-                          <span class="bs-name">${escapeHtml(t.name)}</span>
-                          <span class="bs-detail">${detail}</span>
-                          <button class="btn btn-sec btn-xs" onclick="openPlayerModal(${s.id},'${t.id}')">👁</button>
-                        </div>`;
+                                      <span style="font-size:13px;">${icon}</span>
+                                      <span class="bs-name">${escapeHtml(t.name)}</span>
+                                      <span class="bs-detail">${detail}</span>
+                                      <button class="btn btn-sec btn-xs" onclick="openPlayerModal(${s.id},'${t.id}')">👁</button>
+                                    </div>`;
             }).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
-                    </div>
-                  </div>
-                </div>
-                <div class="card">
-                  <h3>Statymai</h3>
-                  <div class="scroll-panel" style="height:210px; overflow-y: scroll;">
-                    ${s.transactions.length ? s.transactions.slice().reverse().map(tx => `
-                      <div class="tx-row">
-                        <span class="${tx.type === 'buy' ? 'tx-buy' : 'tx-sell'}">${tx.type === 'buy' ? '▲' : '▼'}</span>
-                        <span class="tx-info">${escapeHtml(tx.teamName)} · ${tx.mw}MW @ ${tx.price}$</span>
-                        <span class="tx-meta">R${tx.round}</span>
-                      </div>
-                    `).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra sandorių</p>'}
-                  </div>
-                </div>
-                <div class="card" style="border-left:4px solid #e74c3c;">
-                  <h3 style="color:#e74c3c;">Sesijos valdymas</h3>
-                  <div class="btn-grp">
-                    <button class="btn btn-danger btn-sm" onclick="finishSession(${s.id})">Baigti sesiją</button>
-                    <button class="btn btn-sec btn-sm" onclick="archiveSession(${s.id})">Archyvuoti</button>
-                  </div>
-                </div>
-              `;
+                                </div>
+                              </div>
+                            </div>
+                            <div class="card">
+                              <h3>Statymai</h3>
+                              <div class="scroll-panel" style="height:210px; overflow-y: scroll;">
+                                ${s.transactions.length ? s.transactions.slice().reverse().map(tx => `
+                                  <div class="tx-row">
+                                    <span class="${tx.type === 'buy' ? 'tx-buy' : 'tx-sell'}">${tx.type === 'buy' ? '▲' : '▼'}</span>
+                                    <span class="tx-info">${escapeHtml(tx.teamName)} · ${tx.mw}MW @ ${tx.price}$</span>
+                                    <span class="tx-meta">R${tx.round}</span>
+                                  </div>
+                                `).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra sandorių</p>'}
+                              </div>
+                            </div>
+                            <div class="card" style="border-left:4px solid #e74c3c;">
+                              <h3 style="color:#e74c3c;">Sesijos valdymas</h3>
+                              <div class="btn-grp">
+                                <button class="btn btn-danger btn-sm" onclick="finishSession(${s.id})">Baigti sesiją</button>
+                                <button class="btn btn-sec btn-sm" onclick="archiveSession(${s.id})">Archyvuoti</button>
+                              </div>
+                            </div>
+                          `;
             setTimeout(() => renderAdminChart(s), 50);
         }
         // ── ROUND ACTIONS ──────────────────────────────
@@ -1447,7 +1449,7 @@
 
         async function endRound(id) {
             const s = sessions.find(x => x.id === id); if (!s) return;
-            const rid = s.round_id || (s.rounds && s.rounds.length ? s.rounds[s.rounds.length-1].id : null);
+            const rid = s.round_id || (s.rounds && s.rounds.length ? s.rounds[s.rounds.length - 1].id : null);
             if (!rid) { toast('Nerastas raundo ID'); return; }
 
             try {
@@ -1456,7 +1458,7 @@
                 toast('Raundas baigtas');
                 await loadState();
                 renderManage();
-                
+
                 if (result.session_finished) {
                     toast('Sesija baigta!');
                 } else {
@@ -1502,6 +1504,24 @@
                 toast('Klaida archyvuojant: ' + err.message);
             }
         }
+        async function finishSession(id) {
+            if (!confirm('Ar tikrai norite baigti šią sesiją?')) return;
+            try {
+                // First, end current round if active
+                const s = sessions.find(x => x.id === id);
+                if (s && s.roundStatus === 'bidding') {
+                    toast('Pirmiausia užbaikite esamą raundą...');
+                    await endRound(id);
+                }
+                // Then archive the session
+                await API.Sessions.delete(id);
+                toast('Sesija baigta');
+                await loadState();
+                switchTab('active', document.querySelectorAll('.tbtn')[1]);
+            } catch (err) {
+                toast('Klaida baigiant sesiją: ' + err.message);
+            }
+        }
         // ── PLAYER GAME VIEW MODAL ─────────────────────
         function openPlayerModal(sessionId, teamId) {
             const s = sessions.find(x => x.id === sessionId); if (!s) return;
@@ -1517,46 +1537,46 @@
             const pnl = Math.round(bids.filter(b => b.submitted && b.type === 'buy').reduce((sum, b) => sum + b.mw * (s.marketPrice - b.price), 0));
 
             document.getElementById('playerModalBody').innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f5f1e8;border-radius:8px;margin-bottom:10px;">
-                  <div>
-                    <div style="font-weight:700;font-size:14px;color:#2f4a75;">${escapeHtml(t.name)}</div>
-                    <div style="font-size:10px;color:#888;">Slaptažodis: <code style="background:#e8dfd4;padding:1px 5px;border-radius:4px;">${t.password}</code></div>
-                  </div>
-                  <div style="text-align:right;">
-                    <div style="font-size:18px;font-weight:700;color:#2f4a75;">$${(t.balance || 0).toLocaleString()}</div>
-                    <div style="font-size:9px;color:#888;">Balansas</div>
-                  </div>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
-                  <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
-                    <div style="font-size:14px;font-weight:700;color:#2f4a75;">${totalSubmitted}</div>
-                    <div style="font-size:9px;color:#888;margin-top:2px;">Pateiktos dienos</div>
-                  </div>
-                  <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
-                    <div style="font-size:14px;font-weight:700;color:#2f4a75;">${totalMWh} MWh</div>
-                    <div style="font-size:9px;color:#888;margin-top:2px;">Pirkta iš viso</div>
-                  </div>
-                  <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
-                    <div style="font-size:14px;font-weight:700;color:${pnl >= 0 ? '#27ae60' : '#e74c3c'};">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toLocaleString()}</div>
-                    <div style="font-size:9px;color:#888;margin-top:2px;">P&amp;L</div>
-                  </div>
-                </div>
-                <div style="font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:5px;">Pasirinkite dieną:</div>
-                <div style="display:flex;gap:4px;overflow-x:auto;padding:2px 0;margin-bottom:10px;">
-                  ${Array.from({ length: nr }, (_, i) => i + 1).map(r => `
-                    <button id="pgvBtn_${r}" style="padding:4px 10px;border:1.5px solid ${r === cr ? '#2f4a75' : '#d4cec2'};border-radius:20px;background:${r === cr ? '#2f4a75' : 'white'};color:${r === cr ? 'white' : r < cr ? '#aaa' : '#888'};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;"
-                      onclick="pgvShow('${t.id}',${sessionId},${r})">
-                      ${r < cr ? '🔒 ' : ''}D${r}
-                    </button>`).join('')}
-                </div>
-                <div id="pgvChartWrap" style="background:white;border:1px solid #e8dfd4;border-radius:10px;padding:10px;margin-bottom:10px;">
-                  <div style="font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:6px;" id="pgvChartTitle">Diena ${cr} — 24 valandų vaizdas</div>
-                  <div style="position:relative;height:180px;"><canvas id="pgvChart"></canvas></div>
-                  <div style="font-size:10px;color:#aaa;margin-top:4px;text-align:center;">Mėlyna = rinkos kaina · Oranžinė = komandos pasiūlymai</div>
-                </div>
-                <div id="pgvBidList"></div>
-                <div id="pgvRoundHistory"></div>
-              `;
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#f5f1e8;border-radius:8px;margin-bottom:10px;">
+                              <div>
+                                <div style="font-weight:700;font-size:14px;color:#2f4a75;">${escapeHtml(t.name)}</div>
+                                <div style="font-size:10px;color:#888;">Slaptažodis: <code style="background:#e8dfd4;padding:1px 5px;border-radius:4px;">${t.password}</code></div>
+                              </div>
+                              <div style="text-align:right;">
+                                <div style="font-size:18px;font-weight:700;color:#2f4a75;">$${(t.balance || 0).toLocaleString()}</div>
+                                <div style="font-size:9px;color:#888;">Balansas</div>
+                              </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">
+                              <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
+                                <div style="font-size:14px;font-weight:700;color:#2f4a75;">${totalSubmitted}</div>
+                                <div style="font-size:9px;color:#888;margin-top:2px;">Pateiktos dienos</div>
+                              </div>
+                              <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
+                                <div style="font-size:14px;font-weight:700;color:#2f4a75;">${totalMWh} MWh</div>
+                                <div style="font-size:9px;color:#888;margin-top:2px;">Pirkta iš viso</div>
+                              </div>
+                              <div style="background:#f9f7f3;border:1px solid #e0d9cc;border-radius:7px;padding:8px;text-align:center;">
+                                <div style="font-size:14px;font-weight:700;color:${pnl >= 0 ? '#27ae60' : '#e74c3c'};">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toLocaleString()}</div>
+                                <div style="font-size:9px;color:#888;margin-top:2px;">P&amp;L</div>
+                              </div>
+                            </div>
+                            <div style="font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:5px;">Pasirinkite dieną:</div>
+                            <div style="display:flex;gap:4px;overflow-x:auto;padding:2px 0;margin-bottom:10px;">
+                              ${Array.from({ length: nr }, (_, i) => i + 1).map(r => `
+                                <button id="pgvBtn_${r}" style="padding:4px 10px;border:1.5px solid ${r === cr ? '#2f4a75' : '#d4cec2'};border-radius:20px;background:${r === cr ? '#2f4a75' : 'white'};color:${r === cr ? 'white' : r < cr ? '#aaa' : '#888'};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;"
+                                  onclick="pgvShow('${t.id}',${sessionId},${r})">
+                                  ${r < cr ? '🔒 ' : ''}D${r}
+                                </button>`).join('')}
+                            </div>
+                            <div id="pgvChartWrap" style="background:white;border:1px solid #e8dfd4;border-radius:10px;padding:10px;margin-bottom:10px;">
+                              <div style="font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:6px;" id="pgvChartTitle">Diena ${cr} — 24 valandų vaizdas</div>
+                              <div style="position:relative;height:180px;"><canvas id="pgvChart"></canvas></div>
+                              <div style="font-size:10px;color:#aaa;margin-top:4px;text-align:center;">Mėlyna = rinkos kaina · Oranžinė = komandos pasiūlymai</div>
+                            </div>
+                            <div id="pgvBidList"></div>
+                            <div id="pgvRoundHistory"></div>
+                          `;
 
             document.getElementById('playerModal').classList.add('open');
             pgvShow(t.id, sessionId, cr || 1);
@@ -1731,81 +1751,81 @@
 
                 // Generate HTML with collapsible rows
                 bidListEl.innerHTML = `
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">${bidStatus}
-            <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">D${round}${isPast ? ' (baigta)' : ' (aktyvi)'}</span>
-            <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(t.batteryStored || 0).toFixed(0)} MW</span>
-            <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">${hourData.reduce((sum, h) => sum + h.bidCount, 0)} pasiūlymų</span>
-        </div>
-        <div style="border:1px solid #e8dfd4;border-radius:8px;overflow:hidden;">
-            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;background:#f5f1e8;padding:8px 8px;font-size:10px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;">
-                <span></span>
-                <span>Val.</span>
-                <span>Net MW</span>
-                <span>Iš viso MW</span>
-                <span>Statymų #</span>
-                <span>Talpa</span>
-            </div>
-            <div style="max-height:400px;overflow-y:auto;">
-                ${hourData.map((hour, idx) => {
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">${bidStatus}
+                        <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">D${round}${isPast ? ' (baigta)' : ' (aktyvi)'}</span>
+                        <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(t.batteryStored || 0).toFixed(0)} MW</span>
+                        <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">${hourData.reduce((sum, h) => sum + h.bidCount, 0)} pasiūlymų</span>
+                    </div>
+                    <div style="border:1px solid #e8dfd4;border-radius:8px;overflow:hidden;">
+                        <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;background:#f5f1e8;padding:8px 8px;font-size:10px;font-weight:700;color:#2f4a75;text-transform:uppercase;letter-spacing:.3px;border-bottom:1.5px solid #e0d9cc;">
+                            <span></span>
+                            <span>Val.</span>
+                            <span>Net MW</span>
+                            <span>Iš viso MW</span>
+                            <span>Statymų #</span>
+                            <span>Talpa</span>
+                        </div>
+                        <div style="max-height:400px;overflow-y:auto;">
+                            ${hourData.map((hour, idx) => {
                     const isExpanded = false; // Start collapsed
                     const hourId = `hour_${round}_${hour.hour}`;
                     const netColor = hour.netMW > 0 ? '#27ae60' : (hour.netMW < 0 ? '#e74c3c' : '#888');
                     const netPrefix = hour.netMW > 0 ? '+' : '';
 
                     return `
-                        <div style="border-bottom:1px solid #f0ebe0;">
-                            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;align-items:center;padding:8px 8px;background:white;cursor:pointer;" onclick="toggleHourBids('${hourId}')">
-                                <span style="font-size:16px;color:#2f4a75;" id="${hourId}_icon">▶</span>
-                                <span style="font-weight:600;color:#2f4a75;">${String(hour.hour).padStart(2, '0')}:00</span>
-                                <span style="color:${netColor};font-weight:600;">${netPrefix}${hour.netMW} MW</span>
-                                <span style="color:#555;">${hour.totalMW} MW</span>
-                                <span style="color:#f39c12;">${hour.bidCount}</span>
-                                <span style="color:#f39c12;font-weight:600;">${hour.batteryAfter.toFixed(0)}</span>
-                            </div>
-                            <div id="${hourId}" style="display:none;background:#fafaf8;border-top:1px solid #e8dfd4;">
-                                <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;background:#e8dfd4;padding:6px 8px;font-size:9px;font-weight:700;color:#2f4a75;border-bottom:1px solid #d4cec2;">
-                                    <span></span>
-                                    <span>#</span>
-                                    <span>Kaina $/MWh</span>
-                                    <span>Galia MW</span>
-                                    <span>Tipas</span>
-                                </div>
-                                ${hour.bids.map((bid, bidIdx) => `
-                                    <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;align-items:center;padding:6px 8px;border-bottom:1px solid #f0ebe0;font-size:11px;">
-                                        <span style="color:#aaa;">↳</span>
-                                        <span style="color:#888;">#${bidIdx + 1}</span>
-                                        <span style="color:#2f4a75;font-weight:600;">${bid.price} $</span>
-                                        <span style="color:#555;">${bid.mw} MW</span>
-                                        <span style="color:${bid.type === 'buy' ? '#27ae60' : '#e74c3c'};font-weight:600;">${bid.type === 'buy' ? 'pirk.' : 'pard.'}</span>
+                                    <div style="border-bottom:1px solid #f0ebe0;">
+                                        <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;align-items:center;padding:8px 8px;background:white;cursor:pointer;" onclick="toggleHourBids('${hourId}')">
+                                            <span style="font-size:16px;color:#2f4a75;" id="${hourId}_icon">▶</span>
+                                            <span style="font-weight:600;color:#2f4a75;">${String(hour.hour).padStart(2, '0')}:00</span>
+                                            <span style="color:${netColor};font-weight:600;">${netPrefix}${hour.netMW} MW</span>
+                                            <span style="color:#555;">${hour.totalMW} MW</span>
+                                            <span style="color:#f39c12;">${hour.bidCount}</span>
+                                            <span style="color:#f39c12;font-weight:600;">${hour.batteryAfter.toFixed(0)}</span>
+                                        </div>
+                                        <div id="${hourId}" style="display:none;background:#fafaf8;border-top:1px solid #e8dfd4;">
+                                            <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;background:#e8dfd4;padding:6px 8px;font-size:9px;font-weight:700;color:#2f4a75;border-bottom:1px solid #d4cec2;">
+                                                <span></span>
+                                                <span>#</span>
+                                                <span>Kaina $/MWh</span>
+                                                <span>Galia MW</span>
+                                                <span>Tipas</span>
+                                            </div>
+                                            ${hour.bids.map((bid, bidIdx) => `
+                                                <div style="display:grid;grid-template-columns:40px 70px 1fr 1fr 64px;align-items:center;padding:6px 8px;border-bottom:1px solid #f0ebe0;font-size:11px;">
+                                                    <span style="color:#aaa;">↳</span>
+                                                    <span style="color:#888;">#${bidIdx + 1}</span>
+                                                    <span style="color:#2f4a75;font-weight:600;">${bid.price} $</span>
+                                                    <span style="color:#555;">${bid.mw} MW</span>
+                                                    <span style="color:${bid.type === 'buy' ? '#27ae60' : '#e74c3c'};font-weight:600;">${bid.type === 'buy' ? 'pirk.' : 'pard.'}</span>
+                                                </div>
+                                            `).join('')}
+                                        </div>
                                     </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
+                                `;
                 }).join('')}
-            </div>
-            <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;padding:8px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;">
-                <span></span><span>IŠ VISO</span>
-                <span>${hourData.reduce((sum, h) => sum + h.netMW, 0)} MW</span>
-                <span>${hourData.reduce((sum, h) => sum + h.totalMW, 0)} MW</span>
-                <span>${hourData.reduce((sum, h) => sum + h.bidCount, 0)}</span>
-                <span style="color:#f39c12;">${batteryHistory[batteryHistory.length - 1]?.toFixed(0) || (t.batteryStored || 0)}</span>
-            </div>
-        </div>
-    `;
+                        </div>
+                        <div style="display:grid;grid-template-columns:50px 70px 70px 70px 70px 80px;padding:8px 8px;background:#f0f7ff;border-top:2px solid #b8d4f8;font-size:11px;font-weight:700;color:#2f4a75;">
+                            <span></span><span>IŠ VISO</span>
+                            <span>${hourData.reduce((sum, h) => sum + h.netMW, 0)} MW</span>
+                            <span>${hourData.reduce((sum, h) => sum + h.totalMW, 0)} MW</span>
+                            <span>${hourData.reduce((sum, h) => sum + h.bidCount, 0)}</span>
+                            <span style="color:#f39c12;">${batteryHistory[batteryHistory.length - 1]?.toFixed(0) || (t.batteryStored || 0)}</span>
+                        </div>
+                    </div>
+                `;
             }
 
             const histEl = document.getElementById('pgvRoundHistory');
             if (histEl && (t.roundHistory || []).length) {
                 histEl.innerHTML = `<div style="margin-top:10px;font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:5px;">Dienų istorija</div>
-                  <table style="width:100%;border-collapse:collapse;">
-                    <thead style="background:#f5f1e8;"><tr><th style="padding:5px 8px;font-size:10px;text-align:left;color:#2f4a75;">D</th><th style="padding:5px 8px;font-size:10px;text-align:left;">Balansas</th><th style="padding:5px 8px;font-size:10px;text-align:left;">Pelnas</th></tr></thead>
-                    <tbody>${t.roundHistory.map(r => `<tr>
-                      <td style="padding:5px 8px;font-size:11px;color:#555;">D${r.round}</td>
-                      <td style="padding:5px 8px;font-size:11px;font-weight:600;color:#2f4a75;">$${(r.balance || 0).toLocaleString()}</td>
-                      <td style="padding:5px 8px;font-size:11px;font-weight:600;color:${(r.profit || 0) >= 0 ? '#27ae60' : '#e74c3c'}">${(r.profit || 0) >= 0 ? '+' : ''}$${Math.abs(r.profit || 0).toLocaleString()}</td>
-                    </tr>`).join('')}</tbody>
-                  </table>`;
+                              <table style="width:100%;border-collapse:collapse;">
+                                <thead style="background:#f5f1e8;"><tr><th style="padding:5px 8px;font-size:10px;text-align:left;color:#2f4a75;">D</th><th style="padding:5px 8px;font-size:10px;text-align:left;">Balansas</th><th style="padding:5px 8px;font-size:10px;text-align:left;">Pelnas</th></tr></thead>
+                                <tbody>${t.roundHistory.map(r => `<tr>
+                                  <td style="padding:5px 8px;font-size:11px;color:#555;">D${r.round}</td>
+                                  <td style="padding:5px 8px;font-size:11px;font-weight:600;color:#2f4a75;">$${(r.balance || 0).toLocaleString()}</td>
+                                  <td style="padding:5px 8px;font-size:11px;font-weight:600;color:${(r.profit || 0) >= 0 ? '#27ae60' : '#e74c3c'}">${(r.profit || 0) >= 0 ? '+' : ''}$${Math.abs(r.profit || 0).toLocaleString()}</td>
+                                </tr>`).join('')}</tbody>
+                              </table>`;
             } else if (histEl) histEl.innerHTML = '';
         }
         // ── INTERIM RESULTS ──────────────────────────────────
@@ -1828,77 +1848,77 @@
             const modalId = 'projectorModal_' + Date.now();
 
             const html = `
-        <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) closeProjectorModal('${modalId}')">
-            <div style="background:white;border-radius:20px;max-width:1000px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
-                <div style="padding:18px 24px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);border-radius:20px 20px 0 0;">
-                    <div>
-                        <div style="font-weight:700;font-size:20px;color:white;">Tarpiniai rezultatai</div>
-                        <div style="font-size:13px;color:#a8d8ff;margin-top:4px;">${escapeHtml(s.gameName)} · Diena ${lastRound} / ${s.numRounds}</div>
-                    </div>
-                    <button onclick="closeProjectorModal('${modalId}')" style="background:rgba(255,255,255,.2);border:none;font-size:20px;cursor:pointer;color:white;padding:6px 12px;border-radius:8px;">×</button>
-                </div>
-                <div style="padding:20px;overflow-y:auto;flex:1;">
-                    
-                    <!-- CHART SECTION (ABOVE PODIUM) -->
-                    <div style="margin-bottom:24px;">
-                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Praėjusios dienos #${lastRound} pasiūlymai</div>
-                        <div style="background:#f9f7f3;border-radius:12px;padding:16px;">
-                            <div style="position:relative;height:300px;">
-                                <canvas id="projectorChart_${modalId}"></canvas>
+                    <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) closeProjectorModal('${modalId}')">
+                        <div style="background:white;border-radius:20px;max-width:1000px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+                            <div style="padding:18px 24px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);border-radius:20px 20px 0 0;">
+                                <div>
+                                    <div style="font-weight:700;font-size:20px;color:white;">Tarpiniai rezultatai</div>
+                                    <div style="font-size:13px;color:#a8d8ff;margin-top:4px;">${escapeHtml(s.gameName)} · Diena ${lastRound} / ${s.numRounds}</div>
+                                </div>
+                                <button onclick="closeProjectorModal('${modalId}')" style="background:rgba(255,255,255,.2);border:none;font-size:20px;cursor:pointer;color:white;padding:6px 12px;border-radius:8px;">×</button>
                             </div>
-                            <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;">
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2f4a75;"></span><span>Rinkos kaina</span></div>
-                                ${top3.map((team, idx) => `
-                                    <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:${TEAM_COLORS[idx % TEAM_COLORS.length]}"></span><span>${escapeHtml(team.name)}</span></div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- PODIUM SECTION (BELOW CHART) -->
-                    <div style="margin-bottom:24px;">
-                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;text-align:center;">Top 3</div>
-                        <div style="display:flex;align-items:flex-end;justify-content:center;gap:12px;">
-                            ${renderPodiumStep(top3[1], 2)}
-                            ${renderPodiumStep(top3[0], 1)}
-                            ${renderPodiumStep(top3[2], 3)}
-                        </div>
-                    </div>
-                    
-                    <!-- LEADERBOARD TABLE -->
-                    <div style="margin-bottom:24px;">
-                        <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Visos komandos</div>
-                        <div style="border:1px solid #e8dfd4;border-radius:12px;overflow:hidden;">
-                            <table style="width:100%;">
-                                <thead style="background:#f5f1e8;">
-                                    <tr>
-                                        <th style="padding:10px 12px;font-size:11px;">#</th>
-                                        <th style="padding:10px 12px;font-size:11px;text-align:left;">Komanda</th>
-                                        <th style="padding:10px 12px;font-size:11px;text-align:right;">Balansas</th>
-                                        <th style="padding:10px 12px;font-size:11px;text-align:right;">Pokytis</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${sortedTeams.map((team, idx) => {
+                            <div style="padding:20px;overflow-y:auto;flex:1;">
+
+                                <!-- CHART SECTION (ABOVE PODIUM) -->
+                                <div style="margin-bottom:24px;">
+                                    <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Praėjusios dienos #${lastRound} pasiūlymai</div>
+                                    <div style="background:#f9f7f3;border-radius:12px;padding:16px;">
+                                        <div style="position:relative;height:300px;">
+                                            <canvas id="projectorChart_${modalId}"></canvas>
+                                        </div>
+                                        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;">
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2f4a75;"></span><span>Rinkos kaina</span></div>
+                                            ${top3.map((team, idx) => `
+                                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:${TEAM_COLORS[idx % TEAM_COLORS.length]}"></span><span>${escapeHtml(team.name)}</span></div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- PODIUM SECTION (BELOW CHART) -->
+                                <div style="margin-bottom:24px;">
+                                    <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;text-align:center;">Top 3</div>
+                                    <div style="display:flex;align-items:flex-end;justify-content:center;gap:12px;">
+                                        ${renderPodiumStep(top3[1], 2)}
+                                        ${renderPodiumStep(top3[0], 1)}
+                                        ${renderPodiumStep(top3[2], 3)}
+                                    </div>
+                                </div>
+
+                                <!-- LEADERBOARD TABLE -->
+                                <div style="margin-bottom:24px;">
+                                    <div style="font-size:14px;font-weight:700;color:#2f4a75;margin-bottom:12px;">Visos komandos</div>
+                                    <div style="border:1px solid #e8dfd4;border-radius:12px;overflow:hidden;">
+                                        <table style="width:100%;">
+                                            <thead style="background:#f5f1e8;">
+                                                <tr>
+                                                    <th style="padding:10px 12px;font-size:11px;">#</th>
+                                                    <th style="padding:10px 12px;font-size:11px;text-align:left;">Komanda</th>
+                                                    <th style="padding:10px 12px;font-size:11px;text-align:right;">Balansas</th>
+                                                    <th style="padding:10px 12px;font-size:11px;text-align:right;">Pokytis</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${sortedTeams.map((team, idx) => {
                 const lastRoundProfit = getRoundProfit(team, lastRound);
                 const isTop3 = idx < 3;
                 return `
-                                            <tr style="border-bottom:1px solid #f0ebe0;${isTop3 ? 'background:#fef9e7;' : ''}">
-                                                <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#2f4a75;text-align:center;">${idx + 1}</td>
-                                                <td style="padding:10px 12px;font-size:13px;font-weight:${isTop3 ? '700' : '400'};color:${isTop3 ? '#2f4a75' : '#555'};">${escapeHtml(team.name)}</td>
-                                                <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#2f4a75;text-align:right;">$${(team.balance || 0).toLocaleString()}</td>
-                                                <td style="padding:10px 12px;font-size:13px;font-weight:600;color:${lastRoundProfit >= 0 ? '#27ae60' : '#e74c3c'};text-align:right;">${lastRoundProfit >= 0 ? '+' : ''}$${Math.abs(lastRoundProfit).toLocaleString()}</td>
-                                            </tr>
-                                        `;
+                                                        <tr style="border-bottom:1px solid #f0ebe0;${isTop3 ? 'background:#fef9e7;' : ''}">
+                                                            <td style="padding:10px 12px;font-size:13px;font-weight:700;color:#2f4a75;text-align:center;">${idx + 1}</td>
+                                                            <td style="padding:10px 12px;font-size:13px;font-weight:${isTop3 ? '700' : '400'};color:${isTop3 ? '#2f4a75' : '#555'};">${escapeHtml(team.name)}</td>
+                                                            <td style="padding:10px 12px;font-size:13px;font-weight:600;color:#2f4a75;text-align:right;">$${(team.balance || 0).toLocaleString()}</td>
+                                                            <td style="padding:10px 12px;font-size:13px;font-weight:600;color:${lastRoundProfit >= 0 ? '#27ae60' : '#e74c3c'};text-align:right;">${lastRoundProfit >= 0 ? '+' : ''}$${Math.abs(lastRoundProfit).toLocaleString()}</td>
+                                                        </tr>
+                                                    `;
             }).join('')}
-                                </tbody>
-                            </table>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    `;
+                `;
 
             document.body.insertAdjacentHTML('beforeend', html);
 
@@ -2038,13 +2058,13 @@
             const height = rank === 1 ? '80px' : rank === 2 ? '60px' : '45px';
             const colors = rank === 1 ? '#f1c40f' : rank === 2 ? '#bdc3c7' : '#e67e22';
             return `
-        <div style="text-align:center;flex:1;max-width:120px;">
-            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,${colors},${rank === 1 ? '#d4ac0d' : rank === 2 ? '#95a5a6' : '#ca6f1e'});display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-weight:700;font-size:16px;">${team.name.slice(0, 2).toUpperCase()}</div>
-            <div style="font-size:12px;font-weight:700;color:#333;">${escapeHtml(team.name)}</div>
-            <div style="font-size:14px;font-weight:700;color:#2f4a75;">$${(team.balance || 0).toLocaleString()}</div>
-            <div style="background:${colors};height:${height};width:100%;border-radius:8px 8px 0 0;margin-top:6px;"></div>
-        </div>
-    `;
+                    <div style="text-align:center;flex:1;max-width:120px;">
+                        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,${colors},${rank === 1 ? '#d4ac0d' : rank === 2 ? '#95a5a6' : '#ca6f1e'});display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-weight:700;font-size:16px;">${team.name.slice(0, 2).toUpperCase()}</div>
+                        <div style="font-size:12px;font-weight:700;color:#333;">${escapeHtml(team.name)}</div>
+                        <div style="font-size:14px;font-weight:700;color:#2f4a75;">$${(team.balance || 0).toLocaleString()}</div>
+                        <div style="background:${colors};height:${height};width:100%;border-radius:8px 8px 0 0;margin-top:6px;"></div>
+                    </div>
+                `;
         }
         function getRoundProfit(team, round) {
             const history = (team.roundHistory || []).find(r => r.round === round);
@@ -2058,21 +2078,21 @@
                 window.projectorChartInstance = null;
             }
         }
-        
+
         // ── PREVIOUS ───────────────────────────────────
         function renderPreviousSessions() {
             const el = document.getElementById('previousList');
             if (!prevSessions.length) { el.innerHTML = '<div class="card" style="text-align:center;color:#999;padding:24px;">Nėra archyvuotų sesijų</div>'; return; }
             el.innerHTML = prevSessions.map(s => `
-                <div class="sc">
-                  <div class="sc-hd"><div><div class="sc-name">${escapeHtml(s.gameName)}</div><div class="sc-sub">Baigta: ${s.completedAt || '—'}</div></div><div style="font-size:11px;color:#888;">${s.numRounds} dienų</div></div>
-                  <div class="pin-badge" style="background:#f5f1e8;color:#888;">${s.pin}</div>
-                  <div class="sr"><span class="sl">Komandos</span><span class="sv">${s.teams.length}</span></div>
-                  <div class="btn-grp">
-                    <button class="btn btn-sec btn-sm" onclick="viewArchived('${s.id}')">Peržiūrėti</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteArchived('${s.id}')">Ištrinti</button>
-                  </div>
-                </div>`).join('');
+                            <div class="sc">
+                              <div class="sc-hd"><div><div class="sc-name">${escapeHtml(s.gameName)}</div><div class="sc-sub">Baigta: ${s.completedAt || '—'}</div></div><div style="font-size:11px;color:#888;">${s.numRounds} dienų</div></div>
+                              <div class="pin-badge" style="background:#f5f1e8;color:#888;">${s.pin}</div>
+                              <div class="sr"><span class="sl">Komandos</span><span class="sv">${s.teams.length}</span></div>
+                              <div class="btn-grp">
+                                <button class="btn btn-sec btn-sm" onclick="viewArchived('${s.id}')">Peržiūrėti</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteArchived('${s.id}')">Ištrinti</button>
+                              </div>
+                            </div>`).join('');
         }
         function viewArchived(id) { const s = prevSessions.find(x => x.id == id); if (!s) return; if (!sessions.find(x => x.id == id)) sessions.push({ ...s }); activeSessionId = s.id; document.getElementById('manageTabBtn').style.display = ''; switchTab('manage', document.getElementById('manageTabBtn')); renderManage(); }
         function deleteArchived(id) { if (!confirm('Ištrinti visam laikui?')) return; prevSessions = prevSessions.filter(x => x.id != id); saveState(); renderPreviousSessions(); }
@@ -2084,34 +2104,129 @@
         let adminChartInstance = null;
         async function getOrGenPrices(s, round) {
             if (!s.marketPrices) s.marketPrices = {};
-            if (!s.marketPrices[round]) {
-                const roundObj = (s.rounds || []).find(r => r.round_number === round);
-                if (roundObj && roundObj.status === 'calculated') {
-                    try {
-                        const res = await API.Admin.getResults(s.id, roundObj.id);
-                        if (res && res.market_clearing) {
-                            s.marketPrices[round] = res.market_clearing.map(mc => mc.clearing_price);
-                        }
-                    } catch (e) { console.warn('Failed to load results for round', round, e); }
-                }
-                
-                // Fallback to forecast if results not available or round is active
-                if (!s.marketPrices[round] && roundObj) {
-                    try {
-                        const res = await API.Sessions.getForecast(s.id, roundObj.id);
-                        if (res && res.forecast) {
-                            s.marketPrices[round] = res.forecast.map(f => f.predicted_price);
-                        }
-                    } catch (e) { console.warn('Failed to load forecast for round', round, e); }
-                }
 
-                // Hard fallback to avoid crash
-                if (!s.marketPrices[round]) {
-                    s.marketPrices[round] = Array(24).fill(s.marketPrice || 70);
+            // Return cached prices if available
+            if (s.marketPrices[round]) {
+                return s.marketPrices[round];
+            }
+
+            // Find the round object
+            const roundObj = (s.rounds || []).find(r => r.round_number === round);
+
+            // Initialize with default fallback
+            let prices = Array(24).fill(null);
+
+            // Try to get REAL market clearing prices from backend first
+            if (roundObj && roundObj.id) {
+                try {
+                    // For calculated rounds, get actual results
+                    if (roundObj.status === 'calculated') {
+                        const res = await API.Admin.getResults(s.id, roundObj.id);
+                        console.log(`[getOrGenPrices] Results for round ${round}:`, res);
+
+                        if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
+                            // Create array of 24 prices indexed by hour
+                            const priceMap = {};
+                            res.market_clearing.forEach(mc => {
+                                if (mc.hour !== undefined && mc.clearing_price !== undefined) {
+                                    priceMap[mc.hour] = mc.clearing_price;
+                                }
+                            });
+
+                            // Fill prices array (24 hours)
+                            for (let i = 0; i < 24; i++) {
+                                if (priceMap[i] !== undefined) {
+                                    prices[i] = priceMap[i];
+                                }
+                            }
+
+                            console.log(`[getOrGenPrices] Loaded REAL market prices for round ${round}:`, prices.slice(0, 5));
+                        }
+                    }
+                    // For active/bidding rounds, get forecast
+                    else if (roundObj.status === 'bidding' || round === s.currentRound) {
+                        const res = await API.Sessions.getForecast(s.id, roundObj.id);
+                        console.log(`[getOrGenPrices] Forecast for round ${round}:`, res);
+
+                        if (res && res.forecast && Array.isArray(res.forecast)) {
+                            prices = res.forecast.map(f => f.predicted_price || f.price || s.marketPrice || 70);
+                            console.log(`[getOrGenPrices] Loaded FORECAST prices for round ${round}:`, prices.slice(0, 5));
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`[getOrGenPrices] Failed to load from backend for round ${round}:`, e);
                 }
             }
-            return s.marketPrices[round];
+
+            // If still no valid prices, try to use session's market_price as uniform value
+            const hasValidPrices = prices.some(p => p !== null && p !== undefined && !isNaN(p));
+            if (!hasValidPrices) {
+                const defaultPrice = s.market_price || s.marketPrice || 70;
+                prices = Array(24).fill(defaultPrice);
+                console.log(`[getOrGenPrices] Using DEFAULT uniform price ${defaultPrice} for round ${round}`);
+            } else {
+                // Replace any remaining nulls with the session's market price or nearest neighbor
+                const defaultPrice = s.market_price || s.marketPrice || 70;
+                for (let i = 0; i < prices.length; i++) {
+                    if (prices[i] === null || prices[i] === undefined || isNaN(prices[i])) {
+                        // Try to use previous hour's price, or next hour's, or default
+                        if (i > 0 && prices[i - 1] !== null) {
+                            prices[i] = prices[i - 1];
+                        } else if (i < prices.length - 1 && prices[i + 1] !== null) {
+                            prices[i] = prices[i + 1];
+                        } else {
+                            prices[i] = defaultPrice;
+                        }
+                    }
+                }
+            }
+
+            // Cache the result
+            s.marketPrices[round] = prices;
+            return prices;
         }
+        async function debugBackendData(sessionId) {
+            const s = sessions.find(x => x.id === sessionId);
+            if (!s) return;
+
+            console.log('=== DEBUG BACKEND DATA ===');
+            console.log('Session:', s.gameName, s.id);
+            console.log('Rounds:', s.rounds);
+
+            for (const roundObj of (s.rounds || [])) {
+                console.log(`\n--- Round ${roundObj.round_number} (${roundObj.status}) ---`);
+
+                if (roundObj.status === 'calculated') {
+                    try {
+                        const res = await API.Admin.getResults(s.id, roundObj.id);
+                        console.log('Results response:', res);
+                        if (res && res.market_clearing) {
+                            console.log('Market clearing data:', res.market_clearing);
+                            console.log('Number of hours with data:', res.market_clearing.length);
+                            // Check if we have all 24 hours
+                            const hoursPresent = res.market_clearing.map(mc => mc.hour);
+                            console.log('Hours present:', hoursPresent.sort((a, b) => a - b));
+                        }
+                    } catch (e) {
+                        console.error(`Failed to get results for round ${roundObj.round_number}:`, e);
+                    }
+                } else if (roundObj.status === 'bidding') {
+                    try {
+                        const res = await API.Sessions.getForecast(s.id, roundObj.id);
+                        console.log('Forecast response:', res);
+                        if (res && res.forecast) {
+                            console.log('Forecast data length:', res.forecast.length);
+                            console.log('First few forecast prices:', res.forecast.slice(0, 5));
+                        }
+                    } catch (e) {
+                        console.error(`Failed to get forecast for round ${roundObj.round_number}:`, e);
+                    }
+                }
+            }
+        }
+
+        // Call this from console or add a button
+        // debugBackendData(activeSessionId);
         const bidDirectionPlugin = {
             id: 'bidDirectionPlugin',
 
@@ -2162,7 +2277,7 @@
         async function renderAdminChart(s) {
             const ctx = document.getElementById('adminChart'); if (!ctx) return;
             if (adminChartInstance) { adminChartInstance.destroy(); adminChartInstance = null; }
-            
+
             const round = selectedRound || s.currentRound || 1;
             const prices = await getOrGenPrices(s, round);
             const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
@@ -2263,7 +2378,7 @@
                     },
                     animation: { duration: 300 }
                 },
-                plugins: [bidDirectionPlugin] 
+                plugins: [bidDirectionPlugin]
             });
             setTimeout(() => {
                 if (adminChartInstance) {
@@ -2460,57 +2575,57 @@
             const modalId = 'hourDetailPopup_' + Date.now();
 
             const html = `
-        <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) this.remove()">
-            <div style="background:white;border-radius:16px;max-width:750px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
-                <div style="padding:16px 20px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;">
-                    <div>
-                        <div style="font-weight:700;font-size:16px;color:#2f4a75;">Diena ${round} · ${label}</div>
-                        <div style="font-size:12px;color:#888;margin-top:4px;">Rinkos kaina: <strong>${typeof mp === 'number' ? mp.toFixed(2) : mp} $/MWh</strong></div>
-                    </div>
-                    <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:4px 8px;">×</button>
-                </div>
-                <div style="padding:20px;overflow-y:auto;flex:1;">
-                    <div style="margin-bottom:20px;">
-                        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
-                        <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
-                            <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
-                                <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
+                    <div id="${modalId}" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this) this.remove()">
+                        <div style="background:white;border-radius:16px;max-width:750px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,.3);" onclick="event.stopPropagation()">
+                            <div style="padding:16px 20px;border-bottom:1px solid #e0d9cc;display:flex;justify-content:space-between;align-items:center;">
+                                <div>
+                                    <div style="font-weight:700;font-size:16px;color:#2f4a75;">Diena ${round} · ${label}</div>
+                                    <div style="font-size:12px;color:#888;margin-top:4px;">Rinkos kaina: <strong>${typeof mp === 'number' ? mp.toFixed(2) : mp} $/MWh</strong></div>
+                                </div>
+                                <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:4px 8px;">×</button>
                             </div>
-                            <div style="position:relative;height:220px;">
-                                <canvas id="supplyChart_${modalId}"></canvas>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
-                                <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
-                                <span>Paklausa (pirkimas): <strong>${totalBuyDemand} MW</strong></span>
-                                <span>Pasiūla (pardavimas): <strong>${totalSellSupply} MW</strong></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="margin-top:20px;">
-                        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Komandų pasiūlymai šią valandą</div>
-                        ${rows.length ? rows.map((row, ri) => {
+                            <div style="padding:20px;overflow-y:auto;flex:1;">
+                                <div style="margin-bottom:20px;">
+                                    <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
+                                    <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
+                                        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
+                                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
+                                        </div>
+                                        <div style="position:relative;height:220px;">
+                                            <canvas id="supplyChart_${modalId}"></canvas>
+                                        </div>
+                                        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
+                                            <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
+                                            <span>Paklausa (pirkimas): <strong>${totalBuyDemand} MW</strong></span>
+                                            <span>Pasiūla (pardavimas): <strong>${totalSellSupply} MW</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="margin-top:20px;">
+                                    <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Komandų pasiūlymai šią valandą</div>
+                                    ${rows.length ? rows.map((row, ri) => {
                 const color = TEAM_COLORS[row.teamIndex % TEAM_COLORS.length];
                 return `
-                                <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid #e8dfd4;">
-                                    <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
-                                    <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(row.name)}</span>
-                                    ${row.bid && row.bid.price ? `
-                                        <span style="font-size:12px;color:#2f4a75;font-weight:600;">${row.bid.price} $/MWh</span>
-                                        <span style="font-size:11px;color:#555;">${row.bid.mw} MW</span>
-                                        <span style="font-size:11px;font-weight:600;color:${row.bid.type === 'buy' ? '#27ae60' : '#e74c3c'};">${row.bid.type === 'buy' ? 'pirkimas' : 'pardavimas'}</span>
-                                        ${row.submitted ? '<span style="font-size:10px;background:#e8f8f0;color:#1e8449;padding:2px 8px;border-radius:12px;">pateikta</span>' : '<span style="font-size:10px;background:#fef9e7;color:#d68910;padding:2px 8px;border-radius:12px;">juodraštis</span>'}
-                                    ` : '<span style="color:#ccc;font-size:11px;">— nėra pasiūlymo</span>'}
-                                </div>
-                            `;
+                                            <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid #e8dfd4;">
+                                                <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+                                                <span style="flex:1;font-size:12px;font-weight:600;">${escapeHtml(row.name)}</span>
+                                                ${row.bid && row.bid.price ? `
+                                                    <span style="font-size:12px;color:#2f4a75;font-weight:600;">${row.bid.price} $/MWh</span>
+                                                    <span style="font-size:11px;color:#555;">${row.bid.mw} MW</span>
+                                                    <span style="font-size:11px;font-weight:600;color:${row.bid.type === 'buy' ? '#27ae60' : '#e74c3c'};">${row.bid.type === 'buy' ? 'pirkimas' : 'pardavimas'}</span>
+                                                    ${row.submitted ? '<span style="font-size:10px;background:#e8f8f0;color:#1e8449;padding:2px 8px;border-radius:12px;">pateikta</span>' : '<span style="font-size:10px;background:#fef9e7;color:#d68910;padding:2px 8px;border-radius:12px;">juodraštis</span>'}
+                                                ` : '<span style="color:#ccc;font-size:11px;">— nėra pasiūlymo</span>'}
+                                            </div>
+                                        `;
             }).join('') : '<p style="color:#bbb;text-align:center;padding:16px;font-size:12px;">Nėra komandų</p>'}
-                    </div>
-                </div>
-            </div>
-        </div>`;
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
 
             document.body.insertAdjacentHTML('beforeend', html);
 

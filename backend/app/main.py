@@ -14,11 +14,12 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Electricity Market Game API")
 
 # Setup CORS
-origins = os.getenv("CORS_ORIGINS", "http://localhost:5000").split(",")
+origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000,http://127.0.0.1:5000,http://localhost:8000")
+origins = [origin.strip() for origin in origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    #allow_origins=["http://localhost:5000", "http://127.0.0.1:5000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

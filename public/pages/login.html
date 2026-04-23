@@ -41,66 +41,67 @@
   </style>
 </head>
 <body>
-<header>
-  <button class="back-btn" onclick="history.back()">←</button>
-  <span class="app-name">Pavadinimas</span>
-  <span class="admin-badge">ADMIN</span>
-</header>
-<main>
-  <div class="card" id="loginCard">
-    <h1>Prisijunkite</h1>
-    <p>Administratoriaus paskyra</p>
-    <label>Slapyvardis</label>
-    <input id="usernameInput" type="text" placeholder="Įveskite slapyvardį" autocomplete="off"/>
-    <label>Slaptažodis</label>
-    <input id="passwordInput" type="password" placeholder="••••••••"/>
-    <div class="error-msg" id="errorMsg">Neteisingas slapyvardis arba slaptažodis</div>
-    <button class="btn btn-primary" id="loginBtn">Prisijungti</button>
-    <button class="btn btn-outline" onclick="history.back()">Atšaukti</button>
-    <div class="demo-box">
-      <p>Demo kredencialai:</p>
-      <div class="demo-row"><code>Slapyvardis: admin</code></div>
-      <div class="demo-row"><code>Slaptažodis: admin123</code></div>
-    </div>
-  </div>
-</main>
+    <header>
+        <button class="back-btn" onclick="history.back()">←</button>
+        <span class="app-name">Pavadinimas</span>
+        <span class="admin-badge">ADMIN</span>
+    </header>
+    <main>
+        <div class="card" id="loginCard">
+            <h1>Prisijunkite</h1>
+            <p>Administratoriaus paskyra</p>
+            <label>Slapyvardis</label>
+            <input id="usernameInput" type="text" placeholder="Įveskite slapyvardį" autocomplete="off" />
+            <label>Slaptažodis</label>
+            <input id="passwordInput" type="password" placeholder="••••••••" />
+            <div class="error-msg" id="errorMsg">Neteisingas slapyvardis arba slaptažodis</div>
+            <button class="btn btn-primary" id="loginBtn">Prisijungti</button>
+            <button class="btn btn-outline" onclick="history.back()">Atšaukti</button>
+            <div class="demo-box">
+                <p>Demo kredencialai:</p>
+                <div class="demo-row"><code>Slapyvardis: admin</code></div>
+                <div class="demo-row"><code>Slaptažodis: admin123</code></div>
+            </div>
+        </div>
+    </main>
 
-<script src="/js/api.js"></script>
-<script>
-const loginBtn = document.getElementById('loginBtn');
-const errorMsg = document.getElementById('errorMsg');
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
 
-loginBtn.addEventListener('click', login);
-document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
-document.getElementById('usernameInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('passwordInput').focus(); });
-['usernameInput','passwordInput'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => errorMsg.classList.remove('show'));
-});
+        loginBtn.addEventListener('click', login);
+        document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+        document.getElementById('usernameInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('passwordInput').focus(); });
+        ['usernameInput', 'passwordInput'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => errorMsg.classList.remove('show'));
+        });
 
-async function login() {
-  const u = document.getElementById('usernameInput').value.trim();
-  const p = document.getElementById('passwordInput').value;
-  
-  if (!u || !p) {
-    showError('Įveskite duomenis');
-    return;
-  }
+        async function login() {
+            const u = document.getElementById('usernameInput').value.trim();
+            const p = document.getElementById('passwordInput').value;
 
-  try {
-    await API.Auth.login(u, p);
-    window.location.href = '/pages/admin.html';
-  } catch (err) {
-    showError('Neteisingas slapyvardis arba slaptažodis');
-  }
-}
+            if (!u || !p) {
+                showError('Įveskite duomenis');
+                return;
+            }
 
-function showError(msg) {
-  errorMsg.textContent = msg;
-  errorMsg.classList.add('show');
-  const card = document.getElementById('loginCard');
-  card.classList.add('shake');
-  setTimeout(() => card.classList.remove('shake'), 400);
-}
-</script>
+            try {
+                await API.Auth.login(u, p);
+                window.location.href = '/pages/admin.html';
+            } catch (err) {
+                showError('Neteisingas slapyvardis arba slaptažodis');
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+            const card = document.getElementById('loginCard');
+            card.classList.add('shake');
+            setTimeout(() => card.classList.remove('shake'), 400);
+        }
+    </script>
 </body>
 </html>

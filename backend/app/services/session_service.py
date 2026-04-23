@@ -217,6 +217,10 @@ class SessionService:
         if not day_data:
             raise HTTPException(status_code=404, detail="Seed data for this round not found")
 
+        # Create a deterministic seed based on session_id, round_id, and round_number
+        # This ensures the same round always returns the same forecast
+        deterministic_seed = hash(f"{session_id}_{round_obj.id}_{round_obj.round_number}") % 2**32
+    
         forecasts = []
         for hour_info in day_data:
             base_demand = session.base_demand_mw * hour_info.get("demand_forecast_profile", 0.5)
@@ -241,10 +245,18 @@ class SessionService:
 
             result = self.market_engine.calculate_clearing(market_input)
             predicted_price = result.clearing_price
-
+        
+            # Use deterministic random with seed based on hour as well
+            # This ensures each hour gets a consistent error margin
+            hour_seed = deterministic_seed + hour_info["hour"]
+            random.seed(hour_seed)
+        
             margin = session.forecast_error_margin
             error_margin = random.uniform(1.0 - margin, 1.0 + margin)
             predicted_price = round(predicted_price * error_margin, 2)
+        
+            # Reset random seed to avoid affecting other parts
+            random.seed()
 
             forecasts.append(
                 schemas.HourlyForecast(

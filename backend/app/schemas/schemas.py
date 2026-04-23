@@ -1,3 +1,4 @@
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Optional
 from datetime import datetime
@@ -72,7 +73,8 @@ class UserResponse(BaseModel):
     name: str
     session_id: int
     state: Optional[TeamStateResponse] = None
-
+    bids: List[BidResponse] = []
+    bidRows: Optional[Dict] = Field(default_factory=dict)
     model_config = ConfigDict(from_attributes=True)
 
 # --- Round ---
@@ -114,16 +116,12 @@ class SessionCreate(BaseModel):
             raise ValueError('admin_id cannot be empty or whitespace')
         # Use comprehensive alphanumeric sanitization
         return sanitize_alphanumeric(v, max_length=255, allow_underscore=True, allow_hyphen=True)
-
-class UserResponse(BaseModel):
-    id: int
-    name: str
-    session_id: int
-    password: Optional[str] = None
-    state: Optional[TeamStateResponse] = None
-    bids: List[BidResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
+    
+    @field_validator('game_name')
+    @classmethod
+    def validate_game_name(cls, v):
+        """ADDED: Sanitize game_name to prevent XSS attacks."""
+        return validate_input(v, field_name="game_name", max_length=255)
 
 class TransactionResponse(BaseModel):
     id: int

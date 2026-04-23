@@ -108,225 +108,226 @@
 </head>
 <body>
 
-<header>
-  <div class="hl">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <span class="logo">Pavadinimas</span>
-    <span class="pin-hdr" id="pinHdr"></span>
-  </div>
-</header>
+    <header>
+        <div class="hl">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <span class="logo">Pavadinimas</span>
+            <span class="pin-hdr" id="pinHdr"></span>
+        </div>
+    </header>
 
-<div class="sidebar" id="sidebar">
-  <div class="sb-head"><h2>Navigacija</h2></div>
-  <div class="sb-item" onclick="nav('/pages/join.html')">Kitas PIN</div>
-  <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
-  <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
-</div>
-<div class="overlay" id="overlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sb-head"><h2>Navigacija</h2></div>
+        <div class="sb-item" onclick="nav('/pages/join.html')">Kitas PIN</div>
+        <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
+        <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
+    </div>
+    <div class="overlay" id="overlay"></div>
 
-<main id="mainArea">
-  <!-- populated by JS based on state -->
-</main>
+    <main id="mainArea">
+        <!-- populated by JS based on state -->
+    </main>
 
-<div class="toast" id="toast"></div>
+    <div class="toast" id="toast"></div>
 
-<script src="/js/api.js"></script>
-<script>
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let session = null;
-let myTeam = null;
-const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
-let ws = null;
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        // ══════════════════════════════════════════════
+        // STATE
+        // ══════════════════════════════════════════════
+        let session = null;
+        let myTeam = null;
+        const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
+        let ws = null;
 
-async function loadSession() {
-  if (!pin) { nav('/pages/join.html'); return; }
-  try {
-    const savedUserId = sessionStorage.getItem(KEYS.USER_ID);
-    const savedSessionId = sessionStorage.getItem(KEYS.SESSION_ID);
-    
-    if (savedUserId && savedSessionId) {
-        try {
-            session = await API.Sessions.get(savedSessionId);
-            myTeam = { 
-                id: savedUserId, 
-                name: sessionStorage.getItem(KEYS.TEAM_NAME),
-                password: '****'
-            };
-            startWS(savedSessionId);
-        } catch (staleErr) {
-            // Session was deleted/archived — clear stale data and fall through
-            console.warn('Saved session no longer exists, clearing:', staleErr.message);
+        async function loadSession() {
+            if (!pin) { nav('/pages/join.html'); return; }
+            try {
+                const savedUserId = sessionStorage.getItem(KEYS.USER_ID);
+                const savedSessionId = sessionStorage.getItem(KEYS.SESSION_ID);
+
+                if (savedUserId && savedSessionId) {
+                    try {
+                        session = await API.Sessions.get(savedSessionId);
+                        myTeam = {
+                            id: savedUserId,
+                            name: sessionStorage.getItem(KEYS.TEAM_NAME),
+                            password: '****'
+                        };
+                        startWS(savedSessionId);
+                    } catch (staleErr) {
+                        // Session was deleted/archived — clear stale data and fall through
+                        console.warn('Saved session no longer exists, clearing:', staleErr.message);
+                        sessionStorage.removeItem(KEYS.USER_ID);
+                        sessionStorage.removeItem(KEYS.SESSION_ID);
+                        sessionStorage.removeItem(KEYS.TEAM_NAME);
+                        myTeam = null;
+                        session = await API.Sessions.getByPin(pin);
+                    }
+                } else {
+                    // Fetch session info by PIN to show game name/status before joining
+                    session = await API.Sessions.getByPin(pin);
+                }
+            } catch (e) {
+                console.error('Initial load failed:', e);
+                // If PIN is invalid, send back to join
+                if (e.message && e.message.includes('not found')) {
+                    toast('Neteisingas PIN kodas');
+                    setTimeout(() => nav('/pages/join.html'), 2000);
+                }
+            }
+        }
+
+        function startWS(sessionId) {
+            if (ws) return;
+            ws = window.WS.open(sessionId, {
+                onMessage: (data) => {
+                    if (data.event === 'SESSION_STARTED' || data.event === 'NEW_ROUND') {
+                        nav('/pages/game.html');
+                    }
+                    if (data.event === 'TEAM_JOINED') {
+                        refreshData();
+                    }
+                }
+            });
+        }
+
+        async function refreshData() {
+            const sid = sessionStorage.getItem(KEYS.SESSION_ID);
+            if (!sid) return;
+            session = await API.Sessions.get(sid);
+            render();
+        }
+
+        // ══════════════════════════════════════════════
+        // RENDER
+        // ══════════════════════════════════════════════
+        function render() {
+            document.getElementById('pinHdr').textContent = pin;
+            if (myTeam) {
+                renderWaiting();
+            } else {
+                renderJoinCreate();
+            }
+        }
+
+        function renderWaiting() {
+            const main = document.getElementById('mainArea');
+            main.innerHTML = `
+            <div class="card">
+              <h2>${session.game_name || 'Sesija'}</h2>
+              <p class="card-sub">Sesija · PIN ${pin}</p>
+              <div class="sess-pin">${pin}</div>
+              <div class="sess-stats">
+                <div class="s-stat"><div class="v">${session.status === 'active' ? 'Aktyvi' : 'Laukiama'}</div><div class="l">Statusas</div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Prisijungta: <span style="color:#2f4a75;">${myTeam.name}</span></h3>
+              <div class="waiting-pulse">
+                <div class="pulse-dot"></div>
+                <span class="waiting-text">${session.status === 'active' ? 'Žaidimas pradėtas!' : 'Laukiama, kol administratorius pradės žaidimą...'}</span>
+              </div>
+              ${session.status === 'active' ?
+                    `<button class="btn btn-primary" style="margin-top:12px;" onclick="nav('/pages/game.html')">▶ Į žaidimą</button>` :
+                    ''}
+              <button class="btn btn-sec" style="margin-top:8px;" onclick="leaveTeam()">Atsijungti</button>
+            </div>
+          `;
+        }
+
+        let activeTab = 'create';
+        function renderJoinCreate() {
+            const main = document.getElementById('mainArea');
+            main.innerHTML = `
+            <div class="card">
+               <h2>Prisijungti prie sesijos</h2>
+               <p class="card-sub">PIN: ${pin}</p>
+            </div>
+
+            <div class="card">
+              <div class="ctabs">
+                <div class="ctab ${activeTab === 'create' ? 'active' : ''}" onclick="setTab('create')">Sukurti komandą</div>
+                <div class="ctab ${activeTab === 'join' ? 'active' : ''}" onclick="setTab('join')">Prisijungti</div>
+              </div>
+              ${activeTab === 'create' ? renderCreateForm() : renderJoinForm()}
+            </div>
+          `;
+        }
+
+        function renderCreateForm() {
+            // Simplified: in backend 'create' and 'join' use the same endpoint
+            return `
+            <div class="form-row">
+              <label>Komandos pavadinimas</label>
+              <input type="text" id="createName" placeholder="pvz. Greitieji elektronai" maxlength="30">
+              <div class="field-error" id="createNameErr"></div>
+            </div>
+            <div class="form-row">
+              <label>Slaptažodis (kitiems nariams)</label>
+              <input type="text" id="createPw" placeholder="Sugalvokite slaptažodį" maxlength="20">
+            </div>
+            <button class="btn btn-primary" onclick="performJoin('create')" style="margin-top:10px;">Sukurti ir prisijungti</button>
+          `;
+        }
+
+        function renderJoinForm() {
+            return `
+            <div class="form-row">
+              <label>Komandos pavadinimas</label>
+              <input type="text" id="joinName" placeholder="Tiksliai kaip sukurta">
+              <div class="field-error" id="joinNameErr"></div>
+            </div>
+            <div class="form-row">
+              <label>Komandos slaptažodis</label>
+              <input type="password" id="joinPw" placeholder="••••••">
+              <div class="field-error" id="joinPwErr"></div>
+            </div>
+            <button class="btn btn-primary" onclick="performJoin('join')">Prisijungti</button>
+          `;
+        }
+
+        async function performJoin(mode) {
+            const name = document.getElementById(mode === 'create' ? 'createName' : 'joinName').value.trim();
+            const pw = document.getElementById(mode === 'create' ? 'createPw' : 'joinPw').value.trim();
+
+            if (!name || !pw) { toast('Įveskite duomenis'); return; }
+
+            try {
+                const res = await API.Players.join(name, pin, pw);
+                sessionStorage.setItem(KEYS.USER_ID, res.id);
+                sessionStorage.setItem(KEYS.SESSION_ID, res.session_id);
+                sessionStorage.setItem(KEYS.TEAM_NAME, res.name);
+                sessionStorage.setItem('gamePin', pin);
+
+                myTeam = { id: res.id, name: res.name };
+                session = await API.Sessions.get(res.session_id);
+
+                startWS(res.session_id);
+                render();
+                toast('Sėkmingai prisijungta!');
+            } catch (err) {
+                toast('Klaida: ' + err.message);
+            }
+        }
+
+        function setTab(tab) { activeTab = tab; renderJoinCreate(); }
+
+        function leaveTeam() {
+            if (!confirm('Atsijungti?')) return;
             sessionStorage.removeItem(KEYS.USER_ID);
             sessionStorage.removeItem(KEYS.SESSION_ID);
-            sessionStorage.removeItem(KEYS.TEAM_NAME);
             myTeam = null;
-            session = await API.Sessions.getByPin(pin);
+            render();
         }
-    } else {
-        // Fetch session info by PIN to show game name/status before joining
-        session = await API.Sessions.getByPin(pin);
-    }
-  } catch(e){
-    console.error('Initial load failed:', e);
-    // If PIN is invalid, send back to join
-    if (e.message && e.message.includes('not found')) {
-        toast('Neteisingas PIN kodas');
-        setTimeout(() => nav('/pages/join.html'), 2000);
-    }
-  }
-}
 
-function startWS(sessionId) {
-    if (ws) return;
-    ws = window.WS.open(sessionId, {
-        onMessage: (data) => {
-            if (data.event === 'SESSION_STARTED' || data.event === 'NEW_ROUND') {
-                nav('/pages/game.html');
-            }
-            if (data.event === 'TEAM_JOINED') {
-                refreshData();
-            }
-        }
-    });
-}
+        function nav(p) { window.location.href = p; }
+        function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
 
-async function refreshData() {
-    const sid = sessionStorage.getItem(KEYS.SESSION_ID);
-    if (!sid) return;
-    session = await API.Sessions.get(sid);
-    render();
-}
+        loadSession().then(render);
 
-// ══════════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════════
-function render() {
-  document.getElementById('pinHdr').textContent = pin;
-  if (myTeam) {
-    renderWaiting();
-  } else {
-    renderJoinCreate();
-  }
-}
-
-function renderWaiting() {
-  const main = document.getElementById('mainArea');
-  main.innerHTML = `
-    <div class="card">
-      <h2>${session.game_name || 'Sesija'}</h2>
-      <p class="card-sub">Sesija · PIN ${pin}</p>
-      <div class="sess-pin">${pin}</div>
-      <div class="sess-stats">
-        <div class="s-stat"><div class="v">${session.status === 'active' ? 'Aktyvi' : 'Laukiama'}</div><div class="l">Statusas</div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Prisijungta: <span style="color:#2f4a75;">${myTeam.name}</span></h3>
-      <div class="waiting-pulse">
-        <div class="pulse-dot"></div>
-        <span class="waiting-text">${session.status === 'active' ? 'Žaidimas pradėtas!' : 'Laukiama, kol administratorius pradės žaidimą...'}</span>
-      </div>
-      ${session.status === 'active' ?
-        `<button class="btn btn-primary" style="margin-top:12px;" onclick="nav('/pages/game.html')">▶ Į žaidimą</button>` :
-        ''}
-      <button class="btn btn-sec" style="margin-top:8px;" onclick="leaveTeam()">Atsijungti</button>
-    </div>
-  `;
-}
-
-let activeTab = 'create';
-function renderJoinCreate() {
-  const main = document.getElementById('mainArea');
-  main.innerHTML = `
-    <div class="card">
-       <h2>Prisijungti prie sesijos</h2>
-       <p class="card-sub">PIN: ${pin}</p>
-    </div>
-
-    <div class="card">
-      <div class="ctabs">
-        <div class="ctab ${activeTab==='create'?'active':''}" onclick="setTab('create')">Sukurti komandą</div>
-        <div class="ctab ${activeTab==='join'?'active':''}" onclick="setTab('join')">Prisijungti</div>
-      </div>
-      ${activeTab === 'create' ? renderCreateForm() : renderJoinForm()}
-    </div>
-  `;
-}
-
-function renderCreateForm() {
-    // Simplified: in backend 'create' and 'join' use the same endpoint
-  return `
-    <div class="form-row">
-      <label>Komandos pavadinimas</label>
-      <input type="text" id="createName" placeholder="pvz. Greitieji elektronai" maxlength="30">
-      <div class="field-error" id="createNameErr"></div>
-    </div>
-    <div class="form-row">
-      <label>Slaptažodis (kitiems nariams)</label>
-      <input type="text" id="createPw" placeholder="Sugalvokite slaptažodį" maxlength="20">
-    </div>
-    <button class="btn btn-primary" onclick="performJoin('create')" style="margin-top:10px;">Sukurti ir prisijungti</button>
-  `;
-}
-
-function renderJoinForm() {
-  return `
-    <div class="form-row">
-      <label>Komandos pavadinimas</label>
-      <input type="text" id="joinName" placeholder="Tiksliai kaip sukurta">
-      <div class="field-error" id="joinNameErr"></div>
-    </div>
-    <div class="form-row">
-      <label>Komandos slaptažodis</label>
-      <input type="password" id="joinPw" placeholder="••••••">
-      <div class="field-error" id="joinPwErr"></div>
-    </div>
-    <button class="btn btn-primary" onclick="performJoin('join')">Prisijungti</button>
-  `;
-}
-
-async function performJoin(mode) {
-    const name = document.getElementById(mode === 'create' ? 'createName' : 'joinName').value.trim();
-    const pw = document.getElementById(mode === 'create' ? 'createPw' : 'joinPw').value.trim();
-    
-    if (!name || !pw) { toast('Įveskite duomenis'); return; }
-    
-    try {
-        const res = await API.Players.join(name, pin, pw);
-        sessionStorage.setItem(KEYS.USER_ID, res.id);
-        sessionStorage.setItem(KEYS.SESSION_ID, res.session_id);
-        sessionStorage.setItem(KEYS.TEAM_NAME, res.name);
-        sessionStorage.setItem('gamePin', pin);
-        
-        myTeam = { id: res.id, name: res.name };
-        session = await API.Sessions.get(res.session_id);
-        
-        startWS(res.session_id);
-        render();
-        toast('Sėkmingai prisijungta!');
-    } catch (err) {
-        toast('Klaida: ' + err.message);
-    }
-}
-
-function setTab(tab) { activeTab = tab; renderJoinCreate(); }
-
-function leaveTeam() {
-  if (!confirm('Atsijungti?')) return;
-  sessionStorage.removeItem(KEYS.USER_ID);
-  sessionStorage.removeItem(KEYS.SESSION_ID);
-  myTeam = null;
-  render();
-}
-
-function nav(p) { window.location.href = p; }
-function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
-
-loadSession().then(render);
-
-</script>
+    </script>
 </body>
 </html>

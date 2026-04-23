@@ -1,118 +1,191 @@
 """
-Input sanitization utilities to prevent SQL injection, XSS, and other attacks.
+Input sanitization and validation utilities for security.
+Prevents XSS, SQL injection, and other input-based attacks.
 """
-import html
+
 import re
 from typing import Optional
 
-def sanitize_string(value: str, max_length: int = 255, allow_special: bool = False) -> str:
+
+def sanitize_string(value: str, max_length: int = 255) -> str:
     """
-    Comprehensive input sanitization:
-    - Strip whitespace
-    - Limit length
-    - HTML escape special characters
-    - Remove control characters
+    Remove HTML/script tags and limit length.
+    
+    Args:
+        value: Input string to sanitize
+        max_length: Maximum allowed length
+        
+    Returns:
+        Sanitized string
     """
-    if not value or not isinstance(value, str):
+    if not value:
         return ""
     
-    # Strip leading/trailing whitespace
-    value = value.strip()
+    # Remove HTML tags
+    value = re.sub(r'<[^>]+>', '', value)
     
-    # Remove control characters (except newlines in some contexts)
-    value = ''.join(char for char in value if not (ord(char) < 32 and char not in '\n\t'))
+    # Remove script content
+    value = re.sub(
+        r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', 
+        '', 
+        value, 
+        flags=re.IGNORECASE
+    )
     
-    # Limit length
-    value = value[:max_length]
-    
-    # HTML escape to prevent XSS
-    value = html.escape(value, quote=True)
-    
-    return value
+    # Trim whitespace and limit length
+    return value.strip()[:max_length]
 
 
-def sanitize_alphanumeric(value: str, max_length: int = 255, allow_underscore: bool = True, allow_hyphen: bool = True) -> str:
+def sanitize_alphanumeric(
+    value: str, 
+    max_length: int = 255, 
+    allow_underscore: bool = False, 
+    allow_hyphen: bool = False
+) -> str:
     """
-    Strict alphanumeric sanitization for IDs and codes.
-    Allows only: a-z A-Z 0-9 optionally: _ -
+    Keep only alphanumeric characters (and optionally _ or -).
+    
+    Args:
+        value: Input string
+        max_length: Maximum length
+        allow_underscore: Allow underscore character
+        allow_hyphen: Allow hyphen character
+        
+    Returns:
+        Sanitized alphanumeric string
     """
-    if not value or not isinstance(value, str):
+    if not value:
         return ""
     
-    value = value.strip()
-    
-    # Build allowed character pattern
-    pattern = r'^[a-zA-Z0-9'
+    # Build regex pattern
+    pattern = r'[^a-zA-Z0-9'
     if allow_underscore:
         pattern += '_'
     if allow_hyphen:
         pattern += '-'
-    pattern += r']+$'
+    pattern += ']'
     
-    if not re.match(pattern, value):
-        raise ValueError(f"Invalid characters in input. Only alphanumeric{', underscore' if allow_underscore else ''}{', hyphen' if allow_hyphen else ''} allowed.")
+    # Remove non-allowed characters
+    cleaned = re.sub(pattern, '', value)
     
-    return value[:max_length]
+    return cleaned[:max_length]
 
 
 def sanitize_join_code(value: str) -> str:
     """
-    Sanitize join codes - alphanumeric only, uppercase.
+    Ensure join code is exactly 6 uppercase alphanumeric characters.
+    
+    Args:
+        value: Input join code
+        
+    Returns:
+        Sanitized 6-character uppercase join code
+        
+    Raises:
+        ValueError: If code is not exactly 6 characters after cleaning
     """
-    if not value or not isinstance(value, str):
-        return ""
+    cleaned = sanitize_alphanumeric(value, max_length=6).upper()
     
-    value = value.strip().upper()
+    if len(cleaned) != 6:
+        raise ValueError("Join code must be exactly 6 alphanumeric characters")
     
-    # Join codes should be simple alphanumeric
-    if not re.match(r'^[A-Z0-9]+$', value):
-        raise ValueError("Join code must be alphanumeric only")
-    
-    if len(value) > 10:
-        raise ValueError("Join code must be 10 characters or less")
-    
-    return value
+    return cleaned
 
 
-def prevent_sql_injection(value: str) -> bool:
+def validate_input(value: str, field_name: str, max_length: int = 255) -> str:
     """
-    Basic SQL injection pattern detection.
-    Returns True if suspicious patterns detected.
-    """
-    if not value or not isinstance(value, str):
-        return False
+    Comprehensive validation and sanitization for text inputs.
+    Checks for XSS attempts and dangerous patterns.
     
-    # Common SQL injection patterns
-    suspicious_patterns = [
-        r"(\b(UNION|SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE)\b)",
-        r"(-{2}|/\*|\*/|xp_|sp_)",  # SQL comments and stored procedures
-        r"(;|\||&&)",  # Command separators
-        r"(<script|javascript:|onerror=|onload=)",  # XSS patterns
+    Args:
+        value: Input string to validate
+        field_name: Name of the field (for error messages)
+        max_length: Maximum allowed length
+        
+    Returns:
+        Sanitized and validated string
+        
+    Raises:
+        ValueError: If input is invalid or contains dangerous content
+    """
+    if not value or not value.strip():
+        raise ValueError(f"{field_name} cannot be empty or whitespace")
+    
+    # Sanitize first
+    cleaned = sanitize_string(value, max_length)
+    
+    # Check for dangerous patterns (XSS attempts)
+    dangerous_patterns = [
+        r'javascript:',
+        r'on\w+\s*=',  # onclick=, onerror=, onload=, etc.
+        r'<iframe',
+        r'<embed',
+        r'<object',
+        r'<script',
+        r'eval\s*\(',
+        r'expression\s*\(',
     ]
     
-    for pattern in suspicious_patterns:
-        if re.search(pattern, value, re.IGNORECASE):
-            return True
+    for pattern in dangerous_patterns:
+        if re.search(pattern, cleaned, re.IGNORECASE):
+            raise ValueError(
+                f"Invalid {field_name}: contains potentially dangerous content"
+            )
     
-    return False
+    return cleaned
 
 
-def validate_input(value: str, field_name: str = "input", max_length: int = 255) -> str:
+def validate_email(email: str) -> str:
     """
-    Combined validation and sanitization with security checks.
+    Validate and sanitize email address.
+    
+    Args:
+        email: Email address to validate
+        
+    Returns:
+        Lowercase, trimmed email
+        
+    Raises:
+        ValueError: If email format is invalid
     """
-    if not isinstance(value, str):
-        raise ValueError(f"{field_name} must be a string")
+    if not email:
+        raise ValueError("Email cannot be empty")
     
-    # Check for injection attempts
-    if prevent_sql_injection(value):
-        raise ValueError(f"{field_name} contains invalid characters or patterns")
+    email = email.strip().lower()
     
-    # Sanitize
-    sanitized = sanitize_string(value, max_length=max_length)
+    # Basic email regex (not perfect but catches most issues)
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     
-    # Ensure not empty after sanitization
-    if not sanitized or len(sanitized.strip()) == 0:
-        raise ValueError(f"{field_name} cannot be empty")
+    if not re.match(pattern, email):
+        raise ValueError("Invalid email format")
     
-    return sanitized
+    if len(email) > 255:
+        raise ValueError("Email too long")
+    
+    return email
+
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """
+    Check password strength (for user registration).
+    
+    Args:
+        password: Password to check
+        
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    
+    if len(password) > 100:
+        return False, "Password too long (max 100 characters)"
+    
+    # Check for at least one letter and one number
+    has_letter = bool(re.search(r'[a-zA-Z]', password))
+    has_number = bool(re.search(r'\d', password))
+    
+    if not (has_letter and has_number):
+        return False, "Password must contain both letters and numbers"
+    
+    return True, ""

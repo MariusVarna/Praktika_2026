@@ -142,1441 +142,1622 @@
 </head>
 <body>
 
-<header>
-  <div class="hl">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <span class="logo">Pavadinimas</span>
-    <span class="team-badge" id="teamBadge">Komanda</span>
-  </div>
-  <div class="hr-right">
-    <span class="bets-status-hdr bets-closed-hdr" id="betsHdr">Uždaryti</span>
-  </div>
-</header>
+    <header>
+        <div class="hl">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <span class="logo">Pavadinimas</span>
+            <span class="team-badge" id="teamBadge">Komanda</span>
+        </div>
+        <div class="hr-right">
+            <span class="bets-status-hdr bets-closed-hdr" id="betsHdr">Uždaryti</span>
+        </div>
+    </header>
 
-<div class="sidebar" id="sidebar">
-  <div class="sb-head"><h2>Navigacija</h2></div>
-  <div class="sb-item" onclick="nav('/pages/game.html')">Žaidimas</div>
-  <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
-  <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
-  <div class="sb-item" onclick="logout()">Atsijungti</div>
-</div>
-<div class="overlay" id="overlay"></div>
-
-<div class="round-nav" id="roundNav">
-  <span class="rnav-label">Diena:</span>
-</div>
-
-<main id="mainContent"></main>
-
-<!-- Hour detail modal -->
-<div class="modal-bd" id="hourModal">
-  <div class="modal">
-    <div class="modal-hd">
-      <h2 id="hourModalTitle">Valanda</h2>
-      <button class="modal-close" onclick="closeHourModal()">×</button>
+    <div class="sidebar" id="sidebar">
+        <div class="sb-head"><h2>Navigacija</h2></div>
+        <div class="sb-item" onclick="nav('/pages/game.html')">Žaidimas</div>
+        <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
+        <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
+        <div class="sb-item" onclick="logout()">Atsijungti</div>
     </div>
-    <div class="modal-body" id="hourModalBody"></div>
-  </div>
-</div>
+    <div class="overlay" id="overlay"></div>
 
-<div class="toast" id="toast"></div>
+    <div class="round-nav" id="roundNav">
+        <span class="rnav-label">Diena:</span>
+    </div>
 
-<script src="/js/api.js"></script>
-<script>
-// ══════════════════════════════════════════════
-// DATA MODEL
-// round = one full day
-// bidRows[round] = array of 24 arrays of objects: [[{price, mw, type}, ...], ...]
-// marketPrices[round] = array of 24 numbers (market price per hour)
-// ══════════════════════════════════════════════
-const NUM_HOURS = 24;
+    <main id="mainContent"></main>
 
-let session = null, myTeam = null, viewRound = 1, editingSubmitted = false;
-let hourSupplyChartInstance = null;
+    <!-- Hour detail modal -->
+    <div class="modal-bd" id="hourModal">
+        <div class="modal">
+            <div class="modal-hd">
+                <h2 id="hourModalTitle">Valanda</h2>
+                <button class="modal-close" onclick="closeHourModal()">×</button>
+            </div>
+            <div class="modal-body" id="hourModalBody"></div>
+        </div>
+    </div>
 
-async function loadSession() {
-  const sid = sessionStorage.getItem(KEYS.SESSION_ID);
-  const uid = sessionStorage.getItem(KEYS.USER_ID);
-  if (!sid || !uid) { nav('/pages/join.html'); return; }
+    <div class="toast" id="toast"></div>
 
-    try {
-        session = await API.Sessions.get(sid);
-        
-        // Map backend state
-        const latestRound = session.rounds && session.rounds.length ? session.rounds[session.rounds.length - 1] : null;
-        session.roundStarted = session.status === 'active' && !!latestRound;
-        session.betsOpen = latestRound ? (latestRound.status === 'bidding') : false;
-        session.currentRound = latestRound ? latestRound.round_number : 1;
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        // ══════════════════════════════════════════════
+        // DATA MODEL
+        // round = one full day
+        // bidRows[round] = array of 24 arrays of objects: [[{price, mw, type}, ...], ...]
+        // marketPrices[round] = array of 24 numbers (market price per hour)
+        // ══════════════════════════════════════════════
+        const NUM_HOURS = 24;
 
-        const state = await API.Players.getState(uid);
-        const teamData = (session.teams || []).find(t => String(t.id) === String(uid));
-        
-        myTeam = {
-            id: uid,
-            name: teamData ? teamData.name : sessionStorage.getItem(KEYS.TEAM_NAME),
-            balance: state.total_profit,
-            batteryStored: state.current_battery_mwh,
-            batteryCapacity: session.battery_max_mwh || 100,
-            bids: [], 
-            bidRows: {},
-            roundHistory: []
-        };
+        let session = null, myTeam = null, viewRound = 1, editingSubmitted = false;
+        let hourSupplyChartInstance = null;
 
-        // Initialize marketPrices storage
-        session.marketPrices = session.marketPrices || {};
+        async function loadSession() {
+            const sid = sessionStorage.getItem(KEYS.SESSION_ID);
+            const uid = sessionStorage.getItem(KEYS.USER_ID);
+            if (!sid || !uid) { nav('/pages/join.html'); return; }
 
-        if (teamData && teamData.bids) {
-            teamData.bids.forEach(b => {
-                const rNum = b.round; // Note: session_service already maps round_id to round_number in our enrich_session
-                
-                if (!myTeam.bidRows[rNum]) {
-                    myTeam.bidRows[rNum] = Array(NUM_HOURS).fill(null).map(() => []);
+            try {
+                session = await API.Sessions.get(sid);
+
+                console.log('=== SESSION DATA ===');
+                console.log('Session rounds:', session.rounds);
+                console.log('Teams:', session.teams);
+
+                // Initialize market prices storage
+                if (!session.marketPrices) session.marketPrices = {};
+
+                // Map backend state
+                const latestRound = session.rounds && session.rounds.length ? session.rounds[session.rounds.length - 1] : null;
+                session.roundStarted = session.status === 'active' && !!latestRound;
+                session.betsOpen = latestRound ? (latestRound.status === 'bidding') : false;
+                session.currentRound = latestRound ? latestRound.round_number : 1;
+
+                // Get player state
+                const state = await API.Players.getState(uid);
+
+                const teamData = (session.teams || []).find(t => String(t.id) === String(uid));
+                console.log('My team data:', teamData);
+                console.log('Team bids:', teamData?.bids);
+                console.log('Team bidRows from backend:', teamData?.bidRows);
+
+                // Create myTeam object
+                myTeam = {
+                    id: uid,
+                    name: teamData ? teamData.name : sessionStorage.getItem(KEYS.TEAM_NAME),
+                    balance: state.total_profit,
+                    batteryStored: state.current_battery_mwh,
+                    batteryCapacity: session.battery_max_mwh || 100,
+                    bids: [],
+                    bidRows: {},
+                    roundHistory: []
+                };
+
+                // Use bidRows directly if available
+                if (teamData && teamData.bidRows) {
+                    console.log('Using bidRows directly from backend');
+                    // Deep copy the bidRows structure
+                    myTeam.bidRows = JSON.parse(JSON.stringify(teamData.bidRows));
+
+                    // Also mark rounds as submitted
+                    Object.keys(myTeam.bidRows).forEach(roundNum => {
+                        if (!myTeam.bids.some(b => b.round === parseInt(roundNum))) {
+                            myTeam.bids.push({ round: parseInt(roundNum), submitted: true });
+                        }
+                    });
+
+                    console.log('Loaded bidRows:', myTeam.bidRows);
                 }
-                myTeam.bidRows[rNum][b.hour].push({
-                    price: b.price,
-                    mw: b.volume_mwh,
-                    type: b.bid_type ? 'buy' : 'sell'
-                });
-                
-                if (!myTeam.bids.some(x => x.round === rNum)) {
-                    myTeam.bids.push({ round: rNum, submitted: true });
+                // Fallback Build bidRows from bids if bidRows not available
+                else if (teamData && teamData.bids && teamData.bids.length > 0) {
+                    console.log('Falling back to building bidRows from bids');
+                    teamData.bids.forEach(b => {
+                        const rNum = b.round;
+                        if (!myTeam.bidRows[rNum]) {
+                            myTeam.bidRows[rNum] = Array(24).fill(null).map(() => []);
+                        }
+                        myTeam.bidRows[rNum][b.hour].push({
+                            price: b.price,
+                            mw: b.volume_mwh,
+                            type: b.bid_type ? 'buy' : 'sell'
+                        });
+                        if (!myTeam.bids.some(x => x.round === rNum)) {
+                            myTeam.bids.push({ round: rNum, submitted: true });
+                        }
+                    });
+                    console.log('Built bidRows from bids:', myTeam.bidRows);
+                } else {
+                    console.log('No bids found in backend response');
+                }
+
+                // Load market prices for all rounds
+                for (const rObj of (session.rounds || [])) {
+                    try {
+                        let prices = null;
+
+                        if (rObj.status === 'calculated') {
+                            const res = await API.Admin.getResults(sid, rObj.id);
+                            if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
+                                prices = res.market_clearing.map(mc => mc.clearing_price || mc.price);
+                                console.log(`Loaded REAL prices for round ${rObj.round_number}`);
+                            }
+                        } else if (rObj.status === 'bidding') {
+                            const res = await API.Sessions.getForecast(sid, rObj.id);
+                            if (res && res.forecast && Array.isArray(res.forecast)) {
+                                prices = res.forecast.map(f => f.predicted_price || f.price);
+                                console.log(`Loaded FORECAST prices for round ${rObj.round_number}`);
+                            }
+                        }
+
+                        if (prices && prices.length === 24) {
+                            session.marketPrices[rObj.round_number] = prices;
+                        } else {
+                            const defaultPrice = session.market_price || session.marketPrice || 70;
+                            session.marketPrices[rObj.round_number] = Array(24).fill(defaultPrice);
+                        }
+                    } catch (err) {
+                        console.warn(`Failed to load prices for round ${rObj.round_number}:`, err);
+                        const defaultPrice = session.market_price || session.marketPrice || 70;
+                        session.marketPrices[rObj.round_number] = Array(24).fill(defaultPrice);
+                    }
+                }
+
+                // Ensure current round has prices
+                if (latestRound && !session.marketPrices[latestRound.round_number]) {
+                    try {
+                        const res = await API.Sessions.getForecast(sid, latestRound.id);
+                        if (res && res.forecast) {
+                            session.marketPrices[latestRound.round_number] = res.forecast.map(f => f.predicted_price);
+                        }
+                    } catch (err) {
+                        console.warn('Failed to load current round forecast:', err);
+                    }
+                }
+
+            } catch (e) {
+                console.error('Failed to load session/state:', e);
+                toast('Klaida užkraunant duomenis');
+            }
+        }
+        async function getMarketPricesForRound(round) {
+            if (!session.marketPrices) session.marketPrices = {};
+
+            // Return cached
+            if (session.marketPrices[round]) {
+                return session.marketPrices[round];
+            }
+
+            // Find round object
+            const roundObj = (session.rounds || []).find(r => r.round_number === round);
+            let prices = Array(24).fill(null);
+            const defaultPrice = session.market_price || session.marketPrice || 70;
+
+            if (roundObj && roundObj.id) {
+                try {
+                    if (roundObj.status === 'calculated') {
+                        const res = await API.Admin.getResults(session.id, roundObj.id);
+                        console.log(`[Player] Results for round ${round}:`, res);
+
+                        if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
+                            const priceMap = {};
+                            res.market_clearing.forEach(mc => {
+                                if (mc.hour !== undefined && mc.clearing_price !== undefined) {
+                                    priceMap[mc.hour] = mc.clearing_price;
+                                }
+                            });
+
+                            for (let i = 0; i < 24; i++) {
+                                if (priceMap[i] !== undefined) {
+                                    prices[i] = priceMap[i];
+                                }
+                            }
+                        }
+                    } else if (roundObj.status === 'bidding') {
+                        const res = await API.Sessions.getForecast(session.id, roundObj.id);
+                        console.log(`[Player] Forecast for round ${round}:`, res);
+
+                        if (res && res.forecast && Array.isArray(res.forecast)) {
+                            prices = res.forecast.map(f => f.predicted_price || f.price || defaultPrice);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Failed to get prices for round ${round}:`, e);
+                }
+            }
+
+            // Fill missing values
+            const hasValidPrices = prices.some(p => p !== null && p !== undefined && !isNaN(p));
+            if (!hasValidPrices) {
+                prices = Array(24).fill(defaultPrice);
+            } else {
+                for (let i = 0; i < prices.length; i++) {
+                    if (prices[i] === null || prices[i] === undefined || isNaN(prices[i])) {
+                        if (i > 0 && prices[i - 1] !== null) {
+                            prices[i] = prices[i - 1];
+                        } else if (i < prices.length - 1 && prices[i + 1] !== null) {
+                            prices[i] = prices[i + 1];
+                        } else {
+                            prices[i] = defaultPrice;
+                        }
+                    }
+                }
+            }
+
+            session.marketPrices[round] = prices;
+            return prices;
+        }
+        // ══════════════════════════════════════════════
+        // CHART
+        // ══════════════════════════════════════════════
+        let chartInstance = null;
+
+        function buildChartData(round) {
+            const prices = session.marketPrices[round] || Array(24).fill(session.marketPrice || 70);
+            const labels = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+            //const prices = session.marketPrices[round] || Array(NUM_HOURS).fill(session.marketPrice || 70);
+            //const labels = Array.from({ length: NUM_HOURS }, (_, i) => String(i).padStart(2, '0') + ':00');
+
+            const isSubmitted = (myTeam.bids || []).some(b => b.round === round && b.submitted);
+            const savedRows = (myTeam.bidRows || {})[round] || [];
+            const allBids = [];
+            savedRows.forEach((hourBids, h) => {
+                if (hourBids && hourBids.length) {
+                    hourBids.forEach(bid => {
+                        if (bid && bid.price) {
+                            allBids.push({ hour: h, price: bid.price, mw: bid.mw, type: bid.type, submitted: isSubmitted });
+                        }
+                    });
                 }
             });
-        }
-        
-        // Load Forecast for CURRENT bidding round
-        if (latestRound && latestRound.status === 'bidding') {
-            try {
-                const res = await API.Sessions.getForecast(sid, latestRound.id);
-                session.marketPrices[latestRound.round_number] = res.forecast.map(f => f.predicted_price);
-            } catch (err) { console.warn('Forecast load failed', err); }
-        }
-
-        // Load Results for ALL calculated rounds
-        for (const rObj of (session.rounds || [])) {
-            if (rObj.status === 'calculated') {
-                try {
-                    const res = await API.Admin.getResults(sid, rObj.id);
-                    if (res && res.market_clearing) {
-                        session.marketPrices[rObj.round_number] = res.market_clearing.map(mc => mc.clearing_price);
+            // Draft bids
+            const draftBids = [];
+            const isEditingNow = round === session.currentRound && editingSubmitted;
+            const isNewDraft = round === session.currentRound && !isSubmitted;
+            if (isEditingNow || isNewDraft) {
+                for (let h = 0; h < NUM_HOURS; h++) {
+                    let bidIdx = 0;
+                    while (true) {
+                        const p = document.getElementById('price_' + h + '_' + bidIdx);
+                        if (!p) break;
+                        const m = document.getElementById('mw_' + h + '_' + bidIdx);
+                        const t = document.getElementById('type_' + h + '_' + bidIdx);
+                        const price = +p.value || 0;
+                        const mw = +m.value || 0;
+                        if (price && mw) {
+                            draftBids.push({ hour: h, price, mw, type: t ? t.value : 'buy' });
+                        }
+                        bidIdx++;
                     }
-                } catch (err) { console.warn(`Results load failed for round ${rObj.round_number}`, err); }
+                }
             }
+
+            return { labels, prices, allBids, draftBids };
         }
-    } catch(e) {
-        console.error('Failed to load session/state:', e);
-        toast('Klaida užkraunant duomenis');
-    }
-}
-// ══════════════════════════════════════════════
-// CHART
-// ══════════════════════════════════════════════
-let chartInstance = null;
 
-function buildChartData(round) {
-  const prices = session.marketPrices[round] || Array(NUM_HOURS).fill(session.marketPrice || 70);
-  const labels = Array.from({length: NUM_HOURS}, (_, i) => String(i).padStart(2,'0') + ':00');
+        function renderChart(round) {
+            const ctx = document.getElementById('priceChart');
+            if (!ctx) return;
+            if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-  const isSubmitted = (myTeam.bids || []).some(b => b.round === round && b.submitted);
-  const savedRows = (myTeam.bidRows || {})[round] || [];
-  const allBids = [];
-  savedRows.forEach((hourBids, h) => {
-    if (hourBids && hourBids.length) {
-      hourBids.forEach(bid => {
-        if (bid && bid.price) {
-          allBids.push({ hour: h, price: bid.price, mw: bid.mw, type: bid.type, submitted: isSubmitted });
+            const { labels, prices, allBids, draftBids } = buildChartData(round);
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Rinkos kaina ($/MWh)',
+                            data: prices,
+                            backgroundColor: 'rgba(47,74,117,.4)',
+                            borderColor: '#2f4a75',
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            type: 'bar',
+                            order: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (evt, elements, chart) => {
+                        const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
+                        if (pts.length) openHourModal(round, pts[0].index);
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
+                        tooltip: {
+                            callbacks: {
+                                title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
+                                afterBody: items => {
+                                    const h = items[0].dataIndex;
+                                    const hourBids = ((myTeam.bidRows || {})[round] || [])[h];
+                                    if (hourBids && hourBids.length) {
+                                        return hourBids.map((bid, idx) =>
+                                            `#${idx + 1}: ${bid.price} $/MWh · ${bid.mw} MW (${bid.type === 'buy' ? 'pirkimas' : 'pardavimas'})`
+                                        );
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, min: Math.round(Math.min(...prices) - 5), ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
+                        x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
+                    },
+                    animation: { duration: 300 }
+                },
+                plugins: [{
+                    id: 'multiBidDots',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, scales } = chart;
+
+                        // Draw submitted bids (filled dots)
+                        allBids.forEach(bid => {
+                            const x = scales.x.getPixelForValue(bid.hour);
+                            const y = scales.y.getPixelForValue(bid.price);
+                            if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
+                                y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                                ctx.fillStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
+                                ctx.fill();
+                                ctx.strokeStyle = 'white';
+                                ctx.lineWidth = 1.5;
+                                ctx.stroke();
+                                ctx.fillStyle = 'white';
+                                ctx.font = 'bold 8px sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(bid.mw, x, y);
+                                ctx.restore();
+                            }
+                        });
+
+                        // Draw draft bids (dashed outline)
+                        draftBids.forEach(bid => {
+                            const x = scales.x.getPixelForValue(bid.hour);
+                            const y = scales.y.getPixelForValue(bid.price);
+                            if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
+                                y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                                ctx.fillStyle = bid.type === 'buy' ? 'rgba(39,174,96,0.3)' : 'rgba(231,76,60,0.3)';
+                                ctx.fill();
+                                ctx.strokeStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
+                                ctx.lineWidth = 2;
+                                ctx.setLineDash([3, 3]);
+                                ctx.stroke();
+                                ctx.setLineDash([]);
+                                ctx.fillStyle = '#333';
+                                ctx.font = 'bold 7px sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(bid.mw, x, y);
+                                ctx.restore();
+                            }
+                        });
+                    }
+                }]
+            });
         }
-      });
-    }
-  });
-  // Draft bids
-  const draftBids = [];
-  const isEditingNow = round === session.currentRound && editingSubmitted;
-  const isNewDraft = round === session.currentRound && !isSubmitted;
-  if (isEditingNow || isNewDraft) {
-    for (let h = 0; h < NUM_HOURS; h++) {
-      let bidIdx = 0;
-      while (true) {
-        const p = document.getElementById('price_' + h + '_' + bidIdx);
-        if (!p) break;
-        const m = document.getElementById('mw_' + h + '_' + bidIdx);
-        const t = document.getElementById('type_' + h + '_' + bidIdx);
-        const price = +p.value || 0;
-        const mw = +m.value || 0;
-        if (price && mw) {
-          draftBids.push({ hour: h, price, mw, type: t ? t.value : 'buy' });
-        }
-        bidIdx++;
-      }
-    }
-  }
 
-  return { labels, prices, allBids, draftBids };
-}
+        function renderRound() {
+            const cr = session.current_round || 1;
+            const isReadOnly = viewRound < cr;
+            const isFuture = viewRound > cr;
 
-function renderChart(round) {
-  const ctx = document.getElementById('priceChart');
-  if (!ctx) return;
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+            // Use session.rounds if it exists
+            const backendRound = (session.rounds || []).find(h => h.round_number === viewRound);
+            const mp = backendRound ? (backendRound.clearing_price || 0) : (session.market_price || 0);
+            const demand = backendRound ? (backendRound.total_volume_cleared || 0) : (session.demand || 0);
+            const weather = session.weather || 'Giedra';
 
-  const { labels, prices, allBids, draftBids } = buildChartData(round);
+            const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => []);
+            const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
+            const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
+            const isEditing = editingSubmitted && canEdit;
+            const disabled = isReadOnly || isFuture || (isSubmitted && !isEditing);
 
-  chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Rinkos kaina ($/MWh)',
-          data: prices,
-          backgroundColor: 'rgba(47,74,117,.4)',
-          borderColor: '#2f4a75',
-          borderWidth: 1,
-          borderRadius: 3,
-          type: 'bar',
-          order: 5
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      onClick: (evt, elements, chart) => {
-        const pts = chart.getElementsAtEventForMode(evt, 'index', {intersect: false}, false);
-        if (pts.length) openHourModal(round, pts[0].index);
-      },
-      plugins: {
-        legend: { display: true, position: 'top', labels: { font: { size: 10 }, boxWidth: 12, padding: 8 } },
-        tooltip: {
-          callbacks: {
-            title: items => labels[items[0].dataIndex] + ' — Diena ' + round,
-            afterBody: items => {
-              const h = items[0].dataIndex;
-              const hourBids = ((myTeam.bidRows || {})[round] || [])[h];
-              if (hourBids && hourBids.length) {
-                return hourBids.map((bid, idx) => 
-                  `#${idx+1}: ${bid.price} $/MWh · ${bid.mw} MW (${bid.type==='buy'?'pirkimas':'pardavimas'})`
-                );
-              }
-              return [];
+            const betsHdr = document.getElementById('betsHdr');
+            if (session.betsOpen && !isReadOnly) {
+                betsHdr.className = 'bets-status-hdr bets-open-hdr';
+                betsHdr.textContent = 'Atidaryti';
+            } else {
+                betsHdr.className = 'bets-status-hdr bets-closed-hdr';
+                betsHdr.textContent = 'Uždaryti';
             }
-          }
+
+            const acc = getAccumulation(viewRound);
+
+            let roundProfit = 0;
+            if (isReadOnly) {
+                const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.id === myTeam.id));
+                if (myTxs.length > 0) {
+                    let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
+                    myTxs.forEach(tx => {
+                        if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
+                        else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
+                    });
+                    const net = netBuy - netSell;
+                    roundProfit = Math.round(sellRev - buyCost + net * (session.market_price || 70));
+                }
+            }
+            const roundResult = isReadOnly ? { profit: roundProfit } : null;
+
+            // Calculate battery state for each hour locally for preview
+            let currentBattery = myTeam.batteryStored || 0;
+            const batteryCapacity = myTeam.batteryCapacity || 100;
+            const batteryHistory = [currentBattery];
+
+            for (let i = 0; i < savedRows.length; i++) {
+                const hourBids = savedRows[i];
+                let netMW = 0;
+                if (hourBids && hourBids.length) {
+                    for (const bid of hourBids) {
+                        if (bid && bid.price) {
+                            if (bid.type === 'buy') netMW += bid.mw;
+                            else if (bid.type === 'sell') netMW -= bid.mw;
+                        }
+                    }
+                }
+                currentBattery += netMW;
+                currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
+                batteryHistory.push(currentBattery);
+            }
+
+            document.getElementById('mainContent').innerHTML = `
+            <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
+              Diena ${viewRound} baigta — tik peržiūra.
+              <button class="btn btn-sec" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="switchRound(${cr})">→ D${cr}</button>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-card-title">
+                <h3>Rinkos kainos — Diena ${viewRound}</h3>
+                <span>Spustelėkite ant valandos norėdami matyti išsamią informaciją</span>
+              </div>
+              <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+              <div class="chart-note">Žalios/raudonos apskritimai = jūsų pasiūlymai · Punktyrinės = juodraštis</div>
+            </div>
+
+            <div class="bid-card">
+              <div class="bid-card-header">
+                <h3>Pasiūlymai — Diena ${viewRound}</h3>
+                <div class="bid-actions">
+                  ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
+                    ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
+                  ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
+                  ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
+                    <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
+                    <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen ? '' : 'disabled'}>
+                      ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
+                    </button>` : ''}
+                </div>
+              </div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
+                <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
+                <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
+              </div>
+              <div class="bid-scroll">
+                <div class="bid-row header-row">
+                  <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
+                </div>
+                ${savedRows.map((hourBids, hour) => {
+                const netMW = hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0);
+                const totalMW = hourBids.reduce((sum, b) => sum + b.mw, 0);
+                const bidCount = hourBids.length;
+                const batteryBefore = batteryHistory[hour];
+                const batteryAfter = batteryHistory[hour + 1];
+                const netColor = netMW > 0 ? '#27ae60' : (netMW < 0 ? '#e74c3c' : '#888');
+                const netPrefix = netMW > 0 ? '+' : '';
+                const hourId = `hour_${viewRound}_${hour}`;
+
+                return `
+                    <div style="border-bottom:1px solid #f0ebe0;">
+                      <div class="bid-row ${hourBids.length ? 'has-bid' : ''}" onclick="toggleHourBids('${hourId}')">
+                        <span class="bid-expand-icon" id="${hourId}_icon">▶</span>
+                        <span style="font-weight:600;color:#2f4a75;">${String(hour).padStart(2, '0')}:00</span>
+                        <span style="color:${netColor};font-weight:600;">${netPrefix}${netMW} MW</span>
+                        <span style="color:#555;">${totalMW} MW</span>
+                        <span style="color:#f39c12;">${bidCount}</span>
+                        <span style="color:#888;font-weight:600;">${batteryBefore.toFixed(0)}</span>
+                        <span style="color:#f39c12;font-weight:600;">${batteryAfter.toFixed(0)}</span>
+                      </div>
+                      <div id="${hourId}" class="bid-detail-row">
+                        <div class="bid-detail-header">
+                          <span></span><span>#</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span><span></span>
+                        </div>
+                        ${hourBids.map((bid, bidIdx) => `
+                          <div class="bid-detail-item" id="bid_${hour}_${bidIdx}">
+                            <span style="color:#aaa;">↳</span>
+                            <span style="color:#888;">#${bidIdx + 1}</span>
+                            <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" value="${bid.price || ''}" min="0" step="0.01" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                            <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" value="${bid.mw || ''}" min="0" step="1" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                            <select class="bid-select" id="type_${hour}_${bidIdx}" ${disabled ? 'disabled' : ''} onchange="onBidInput(${hour})">
+                              <option value="buy" ${bid.type === 'buy' ? 'selected' : ''}>Pirkti</option>
+                              <option value="sell" ${bid.type === 'sell' ? 'selected' : ''}>Parduoti</option>
+                            </select>
+                            ${!disabled ? `<button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>` : '<span></span>'}
+                          </div>
+                        `).join('')}
+                        ${!disabled && hourBids.length < 3 ? `<div style="padding:8px;text-align:center;">
+                          <button class="btn btn-sec" style="font-size:11px;padding:4px 12px;" onclick="addBidToHour(${hour})">+ Pridėti pasiūlymą</button>
+                        </div>` : ''}
+                      </div>
+                    </div>
+                  `;
+            }).join('')}
+              </div>
+              <div class="bid-footer">
+                <span></span><span>IŠ VISO</span>
+                <span id="totalNetMW">—</span>
+                <span id="totalMW">—</span>
+                <span id="totalBids">—</span>
+                <span>${(myTeam.batteryStored || 0).toFixed(0)}</span>
+                <span id="finalBattery" style="color:#f39c12;">—</span>
+              </div>
+            </div>
+
+            <!-- STATUS -->
+            <div class="status-bar">
+              <div class="stat-chip">
+                <span class="v">D${viewRound}${isReadOnly ? ' 🔒' : ''}</span>
+                <span class="l">Diena</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
+                <span class="l">Vid. kaina</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${demand}</span>
+                <span class="l">Paklausa MW</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${weather}</span>
+                <span class="l">Oras</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v" style="color:#27ae60;">$${(myTeam.balance || 0).toLocaleString()}</span>
+                <span class="l">Balansas</span>
+              </div>
+            </div>
+
+            <!-- ENERGY -->
+            <div class="energy-card">
+              <h3>Energijos portfelis (iki D${viewRound})</h3>
+              <div class="energy-grid">
+                <div class="ebox highlight"><div class="v">${acc.totalBought}<small style="font-size:9px;"> MWh</small></div><div class="l">Pirkta</div></div>
+                <div class="ebox"><div class="v">${acc.totalSold}<small style="font-size:9px;"> MWh</small></div><div class="l">Parduota</div></div>
+                <div class="ebox"><div class="v">${acc.net}<small style="font-size:9px;"> MWh</small></div><div class="l">Grynasis</div></div>
+                <div class="ebox highlight"><div class="v" style="color:${acc.pnl >= 0 ? '#27ae60' : '#e74c3c'}">${acc.pnl >= 0 ? '+' : ''}$${Math.abs(acc.pnl).toLocaleString()}</div><div class="l">P&amp;L</div></div>
+              </div>
+            </div>
+          `;
+
+            document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('viewing'));
+            const rb = document.getElementById('rbtn_' + viewRound);
+            if (rb) rb.classList.add('viewing');
+
+            updateTotals();
+            renderChart(viewRound);
         }
-      },
-      scales: {
-        y: { beginAtZero: false, min: Math.round(Math.min(...prices) - 5), ticks: { font: { size: 10 }, callback: v => v + ' $' }, grid: { color: '#f0ebe0' } },
-        x: { ticks: { font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
-      },
-      animation: { duration: 300 }
-    },
-    plugins: [{
-      id: 'multiBidDots',
-      afterDatasetsDraw(chart) {
-        const { ctx, scales } = chart;
-        
-        // Draw submitted bids (filled dots)
-        allBids.forEach(bid => {
-          const x = scales.x.getPixelForValue(bid.hour);
-          const y = scales.y.getPixelForValue(bid.price);
-          if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
-              y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+
+        // ══════════════════════════════════════════════
+        // SUPPLY CHART FUNCTIONS
+        // ══════════════════════════════════════════════
+        function generateSupplyStackForHour(round, hour) {
+            let seed = round * 31 + hour * 7;
+            const rng = () => {
+                seed = (seed * 16807) % 2147483647;
+                return (seed - 1) / 2147483646;
+            };
+
+            const groups = [
+                { name: 'Vėjas', color: '#4A90E2', base: 200 },
+                { name: 'Saulė', color: '#F5A623', base: 150 },
+                { name: 'Dujos', color: '#7B8D8E', base: 175 },
+                { name: 'Vanduo', color: '#2ECC71', base: 120 },
+                { name: 'Kita', color: '#9B59B6', base: 165 }
+            ];
+
+            const dayMults = [
+                [0.8, 0.9, 1.0, 1.1, 1.2],
+                [0.7, 1.0, 1.1, 0.9, 1.3],
+                [1.2, 0.8, 1.1, 0.9, 1.0],
+                [1.1, 1.2, 0.7, 1.0, 0.9],
+                [1.0, 1.1, 0.9, 1.2, 0.8]
+            ];
+            const mult = dayMults[(round - 1) % dayMults.length];
+
+            const labels = [];
+            const values = [];
+            const colors = [];
+
+            groups.forEach((g, gi) => {
+                for (let i = 0; i < 6; i++) {
+                    labels.push(`${g.name} ${i + 1}`);
+                    const hourFactor = 0.7 + (hour / 24) * 0.6;
+                    const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
+                    values.push(Math.max(10, value));
+                    colors.push(g.color);
+                }
+            });
+
+            const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
+            combined.sort((a, b) => a.value - b.value);
+
+            return {
+                labels: combined.map(c => c.label),
+                values: combined.map(c => c.value),
+                colors: combined.map(c => c.color)
+            };
+        }
+
+        function generateDemandCurve(maxQuantity, basePrice, round, hour) {
+            const points = [];
+            const numPoints = 6;
+            for (let i = 0; i <= numPoints; i++) {
+                const price = basePrice + (1 - (i / numPoints)) * 50;
+                const quantity = maxQuantity * (0.2 + (i / numPoints) * 0.8);
+                points.push({ x: Math.round(quantity), y: Math.round(price) });
+            }
+            const seed = round * hour;
+            points.forEach(p => {
+                p.x = Math.max(10, p.x + (seed % 20) - 10);
+                p.y = Math.max(20, p.y + (seed % 15) - 7);
+            });
+            return points.sort((a, b) => a.x - b.x);
+        }
+
+        function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex, values) {
+            if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
+
+            const ctx = chart.ctx;
+            const xScale = chart.scales.x;
+            const yScale = chart.scales.y;
+
             ctx.save();
+
+            // Draw demand curve line
             ctx.beginPath();
-            ctx.arc(x, y, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
-            ctx.fill();
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 8px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(bid.mw, x, y);
-            ctx.restore();
-          }
-        });
-        
-        // Draw draft bids (dashed outline)
-        draftBids.forEach(bid => {
-          const x = scales.x.getPixelForValue(bid.hour);
-          const y = scales.y.getPixelForValue(bid.price);
-          if (x && y && x >= chart.chartArea.left && x <= chart.chartArea.right &&
-              y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(x, y, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = bid.type === 'buy' ? 'rgba(39,174,96,0.3)' : 'rgba(231,76,60,0.3)';
-            ctx.fill();
-            ctx.strokeStyle = bid.type === 'buy' ? '#27ae60' : '#e74c3c';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([3, 3]);
-            ctx.stroke();
+            ctx.strokeStyle = '#E74C3C';
+            ctx.lineWidth = 3;
             ctx.setLineDash([]);
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 7px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(bid.mw, x, y);
-            ctx.restore();
-          }
-        });
-      }
-    }]
-  });
-}
 
-function renderRound() {
-  const cr = session.current_round || 1;
-  const isReadOnly = viewRound < cr;
-  const isFuture = viewRound > cr;
-  
-  // Use session.rounds if it exists
-  const backendRound = (session.rounds || []).find(h => h.round_number === viewRound);
-  const mp = backendRound ? (backendRound.clearing_price || 0) : (session.market_price || 0);
-  const demand = backendRound ? (backendRound.total_volume_cleared || 0) : (session.demand || 0);
-  const weather = session.weather || 'Giedra';
+            let firstPoint = true;
+            for (let i = 0; i < demandPoints.length; i++) {
+                const x = xScale.getPixelForValue(demandPoints[i].x);
+                const y = yScale.getPixelForValue(demandPoints[i].y);
 
-  const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => []);
-  const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
-  const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
-  const isEditing = editingSubmitted && canEdit;
-  const disabled = isReadOnly || isFuture || (isSubmitted && !isEditing);
-
-  const betsHdr = document.getElementById('betsHdr');
-  if (session.betsOpen && !isReadOnly) {
-    betsHdr.className = 'bets-status-hdr bets-open-hdr';
-    betsHdr.textContent = 'Atidaryti';
-  } else {
-    betsHdr.className = 'bets-status-hdr bets-closed-hdr';
-    betsHdr.textContent = 'Uždaryti';
-  }
-
-  const acc = getAccumulation(viewRound);
-  
-  let roundProfit = 0;
-  if (isReadOnly) {
-      const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.id === myTeam.id));
-      if (myTxs.length > 0) {
-          let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
-          myTxs.forEach(tx => {
-              if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
-              else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
-          });
-          const net = netBuy - netSell;
-          roundProfit = Math.round(sellRev - buyCost + net * (session.market_price || 70));
-      }
-  }
-  const roundResult = isReadOnly ? { profit: roundProfit } : null;
-
-  // Calculate battery state for each hour locally for preview
-  let currentBattery = myTeam.batteryStored || 0;
-  const batteryCapacity = myTeam.batteryCapacity || 100;
-  const batteryHistory = [currentBattery];
-  
-  for (let i = 0; i < savedRows.length; i++) {
-    const hourBids = savedRows[i];
-    let netMW = 0;
-    if (hourBids && hourBids.length) {
-      for (const bid of hourBids) {
-        if (bid && bid.price) {
-          if (bid.type === 'buy') netMW += bid.mw;
-          else if (bid.type === 'sell') netMW -= bid.mw;
-        }
-      }
-    }
-    currentBattery += netMW;
-    currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
-    batteryHistory.push(currentBattery);
-  }
-
-  document.getElementById('mainContent').innerHTML = `
-    <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
-      Diena ${viewRound} baigta — tik peržiūra.
-      <button class="btn btn-sec" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="switchRound(${cr})">→ D${cr}</button>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-card-title">
-        <h3>Rinkos kainos — Diena ${viewRound}</h3>
-        <span>Spustelėkite ant valandos norėdami matyti išsamią informaciją</span>
-      </div>
-      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
-      <div class="chart-note">Žalios/raudonos apskritimai = jūsų pasiūlymai · Punktyrinės = juodraštis</div>
-    </div>
-
-    <div class="bid-card">
-      <div class="bid-card-header">
-        <h3>Pasiūlymai — Diena ${viewRound}</h3>
-        <div class="bid-actions">
-          ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
-            ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
-          ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
-          ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
-            <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
-            <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen ? '' : 'disabled'}>
-              ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
-            </button>` : ''}
-        </div>
-      </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
-        <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
-        <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
-      </div>
-      <div class="bid-scroll">
-        <div class="bid-row header-row">
-          <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
-        </div>
-        ${savedRows.map((hourBids, hour) => {
-            const netMW = hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0);
-            const totalMW = hourBids.reduce((sum, b) => sum + b.mw, 0);
-            const bidCount = hourBids.length;
-            const batteryBefore = batteryHistory[hour];
-            const batteryAfter = batteryHistory[hour + 1];
-            const netColor = netMW > 0 ? '#27ae60' : (netMW < 0 ? '#e74c3c' : '#888');
-            const netPrefix = netMW > 0 ? '+' : '';
-            const hourId = `hour_${viewRound}_${hour}`;
-
-            return `
-            <div style="border-bottom:1px solid #f0ebe0;">
-              <div class="bid-row ${hourBids.length ? 'has-bid' : ''}" onclick="toggleHourBids('${hourId}')">
-                <span class="bid-expand-icon" id="${hourId}_icon">▶</span>
-                <span style="font-weight:600;color:#2f4a75;">${String(hour).padStart(2, '0')}:00</span>
-                <span style="color:${netColor};font-weight:600;">${netPrefix}${netMW} MW</span>
-                <span style="color:#555;">${totalMW} MW</span>
-                <span style="color:#f39c12;">${bidCount}</span>
-                <span style="color:#888;font-weight:600;">${batteryBefore.toFixed(0)}</span>
-                <span style="color:#f39c12;font-weight:600;">${batteryAfter.toFixed(0)}</span>
-              </div>
-              <div id="${hourId}" class="bid-detail-row">
-                <div class="bid-detail-header">
-                  <span></span><span>#</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span><span></span>
-                </div>
-                ${hourBids.map((bid, bidIdx) => `
-                  <div class="bid-detail-item" id="bid_${hour}_${bidIdx}">
-                    <span style="color:#aaa;">↳</span>
-                    <span style="color:#888;">#${bidIdx + 1}</span>
-                    <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" value="${bid.price || ''}" min="0" step="0.01" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
-                    <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" value="${bid.mw || ''}" min="0" step="1" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
-                    <select class="bid-select" id="type_${hour}_${bidIdx}" ${disabled ? 'disabled' : ''} onchange="onBidInput(${hour})">
-                      <option value="buy" ${bid.type === 'buy' ? 'selected' : ''}>Pirkti</option>
-                      <option value="sell" ${bid.type === 'sell' ? 'selected' : ''}>Parduoti</option>
-                    </select>
-                    ${!disabled ? `<button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>` : '<span></span>'}
-                  </div>
-                `).join('')}
-                ${!disabled && hourBids.length < 3 ? `<div style="padding:8px;text-align:center;">
-                  <button class="btn btn-sec" style="font-size:11px;padding:4px 12px;" onclick="addBidToHour(${hour})">+ Pridėti pasiūlymą</button>
-                </div>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-      <div class="bid-footer">
-        <span></span><span>IŠ VISO</span>
-        <span id="totalNetMW">—</span>
-        <span id="totalMW">—</span>
-        <span id="totalBids">—</span>
-        <span>${(myTeam.batteryStored || 0).toFixed(0)}</span>
-        <span id="finalBattery" style="color:#f39c12;">—</span>
-      </div>
-    </div>
-
-    <!-- STATUS -->
-    <div class="status-bar">
-      <div class="stat-chip">
-        <span class="v">D${viewRound}${isReadOnly?' 🔒':''}</span>
-        <span class="l">Diena</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
-        <span class="l">Vid. kaina</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${demand}</span>
-        <span class="l">Paklausa MW</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${weather}</span>
-        <span class="l">Oras</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v" style="color:#27ae60;">$${(myTeam.balance||0).toLocaleString()}</span>
-        <span class="l">Balansas</span>
-      </div>
-    </div>
-
-    <!-- ENERGY -->
-    <div class="energy-card">
-      <h3>Energijos portfelis (iki D${viewRound})</h3>
-      <div class="energy-grid">
-        <div class="ebox highlight"><div class="v">${acc.totalBought}<small style="font-size:9px;"> MWh</small></div><div class="l">Pirkta</div></div>
-        <div class="ebox"><div class="v">${acc.totalSold}<small style="font-size:9px;"> MWh</small></div><div class="l">Parduota</div></div>
-        <div class="ebox"><div class="v">${acc.net}<small style="font-size:9px;"> MWh</small></div><div class="l">Grynasis</div></div>
-        <div class="ebox highlight"><div class="v" style="color:${acc.pnl>=0?'#27ae60':'#e74c3c'}">${acc.pnl>=0?'+':''}$${Math.abs(acc.pnl).toLocaleString()}</div><div class="l">P&amp;L</div></div>
-      </div>
-    </div>
-  `;
-
-  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('viewing'));
-  const rb = document.getElementById('rbtn_' + viewRound);
-  if (rb) rb.classList.add('viewing');
-
-  updateTotals();
-  renderChart(viewRound);
-}
-
-// ══════════════════════════════════════════════
-// SUPPLY CHART FUNCTIONS
-// ══════════════════════════════════════════════
-function generateSupplyStackForHour(round, hour) {
-  let seed = round * 31 + hour * 7;
-  const rng = () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-
-  const groups = [
-    { name: 'Vėjas', color: '#4A90E2', base: 200 },
-    { name: 'Saulė', color: '#F5A623', base: 150 },
-    { name: 'Dujos', color: '#7B8D8E', base: 175 },
-    { name: 'Vanduo', color: '#2ECC71', base: 120 },
-    { name: 'Kita', color: '#9B59B6', base: 165 }
-  ];
-
-  const dayMults = [
-    [0.8, 0.9, 1.0, 1.1, 1.2],
-    [0.7, 1.0, 1.1, 0.9, 1.3],
-    [1.2, 0.8, 1.1, 0.9, 1.0],
-    [1.1, 1.2, 0.7, 1.0, 0.9],
-    [1.0, 1.1, 0.9, 1.2, 0.8]
-  ];
-  const mult = dayMults[(round - 1) % dayMults.length];
-
-  const labels = [];
-  const values = [];
-  const colors = [];
-
-  groups.forEach((g, gi) => {
-    for (let i = 0; i < 6; i++) {
-      labels.push(`${g.name} ${i + 1}`);
-      const hourFactor = 0.7 + (hour / 24) * 0.6;
-      const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
-      values.push(Math.max(10, value));
-      colors.push(g.color);
-    }
-  });
-
-  const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
-  combined.sort((a, b) => a.value - b.value);
-
-  return {
-    labels: combined.map(c => c.label),
-    values: combined.map(c => c.value),
-    colors: combined.map(c => c.color)
-  };
-}
-
-function generateDemandCurve(maxQuantity, basePrice, round, hour) {
-  const points = [];
-  const numPoints = 6;
-  for (let i = 0; i <= numPoints; i++) {
-    const price = basePrice + (1 - (i / numPoints)) * 50;
-    const quantity = maxQuantity * (0.2 + (i / numPoints) * 0.8);
-    points.push({ x: Math.round(quantity), y: Math.round(price) });
-  }
-  const seed = round * hour;
-  points.forEach(p => {
-    p.x = Math.max(10, p.x + (seed % 20) - 10);
-    p.y = Math.max(20, p.y + (seed % 15) - 7);
-  });
-  return points.sort((a, b) => a.x - b.x);
-}
-
-function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex, values) {
-  if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
-
-  const ctx = chart.ctx;
-  const xScale = chart.scales.x;
-  const yScale = chart.scales.y;
-
-  ctx.save();
-
-  // Draw demand curve line
-  ctx.beginPath();
-  ctx.strokeStyle = '#E74C3C';
-  ctx.lineWidth = 3;
-  ctx.setLineDash([]);
-
-  let firstPoint = true;
-  for (let i = 0; i < demandPoints.length; i++) {
-    const x = xScale.getPixelForValue(demandPoints[i].x);
-    const y = yScale.getPixelForValue(demandPoints[i].y);
-
-    if (x >= chart.chartArea.left && x <= chart.chartArea.right &&
-        y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
-      if (firstPoint) {
-        ctx.moveTo(x, y);
-        firstPoint = false;
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-  }
-  ctx.stroke();
-  // Dashed horizontal clearing line
-  if (clearingQuantity && clearingPrice && clearingIndex !== -1) {
-    const clearingX = xScale.getPixelForValue(clearingQuantity);
-    const clearingY = yScale.getPixelForValue(clearingPrice);
-    const barMeta = chart.getDatasetMeta(0);
-    if (barMeta && barMeta.data[clearingIndex]) {
-        const barX = barMeta.data[clearingIndex].x;
-      ctx.beginPath();
-      ctx.moveTo(barX, clearingY);
-      ctx.lineTo(clearingX, clearingY);
-      ctx.strokeStyle = '#F39C12';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
-function renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour) {
-  if (hourSupplyChartInstance) {
-    try { hourSupplyChartInstance.destroy(); } catch(e) {}
-    hourSupplyChartInstance = null;
-  }
-
-  // Calculate cumulative sum
-  let cumulative = 0;
-  const cumulativeSums = [];
-  let clearingIndex = -1;
-  let clearingPrice = null;
-  let clearingQuantity = null;
-
-  for (let i = 0; i < supplyData.values.length; i++) {
-    cumulative += supplyData.values[i];
-    cumulativeSums.push(cumulative);
-  }
-
-  // Find intersection
-  for (let i = 0; i < cumulativeSums.length; i++) {
-    const supplyQty = cumulativeSums[i];
-    for (let j = 0; j < demandPoints.length; j++) {
-      if (demandPoints[j].x >= supplyQty) {
-        clearingIndex = i;
-        clearingQuantity = supplyQty;
-        clearingPrice = demandPoints[j].y;
-        break;
-      }
-    }
-    if (clearingIndex !== -1) break;
-  }
-
-  // Bar colors
-  const barColors = supplyData.values.map((_, idx) => {
-    if (clearingIndex !== -1 && idx <= clearingIndex) {
-      return 'rgba(46, 204, 113, 0.7)';
-    }
-    return supplyData.colors[idx];
-  });
-
-  const cumulativeLabels = supplyData.labels.map((label, idx) => {
-    let cumulative = 0;
-    for (let i = 0; i <= idx; i++) {
-      cumulative += supplyData.values[i];
-    }
-    return `${cumulative} MW`;
-  });
-
-  hourSupplyChartInstance = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: cumulativeLabels,
-      datasets: [{
-        data: supplyData.values,
-        backgroundColor: barColors,
-        borderRadius: 3,
-        borderWidth: 0.5,
-        borderColor: 'rgba(0,0,0,.1)'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            title: (items) => supplyData.labels[items[0].dataIndex],
-            label: (item) => {
-              const idx = item.dataIndex;
-              return [
-                `Gamyba: ${item.raw} MW`,
-                `Kumuliacinė: ${cumulativeSums[idx]} MW`
-              ];
-            },
-            footer: () => {
-              if (clearingPrice !== null) {
-                return `Kliringo kaina: ${clearingPrice.toFixed(2)} $/MWh, Kiekis: ${clearingQuantity} MW`;
-              }
-              return `Paklausa: ${demand} MW - Nepasiekta`;
+                if (x >= chart.chartArea.left && x <= chart.chartArea.right &&
+                    y >= chart.chartArea.top && y <= chart.chartArea.bottom) {
+                    if (firstPoint) {
+                        ctx.moveTo(x, y);
+                        firstPoint = false;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
             }
-          }
+            ctx.stroke();
+            // Dashed horizontal clearing line
+            if (clearingQuantity && clearingPrice && clearingIndex !== -1) {
+                const clearingX = xScale.getPixelForValue(clearingQuantity);
+                const clearingY = yScale.getPixelForValue(clearingPrice);
+                const barMeta = chart.getDatasetMeta(0);
+                if (barMeta && barMeta.data[clearingIndex]) {
+                    const barX = barMeta.data[clearingIndex].x;
+                    ctx.beginPath();
+                    ctx.moveTo(barX, clearingY);
+                    ctx.lineTo(clearingX, clearingY);
+                    ctx.strokeStyle = '#F39C12';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 4]);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
         }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: 'MW / Kaina ($)', font: { size: 10 }, color: '#888' },
-          ticks: { font: { size: 9 }, color: '#888' },
-          grid: { color: '#f0ebe0' }
-        },
-        x: {
-          ticks: {
-            font: { size: 8 },
-            maxRotation: 45,
-            minRotation: 45,
-            autoSkip: true,
-            maxTicksLimit: 15
-          },
-          grid: { display: false }
+
+        function renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour) {
+            if (hourSupplyChartInstance) {
+                try { hourSupplyChartInstance.destroy(); } catch (e) { }
+                hourSupplyChartInstance = null;
+            }
+
+            // Calculate cumulative sum
+            let cumulative = 0;
+            const cumulativeSums = [];
+            let clearingIndex = -1;
+            let clearingPrice = null;
+            let clearingQuantity = null;
+
+            for (let i = 0; i < supplyData.values.length; i++) {
+                cumulative += supplyData.values[i];
+                cumulativeSums.push(cumulative);
+            }
+
+            // Find intersection
+            for (let i = 0; i < cumulativeSums.length; i++) {
+                const supplyQty = cumulativeSums[i];
+                for (let j = 0; j < demandPoints.length; j++) {
+                    if (demandPoints[j].x >= supplyQty) {
+                        clearingIndex = i;
+                        clearingQuantity = supplyQty;
+                        clearingPrice = demandPoints[j].y;
+                        break;
+                    }
+                }
+                if (clearingIndex !== -1) break;
+            }
+
+            // Bar colors
+            const barColors = supplyData.values.map((_, idx) => {
+                if (clearingIndex !== -1 && idx <= clearingIndex) {
+                    return 'rgba(46, 204, 113, 0.7)';
+                }
+                return supplyData.colors[idx];
+            });
+
+            const cumulativeLabels = supplyData.labels.map((label, idx) => {
+                let cumulative = 0;
+                for (let i = 0; i <= idx; i++) {
+                    cumulative += supplyData.values[i];
+                }
+                return `${cumulative} MW`;
+            });
+
+            hourSupplyChartInstance = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: cumulativeLabels,
+                    datasets: [{
+                        data: supplyData.values,
+                        backgroundColor: barColors,
+                        borderRadius: 3,
+                        borderWidth: 0.5,
+                        borderColor: 'rgba(0,0,0,.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => supplyData.labels[items[0].dataIndex],
+                                label: (item) => {
+                                    const idx = item.dataIndex;
+                                    return [
+                                        `Gamyba: ${item.raw} MW`,
+                                        `Kumuliacinė: ${cumulativeSums[idx]} MW`
+                                    ];
+                                },
+                                footer: () => {
+                                    if (clearingPrice !== null) {
+                                        return `Kliringo kaina: ${clearingPrice.toFixed(2)} $/MWh, Kiekis: ${clearingQuantity} MW`;
+                                    }
+                                    return `Paklausa: ${demand} MW - Nepasiekta`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'MW / Kaina ($)', font: { size: 10 }, color: '#888' },
+                            ticks: { font: { size: 9 }, color: '#888' },
+                            grid: { color: '#f0ebe0' }
+                        },
+                        x: {
+                            ticks: {
+                                font: { size: 8 },
+                                maxRotation: 45,
+                                minRotation: 45,
+                                autoSkip: true,
+                                maxTicksLimit: 15
+                            },
+                            grid: { display: false }
+                        }
+                    },
+                    animation: {
+                        duration: 200,
+                        onComplete: function () {
+                            drawDemandCurveOnSupplyChart(hourSupplyChartInstance, demandPoints, clearingQuantity, clearingPrice, clearingIndex, supplyData.values);
+                        }
+                    }
+                }
+            });
+
+            return { clearingIndex, clearingPrice, clearingQuantity, cumulativeSums };
         }
-      },
-      animation: {
-        duration: 200,
-        onComplete: function () {
-          drawDemandCurveOnSupplyChart(hourSupplyChartInstance, demandPoints, clearingQuantity, clearingPrice, clearingIndex, supplyData.values);
-        }
-      }
-    }
-  });
 
-  return { clearingIndex, clearingPrice, clearingQuantity, cumulativeSums };
-}
+        // ══════════════════════════════════════════════
+        // HOUR DETAIL MODAL
+        // ══════════════════════════════════════════════
+        function openHourModal(round, hour) {
+            const prices = session.marketPrices[round] || [];
+            const mp = prices[hour] || session.marketPrice || 70;
+            const hourBids = ((myTeam.bidRows || {})[round] || [])[hour] || [];
+            const label = String(hour).padStart(2, '0') + ':00 — ' + String(hour + 1).padStart(2, '0') + ':00';
 
-// ══════════════════════════════════════════════
-// HOUR DETAIL MODAL
-// ══════════════════════════════════════════════
-function openHourModal(round, hour) {
-  const prices = session.marketPrices[round] || [];
-  const mp = prices[hour] || session.marketPrice;
-  const hourBids = ((myTeam.bidRows || {})[round] || [])[hour] || [];
-  const label = String(hour).padStart(2,'0') + ':00 — ' + String(hour+1).padStart(2,'0') + ':00';
-  const demand = session.demand || 500;
+            // Get real supply/demand data from backend
+            const roundObj = (session.rounds || []).find(r => r.round_number === round);
+            let supplyData = null;
+            let clearingPrice = mp;
+            let clearingQuantity = 0;
+            let demand = session.demand || 500;
 
-  document.getElementById('hourModalTitle').textContent = 'Diena ' + round + ' · ' + label;
-  
-  const supplyData = generateSupplyStackForHour(round, hour);
-  const totalSupply = supplyData.values.reduce((sum, v) => sum + v, 0);
-
-  document.getElementById('hourModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-      <div style="background:#e8f0fb;border-radius:8px;padding:10px;text-align:center;">
-        <div style="font-size:18px;font-weight:700;color:#2f4a75;">${mp.toFixed(2)}</div>
-        <div style="font-size:10px;color:#888;margin-top:2px;">Rinkos kaina ($/MWh)</div>
-      </div>
-      <div style="background:${hourBids.length?'#e8f8f0':'#f5f1e8'};border-radius:8px;padding:10px;text-align:center;">
-        <div style="font-size:18px;font-weight:700;color:${hourBids.length?'#1e8449':'#aaa'};">${hourBids.length ? hourBids.length + ' pasiūl.' : '—'}</div>
-        <div style="font-size:10px;color:#888;margin-top:2px;">Mano pasiūlymai</div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
-      <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
-        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
-        </div>
-        <div style="position:relative;height:220px;">
-          <canvas id="supplyChart_modal"></canvas>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
-          <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
-          <span>Paklausa: <strong>${demand} MW</strong></span>
-        </div>
-      </div>
-    </div>
-
-    ${hourBids.length ? `
-      <div style="background:#f9f7f3;border-radius:8px;padding:10px;font-size:12px;">
-        <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:8px;">Mano pasiūlymai šią valandą</div>
-        ${hourBids.map((bid, idx) => `
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8dfd4;">
-            <span style="color:#777;">#${idx + 1}</span>
-            <span style="font-weight:600;color:#2f4a75;">${bid.price} $/MWh</span>
-            <span style="font-weight:600;">${bid.mw} MW</span>
-            <span style="font-weight:600;color:${bid.type==='buy'?'#27ae60':'#e74c3c'};">${bid.type==='buy'?'Pirkimas':'Pardavimas'}</span>
-            <span style="font-weight:600;color:#2f4a75;">$${(+bid.price * +bid.mw).toLocaleString()}</span>
-          </div>
-        `).join('')}
-      </div>
-    ` : `<p style="color:#bbb;font-size:12px;text-align:center;padding:16px;">Šiai valandai pasiūlymas nepateiktas.</p>`}
-  `;
-  
-  document.getElementById('hourModal').classList.add('open');
-  
-  // Render supply chart
-  setTimeout(() => {
-    const canvas = document.getElementById('supplyChart_modal');
-    if (canvas) {
-      const maxQuantity = totalSupply * 1.2;
-      const demandPoints = generateDemandCurve(maxQuantity, mp, round, hour);
-      renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour);
-    }
-  }, 50);
-}
-
-function closeHourModal() { 
-  document.getElementById('hourModal').classList.remove('open');
-  if (hourSupplyChartInstance) {
-    try { hourSupplyChartInstance.destroy(); } catch(e) {}
-    hourSupplyChartInstance = null;
-  }
-}
-
-// ══════════════════════════════════════════════
-// RENDER
-// ══════════════════════════════════════════════
-function renderRoundNav() {
-  const nav = document.getElementById('roundNav');
-  const cr = session.currentRound, nr = session.numRounds;
-  let html = '<span class="rnav-label">Diena:</span>';
-  for (let r = 1; r <= nr; r++) {
-    const cls = r === cr ? 'rbtn current' : r < cr ? 'rbtn past' : 'rbtn';
-    const lock = r < cr ? '🔒 ' : '';
-    html += `<button class="${cls}${r===viewRound?' viewing':''}" onclick="switchRound(${r})" id="rbtn_${r}">${lock}D${r}</button>`;
-  }
-  nav.innerHTML = html;
-}
-
-function switchRound(r) {
-  if (viewRound === session.currentRound) saveDraftRows(viewRound);
-  viewRound = r;
-  editingSubmitted = false;
-  renderRound();
-}
-
-function saveDraftRows(round) {
-  if (!myTeam.bidRows) myTeam.bidRows = {};
-  const rows = [];
-  for (let i = 0; i < NUM_HOURS; i++) {
-    const hourBids = [];
-    let bidIdx = 0;
-    while (true) {
-      const p = document.getElementById('price_' + i + '_' + bidIdx);
-      if (!p) break;
-      const m = document.getElementById('mw_' + i + '_' + bidIdx);
-      const t = document.getElementById('type_' + i + '_' + bidIdx);
-      const price = p ? +p.value || 0 : 0;
-      const mw = m ? +m.value || 0 : 0;
-      if (price && mw) {
-        hourBids.push({ price, mw, type: t ? t.value : 'buy' });
-      }
-      bidIdx++;
-    }
-    rows.push(hourBids);
-  }
-  myTeam.bidRows[round] = rows;
-}
-
-function toggleHourBids(hourId) {
-  const content = document.getElementById(hourId);
-  const icon = document.getElementById(hourId + '_icon');
-  
-  if (content) {
-    if (content.style.display === 'none' || content.style.display === '') {
-      content.style.display = 'block';
-      if (icon) icon.textContent = '▼';
-    } else {
-      content.style.display = 'none';
-      if (icon) icon.textContent = '▶';
-    }
-  }
-}
-
-function addBidToHour(hour) {
-  const container = document.getElementById('hour_' + viewRound + '_' + hour);
-  if (!container) return;
-  
-  const detailItems = container.querySelectorAll('.bid-detail-item');
-  const bidIdx = detailItems.length;
-  
-  if (bidIdx >= 3) {
-    toast('Maksimalus 3 pasiūlymai per valandą');
-    return;
-  }
-  
-  const newBid = document.createElement('div');
-  newBid.className = 'bid-detail-item';
-  newBid.id = 'bid_' + hour + '_' + bidIdx;
-  newBid.innerHTML = `
-    <span style="color:#aaa;">↳</span>
-    <span style="color:#888;">#${bidIdx + 1}</span>
-    <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" placeholder="Kaina" min="0" step="0.01" oninput="onBidInput(${hour})">
-    <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" placeholder="MW" min="0" step="1" oninput="onBidInput(${hour})">
-    <select class="bid-select" id="type_${hour}_${bidIdx}" onchange="onBidInput(${hour})">
-      <option value="buy">Pirkti</option>
-      <option value="sell">Parduoti</option>
-    </select>
-    <button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>
-  `;
-  
-  container.appendChild(newBid);
-  onBidInput(hour);
-}
-
-function removeBidFromHour(hour, bidIdx) {
-  const bidEl = document.getElementById('bid_' + hour + '_' + bidIdx);
-  if (bidEl) bidEl.remove();
-  
-  // Renumber remaining bids
-  const container = document.getElementById('hour_' + viewRound + '_' + hour);
-  if (container) {
-    const items = container.querySelectorAll('.bid-detail-item');
-    items.forEach((item, idx) => {
-      const numSpan = item.querySelector('span:nth-child(2)');
-      if (numSpan) numSpan.textContent = '#' + (idx + 1);
-      
-      // Update IDs
-      const oldIdx = item.id.split('_').pop();
-      item.id = 'bid_' + hour + '_' + idx;
-      
-      const priceInput = item.querySelector('input[type="number"]');
-      const mwInput = item.querySelectorAll('input[type="number"]')[1];
-      const typeSelect = item.querySelector('select');
-      const removeBtn = item.querySelector('button');
-      
-      if (priceInput) priceInput.id = 'price_' + hour + '_' + idx;
-      if (mwInput) mwInput.id = 'mw_' + hour + '_' + idx;
-      if (typeSelect) typeSelect.id = 'type_' + hour + '_' + idx;
-      if (removeBtn) removeBtn.onclick = () => removeBidFromHour(hour, idx);
-    });
-  }
-  
-  onBidInput(hour);
-}
-
-function renderRound() {
-  const cr = session.current_round || session.currentRound || 1;
-  const isReadOnly = viewRound < cr;
-  const isFuture = viewRound > cr;
-  
-  // Use session.rounds if it exists, fallback to stub
-  const backendRound = (session.rounds || []).find(h => h.round_number === viewRound);
-  const mp = backendRound ? (backendRound.clearing_price || 0) : (session.market_price || session.marketPrice || 0);
-  const demand = backendRound ? (backendRound.total_volume_cleared || 0) : (session.demand || 0);
-  const weather = session.weather || '';
-
-  // Ensure hourly prices exist for this round (fallback to flat market price)
-  if (!session.marketPrices) session.marketPrices = {};
-  if (!session.marketPrices[viewRound]) {
-    session.marketPrices[viewRound] = Array(NUM_HOURS).fill(session.market_price || 70);
-  }
-
-  const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => []);
-  const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
-  const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
-  const isEditing = editingSubmitted && canEdit;
-  const disabled = isReadOnly || isFuture || (isSubmitted && !isEditing);
-
-  const betsHdr = document.getElementById('betsHdr');
-  if (session.betsOpen && !isReadOnly) {
-    betsHdr.className = 'bets-status-hdr bets-open-hdr';
-    betsHdr.textContent = 'Atidaryti';
-  } else {
-    betsHdr.className = 'bets-status-hdr bets-closed-hdr';
-    betsHdr.textContent = 'Uždaryti';
-  }
-
-  const acc = getAccumulation(viewRound);
-  
-  // Try to find profit for this specific round for this team from transactions
-  let roundProfit = 0;
-  if (isReadOnly) {
-      const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.teamId === myTeam.id));
-      if (myTxs.length > 0) {
-          let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
-          myTxs.forEach(tx => {
-              if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
-              else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
-          });
-          const net = netBuy - netSell;
-          roundProfit = Math.round(sellRev - buyCost + net * (session.market_price || session.marketPrice || 70));
-      } else if (myTeam.roundHistory) {
-          const rhMatch = myTeam.roundHistory.find(r => r.round === viewRound);
-          if (rhMatch) roundProfit = rhMatch.profit;
-      }
-  }
-  const roundResult = isReadOnly ? { profit: roundProfit } : null;
-
-  // Calculate battery state for each hour
-  let currentBattery = myTeam.batteryStored || 0;
-  const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
-  const batteryHistory = [currentBattery]; // Start with initial
-  
-  for (let i = 0; i < savedRows.length; i++) {
-    const hourBids = savedRows[i];
-    let netMW = 0;
-    if (hourBids && hourBids.length) {
-      for (const bid of hourBids) {
-        if (bid && bid.price) {
-          if (bid.type === 'buy') netMW += bid.mw;
-          else if (bid.type === 'sell') netMW -= bid.mw;
-        }
-      }
-    }
-    currentBattery += netMW;
-    currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
-    batteryHistory.push(currentBattery);
-  }
-
-  document.getElementById('mainContent').innerHTML = `
-    <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
-      Diena ${viewRound} baigta — tik peržiūra.
-      <button class="btn btn-sec" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="switchRound(${cr})">→ D${cr}</button>
-    </div>
-
-    <!-- CHART -->
-    <div class="chart-card">
-      <div class="chart-card-title">
-        <h3>Rinkos kainos — Diena ${viewRound}</h3>
-        <span>Spustelėkite ant valandos norėdami matyti išsamią informaciją</span>
-      </div>
-      <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
-      <div class="chart-note">Žalios/raudonos apskritimai = jūsų pasiūlymai (skaičius = MW) · Punktyrinės = juodraštis</div>
-    </div>
-
-        <!-- BIDS -->
-    <div class="bid-card">
-      <div class="bid-card-header">
-        <h3>Pasiūlymai — Diena ${viewRound} (24 val.)</h3>
-        <div class="bid-actions">
-          ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
-            ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
-          ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
-          ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
-            <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
-            <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen ? '' : 'disabled'}>
-              ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
-            </button>` : ''}
-        </div>
-      </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
-        <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
-        <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
-      </div>
-      <div class="bid-scroll">
-        <div class="bid-row header-row">
-          <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
-        </div>
-        ${savedRows.map((hourBids, hour) => {
-            const netMW = hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0);
-            const totalMW = hourBids.reduce((sum, b) => sum + b.mw, 0);
-            const bidCount = hourBids.length;
-            const batteryBefore = batteryHistory[hour];
-            const batteryAfter = batteryHistory[hour + 1];
-            const netColor = netMW > 0 ? '#27ae60' : (netMW < 0 ? '#e74c3c' : '#888');
-            const netPrefix = netMW > 0 ? '+' : '';
-            const hourId = `hour_${viewRound}_${hour}`;
-
-            return `
-            <div style="border-bottom:1px solid #f0ebe0;">
-              <div class="bid-row ${hourBids.length ? 'has-bid' : ''}" onclick="toggleHourBids('${hourId}')">
-                <span class="bid-expand-icon" id="${hourId}_icon">▶</span>
-                <span style="font-weight:600;color:#2f4a75;">${String(hour).padStart(2, '0')}:00</span>
-                <span style="color:${netColor};font-weight:600;">${netPrefix}${netMW} MW</span>
-                <span style="color:#555;">${totalMW} MW</span>
-                <span style="color:#f39c12;">${bidCount}</span>
-                <span style="color:#888;font-weight:600;">${batteryBefore.toFixed(0)}</span>
-                <span style="color:#f39c12;font-weight:600;">${batteryAfter.toFixed(0)}</span>
+            if (roundObj && roundObj.status === 'calculated') {
+                try {
+                    const res = API.Admin.getResults(session.id, roundObj.id);
+                    if (res && res.market_clearing && res.market_clearing[hour]) {
+                        const hourData = res.market_clearing[hour];
+                        supplyData = {
+                            labels: hourData.supply_offers?.map(o => o.source_name || `Tiekėjas ${o.source_index}`) || [],
+                            values: hourData.supply_offers?.map(o => o.quantity_mw) || [],
+                            colors: hourData.supply_offers?.map(o => o.color || '#4A90E2') || []
+                        };
+                        clearingPrice = hourData.clearing_price || mp;
+                        clearingQuantity = hourData.clearing_quantity_mwh || 0;
+                        demand = hourData.total_demand_mw || demand;
+                    }
+                } catch (err) {
+                    console.warn('Failed to load market results:', err);
+                }
+            }
+            // Fallback to generated supply if no real data
+            if (!supplyData || !supplyData.values.length) {
+                supplyData = generateSupplyStackForHour(round, hour);
+            }
+            const totalSupply = supplyData.values.reduce((sum, v) => sum + v, 0);
+            document.getElementById('hourModalBody').innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#e8f0fb;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#2f4a75;">${mp.toFixed(2)}</div>
+                <div style="font-size:10px;color:#888;margin-top:2px;">Rinkos kaina ($/MWh)</div>
               </div>
-              <div id="${hourId}" class="bid-detail-row">
-                <div class="bid-detail-header">
-                  <span></span><span>#</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span><span></span>
-                </div>
-                ${hourBids.map((bid, bidIdx) => `
-                  <div class="bid-detail-item" id="bid_${hour}_${bidIdx}">
-                    <span style="color:#aaa;">↳</span>
-                    <span style="color:#888;">#${bidIdx + 1}</span>
-                    <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" value="${bid.price || ''}" min="0" step="0.01" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
-                    <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" value="${bid.mw || ''}" min="0" step="1" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
-                    <select class="bid-select" id="type_${hour}_${bidIdx}" ${disabled ? 'disabled' : ''} onchange="onBidInput(${hour})">
-                      <option value="buy" ${bid.type === 'buy' ? 'selected' : ''}>Pirkti</option>
-                      <option value="sell" ${bid.type === 'sell' ? 'selected' : ''}>Parduoti</option>
-                    </select>
-                    ${!disabled ? `<button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>` : '<span></span>'}
-                  </div>
-                `).join('')}
-                ${!disabled && hourBids.length < 3 ? `<div style="padding:8px;text-align:center;">
-                  <button class="btn btn-sec" style="font-size:11px;padding:4px 12px;" onclick="addBidToHour(${hour})">+ Pridėti pasiūlymą</button>
-                </div>` : ''}
+              <div style="background:${hourBids.length ? '#e8f8f0' : '#f5f1e8'};border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:${hourBids.length ? '#1e8449' : '#aaa'};">${hourBids.length ? hourBids.length + ' pasiūl.' : '—'}</div>
+                <div style="font-size:10px;color:#888;margin-top:2px;">Mano pasiūlymai</div>
               </div>
             </div>
+
+            <div style="margin-bottom:20px;">
+              <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;">Gamybos grafikas (pagal tiekėjus)</div>
+              <div style="background:#f9f7f3;border-radius:10px;padding:12px;">
+                <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#4A90E2;"></span><span>Vėjas</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5A623;"></span><span>Saulė</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#7B8D8E;"></span><span>Dujos</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#2ECC71;"></span><span>Vanduo</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;"><span style="width:12px;height:12px;border-radius:2px;background:#9B59B6;"></span><span>Kita</span></div>
+                </div>
+                <div style="position:relative;height:220px;">
+                  <canvas id="supplyChart_modal"></canvas>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:#888;">
+                  <span>Iš viso gamyba: <strong>${totalSupply} MW</strong></span>
+                  <span>Paklausa: <strong>${demand} MW</strong></span>
+                </div>
+              </div>
+            </div>
+
+            ${hourBids.length ? `
+              <div style="background:#f9f7f3;border-radius:8px;padding:10px;font-size:12px;">
+                <div style="font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:8px;">Mano pasiūlymai šią valandą</div>
+                ${hourBids.map((bid, idx) => `
+                  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8dfd4;">
+                    <span style="color:#777;">#${idx + 1}</span>
+                    <span style="font-weight:600;color:#2f4a75;">${bid.price} $/MWh</span>
+                    <span style="font-weight:600;">${bid.mw} MW</span>
+                    <span style="font-weight:600;color:${bid.type === 'buy' ? '#27ae60' : '#e74c3c'};">${bid.type === 'buy' ? 'Pirkimas' : 'Pardavimas'}</span>
+                    <span style="font-weight:600;color:#2f4a75;">$${(+bid.price * +bid.mw).toLocaleString()}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `<p style="color:#bbb;font-size:12px;text-align:center;padding:16px;">Šiai valandai pasiūlymas nepateiktas.</p>`}
           `;
-        }).join('')}
-      </div>
-      <div class="bid-footer">
-        <span></span><span>IŠ VISO</span>
-        <span id="totalNetMW">—</span>
-        <span id="totalMW">—</span>
-        <span id="totalBids">—</span>
-        <span>${(myTeam.batteryStored || 0).toFixed(0)}</span>
-        <span id="finalBattery" style="color:#f39c12;">—</span>
-      </div>
-      <div id="bidErrors" style="margin-top:6px;"></div>
-    </div>
 
-    <!-- STATUS -->
-    <div class="status-bar">
-      <div class="stat-chip">
-        <span class="v">D${viewRound}${isReadOnly?' 🔒':''}</span>
-        <span class="l">Diena</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
-        <span class="l">Vid. kaina</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${demand}</span>
-        <span class="l">Paklausa MW</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v">${weather}</span>
-        <span class="l">Oras</span>
-      </div>
-      <div class="stat-sep"></div>
-      <div class="stat-chip">
-        <span class="v" style="color:#27ae60;">$${(myTeam.balance||0).toLocaleString()}</span>
-        <span class="l">Balansas</span>
-      </div>
-      ${roundResult ? `<div class="stat-sep"></div><div class="stat-chip">
-        <span class="v" style="color:${roundResult.profit>=0?'#27ae60':'#e74c3c'}">${roundResult.profit>=0?'+':''}$${Math.abs(roundResult.profit||0).toLocaleString()}</span>
-        <span class="l">D${viewRound} pelnas</span>
-      </div>` : ''}
-    </div>
+            document.getElementById('hourModal').classList.add('open');
 
-    <!-- ENERGY -->
-    <div class="energy-card">
-      <h3>Energijos portfelis (iki D${viewRound})</h3>
-      <div class="energy-grid">
-        <div class="ebox highlight"><div class="v">${acc.totalBought}<small style="font-size:9px;"> MWh</small></div><div class="l">Pirkta</div></div>
-        <div class="ebox"><div class="v">${acc.totalSold}<small style="font-size:9px;"> MWh</small></div><div class="l">Parduota</div></div>
-        <div class="ebox"><div class="v">${acc.net}<small style="font-size:9px;"> MWh</small></div><div class="l">Grynasis</div></div>
-        <div class="ebox highlight"><div class="v" style="color:${acc.pnl>=0?'#27ae60':'#e74c3c'}">${acc.pnl>=0?'+':''}$${Math.abs(acc.pnl).toLocaleString()}</div><div class="l">P&amp;L</div></div>
-      </div>
-    </div>
-
-
-  `;
-
-  // Render nav highlights
-  document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('viewing'));
-  const rb = document.getElementById('rbtn_' + viewRound);
-  if (rb) rb.classList.add('viewing');
-
-  updateTotals();
-  renderChart(viewRound);
-}
-
-// ══════════════════════════════════════════════
-// BID INTERACTIONS
-// ══════════════════════════════════════════════
-function onBidInput(hour) {
-  updateTotals();
-  updateEnergyAccumulation();
-  // Update draft line on chart
-  if (editingSubmitted || !(myTeam.bids||[]).some(b=>b.round===viewRound&&b.submitted)) {
-    renderChart(viewRound);
-  }
-}
-
-function updateTotals() {
-  let totalNetMW = 0, totalMW = 0, totalBids = 0;
-  let currentBattery = myTeam.batteryStored || 0;
-  const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
-  
-  for (let h = 0; h < NUM_HOURS; h++) {
-    let bidIdx = 0;
-    let hourNetMW = 0, hourTotalMW = 0;
-    
-    while (true) {
-      const p = document.getElementById('price_' + h + '_' + bidIdx);
-      if (!p) break;
-      const m = document.getElementById('mw_' + h + '_' + bidIdx);
-      const t = document.getElementById('type_' + h + '_' + bidIdx);
-      
-      const price = +p.value || 0;
-      const mw = +m.value || 0;
-      
-      if (price && mw) {
-        totalBids++;
-        hourTotalMW += mw;
-        if (t && t.value === 'buy') {
-          hourNetMW += mw;
-        } else {
-          hourNetMW -= mw;
+            // Render supply chart
+            setTimeout(() => {
+                const canvas = document.getElementById('supplyChart_modal');
+                if (canvas) {
+                    const maxQuantity = totalSupply * 1.2;
+                    const demandPoints = generateDemandCurve(maxQuantity, mp, round, hour);
+                    renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour);
+                }
+            }, 50);
         }
-      }
-      bidIdx++;
-    }
-    
-    totalNetMW += hourNetMW;
-    totalMW += hourTotalMW;
-    
-    // Update the row display
-    const rowNetEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(3)');
-    const rowTotalEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(4)');
-    const rowCountEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(5)');
-    const rowBeforeEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(6)');
-    const rowAfterEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(7)');
-    
-    const batteryBefore = currentBattery;
-    currentBattery += hourNetMW;
-    currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
-    const batteryAfter = currentBattery;
-    
-    if (rowNetEl) {
-      const netColor = hourNetMW > 0 ? '#27ae60' : (hourNetMW < 0 ? '#e74c3c' : '#888');
-      const netPrefix = hourNetMW > 0 ? '+' : '';
-      rowNetEl.style.color = netColor;
-      rowNetEl.style.fontWeight = '600';
-      rowNetEl.textContent = netPrefix + hourNetMW + ' MW';
-    }
-    if (rowTotalEl) {
-      rowTotalEl.textContent = hourTotalMW + ' MW';
-    }
-    if (rowCountEl) {
-      rowCountEl.textContent = bidIdx;
-    }
-    if (rowBeforeEl) {
-      rowBeforeEl.textContent = batteryBefore.toFixed(0);
-    }
-    if (rowAfterEl) {
-      rowAfterEl.textContent = batteryAfter.toFixed(0);
-    }
-  }
-  
-  const fb = document.getElementById('finalBattery');
-  const tnet = document.getElementById('totalNetMW');
-  const tmw = document.getElementById('totalMW');
-  const tb = document.getElementById('totalBids');
-  
-  if (fb) fb.textContent = currentBattery.toFixed(0);
-  if (tnet) tnet.textContent = totalNetMW ? (totalNetMW > 0 ? '+' : '') + totalNetMW + ' MW' : '—';
-  if (tmw) tmw.textContent = totalMW ? totalMW + ' MW' : '—';
-  if (tb) tb.textContent = totalBids || '—';
-}
 
-async function updateEnergyAccumulation() {
-    if (!myTeam || !myTeam.id) return;
-    try {
-        const state = await API.Players.getState(myTeam.id);
-        const boxes = document.querySelectorAll('.energy-grid .ebox .v');
-        // Based on backend TeamStateResponse: {current_battery_mwh, total_profit}
-        if (boxes[3]) { 
-            boxes[3].style.color = state.total_profit >= 0 ? '#27ae60' : '#e74c3c'; 
-            boxes[3].textContent = (state.total_profit >= 0 ? '+' : '') + '$' + Math.abs(Math.round(state.total_profit)).toLocaleString(); 
+        function closeHourModal() {
+            document.getElementById('hourModal').classList.remove('open');
+            if (hourSupplyChartInstance) {
+                try { hourSupplyChartInstance.destroy(); } catch (e) { }
+                hourSupplyChartInstance = null;
+            }
         }
-        if (boxes[2]) boxes[2].textContent = state.current_battery_mwh.toFixed(1) + ' MW';
-    } catch (e) {
-        console.error('Failed to update stats:', e);
-    }
-}
 
-function editBids() { 
-  editingSubmitted = true; 
-  renderRound(); 
-  toast('Redagavimo režimas — pakeiskite ir pateikite iš naujo'); 
-}
-
-async function submitBids() {
-  if (session.status !== 'active') { toast('Sesija neaktyvi'); return; }
-  
-  const errors = [], formattedBids = [];
-  let totalBidCount = 0;
-  
-  for (let h = 0; h < NUM_HOURS; h++) {
-    let bidIdx = 0;
-    while (true) {
-      const p = document.getElementById('price_' + h + '_' + bidIdx);
-      if (!p) break;
-      const m = document.getElementById('mw_' + h + '_' + bidIdx);
-      const t = document.getElementById('type_' + h + '_' + bidIdx);
-      
-      const price = +p.value;
-      const mw = +m.value;
-      
-      if (price || mw) {
-        if (!price || price <= 0) errors.push(`${String(h).padStart(2,'0')}:00 #${bidIdx+1} — netinkama kaina`);
-        else if (!mw || mw <= 0) errors.push(`${String(h).padStart(2,'0')}:00 #${bidIdx+1} — netinkamas kiekis`);
-        else {
-          formattedBids.push({ 
-              hour: h,
-              price: price, 
-              volume_mwh: mw, 
-              bid_type: (t ? t.value : 'buy') === 'buy'
-          });
-          totalBidCount++;
+        // ══════════════════════════════════════════════
+        // RENDER
+        // ══════════════════════════════════════════════
+        function renderRoundNav() {
+            const nav = document.getElementById('roundNav');
+            const cr = session.currentRound, nr = session.numRounds;
+            let html = '<span class="rnav-label">Diena:</span>';
+            for (let r = 1; r <= nr; r++) {
+                const cls = r === cr ? 'rbtn current' : r < cr ? 'rbtn past' : 'rbtn';
+                const lock = r < cr ? '🔒 ' : '';
+                html += `<button class="${cls}${r === viewRound ? ' viewing' : ''}" onclick="switchRound(${r})" id="rbtn_${r}">${lock}D${r}</button>`;
+            }
+            nav.innerHTML = html;
         }
-      }
-      bidIdx++;
-    }
-  }
-  
-  if (errors.length) {
-    toast('Patikrinkite duomenis'); 
-    return;
-  }
-  
-  if (totalBidCount === 0) { toast('Įveskite bent vieną pasiūlymą'); return; }
 
-  try {
-    const rid = session.round_id || (session.rounds && session.rounds.length ? session.rounds[session.rounds.length-1].id : null);
-    await API.Bids.submit(myTeam.id, rid, formattedBids);
-      toast('Pasiūlymai sėkmingai pateikti!');
-      await API.Sessions.get(session.id);
-    if (!myTeam.bids) myTeam.bids = [];
-    myTeam.bids.push({ round: session.currentRound, submitted: true });
-    editingSubmitted = false;
-    renderRound();
-  } catch (err) {
-    toast('Klaida pateikiant: ' + err.message);
-  }
-}
-
-function saveTeamToSession() {
-  try {
-    const sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
-    const idx = sessions.findIndex(s => s.id === session.id);
-    if (idx >= 0) {
-      if (!sessions[idx].marketPrices) sessions[idx].marketPrices = {};
-      Object.assign(sessions[idx].marketPrices, session.marketPrices);
-      const tIdx = sessions[idx].teams.findIndex(t => t.id === myTeam.id);
-      if (tIdx >= 0) sessions[idx].teams[tIdx] = myTeam;
-      else sessions[idx].teams.push(myTeam);
-      sessionStorage.setItem('adminSessions', JSON.stringify(sessions));
-    }
-  } catch(e) {}
-}
-// excess function
-function buildTxList() {
-  const txs = (session.transactions || []).filter(tx => tx.teamId === myTeam.id || tx.teamName === myTeam.name);
-  if (!txs.length) return '<p style="color:#bbb;font-size:11px;padding:6px 0;">Nėra sandorių</p>';
-  return txs.slice().reverse().map(tx => `
-    <div class="tx-row">
-      <span class="${tx.type==='buy'?'tx-buy':'tx-sell'}">${tx.type==='buy'?'▲':'▼'}</span>
-      <span class="tx-info">${tx.mw} MW @ ${tx.price} $/MWh</span>
-      <span class="tx-meta">D${tx.round}</span>
-    </div>`).join('');
-}
-
-function getAccumulation(upToRound) {
-  let totalBought = 0, totalSold = 0, totalCostBuy = 0, totalRevSell = 0;
-  for (let r = 1; r <= upToRound; r++) {
-    const rows = (myTeam.bidRows || {})[r] || [];
-    rows.forEach(hourBids => {
-      if (!hourBids || !hourBids.length) return;
-      hourBids.forEach(bid => {
-        if (!bid.price || !bid.mw) return;
-        if (bid.type === 'buy') { 
-          totalBought += +bid.mw; 
-          totalCostBuy += +bid.mw * +bid.price; 
-        } else { 
-          totalSold += +bid.mw; 
-          totalRevSell += +bid.mw * +bid.price; 
+        function switchRound(r) {
+            if (viewRound === session.currentRound) saveDraftRows(viewRound);
+            viewRound = r;
+            editingSubmitted = false;
+            renderRound();
         }
-      });
-    });
-  }
-  const net = totalBought - totalSold;
-  const pnl = Math.round(totalRevSell - totalCostBuy + net * (session.marketPrice || 70));
-  return { totalBought, totalSold, net, pnl };
-}
 
-// ══════════════════════════════════════════════
-// SIDEBAR / MISC
-// ══════════════════════════════════════════════
-const menuBtn = document.getElementById('menuBtn');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
-menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
-overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { 
-    sidebar.classList.remove('active'); 
-    overlay.classList.remove('active'); 
-    closeHourModal(); 
-  }
-});
-document.querySelectorAll('.sb-item').forEach(i => i.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); }));
-document.getElementById('hourModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHourModal(); });
-
-function nav(p) { window.location.href = p; }
-function logout() { if (confirm('Atsijungti?')) { sessionStorage.removeItem('myTeamId'); sessionStorage.removeItem('gamePin'); window.location.href = '/pages/join.html'; } }
-function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
-
-async function init() {
-  await loadSession();
-  
-  if (!session || !myTeam) return; // Errors handled in loadSession
-  
-  viewRound = session.currentRound || 1;
-  const tb = document.getElementById('teamBadge');
-  if (tb) tb.textContent = myTeam.name;
-  
-  renderRoundNav();
-  renderRound();
-  
-  const sid = sessionStorage.getItem(KEYS.SESSION_ID);
-  if (sid) {
-      startPlayerWS(sid);
-  }
-
-}
-
-let playerWS = null;
-function startPlayerWS(sessionId) {
-  if (playerWS) return;
-  try {
-    playerWS = window.WS.open(sessionId, {
-      onMessage: async (data) => {
-        console.log('[PlayerWS] Message:', data);
-        if (['SESSION_STARTED', 'ROUND_CALCULATED', 'NEW_ROUND', 'SESSION_FINISHED'].includes(data.event)) {
-          if (data.event === 'NEW_ROUND') {
-              toast('Naujas raundas!');
-          } else if (data.event === 'ROUND_CALCULATED') {
-              toast('Raundo rezultatai apskaičiuoti!');
-          }
-          await loadSession();
-          if (data.event === 'NEW_ROUND' && session && session.current_round) {
-              viewRound = session.current_round;
-          }
-          renderRoundNav();
-          renderRound();
+        function saveDraftRows(round) {
+            if (!myTeam.bidRows) myTeam.bidRows = {};
+            const rows = [];
+            for (let i = 0; i < NUM_HOURS; i++) {
+                const hourBids = [];
+                let bidIdx = 0;
+                while (true) {
+                    const p = document.getElementById('price_' + i + '_' + bidIdx);
+                    if (!p) break;
+                    const m = document.getElementById('mw_' + i + '_' + bidIdx);
+                    const t = document.getElementById('type_' + i + '_' + bidIdx);
+                    const price = p ? +p.value || 0 : 0;
+                    const mw = m ? +m.value || 0 : 0;
+                    if (price && mw) {
+                        hourBids.push({ price, mw, type: t ? t.value : 'buy' });
+                    }
+                    bidIdx++;
+                }
+                rows.push(hourBids);
+            }
+            myTeam.bidRows[round] = rows;
         }
-      }
-    });
-  } catch (e) {
-    console.warn('WS Init failed:', e);
-  }
-}
 
-init();
-</script>
+        function toggleHourBids(hourId) {
+            const content = document.getElementById(hourId);
+            const icon = document.getElementById(hourId + '_icon');
+
+            if (content) {
+                if (content.style.display === 'none' || content.style.display === '') {
+                    content.style.display = 'block';
+                    if (icon) icon.textContent = '▼';
+                } else {
+                    content.style.display = 'none';
+                    if (icon) icon.textContent = '▶';
+                }
+            }
+        }
+
+        function addBidToHour(hour) {
+            const container = document.getElementById('hour_' + viewRound + '_' + hour);
+            if (!container) return;
+
+            const detailItems = container.querySelectorAll('.bid-detail-item');
+            const bidIdx = detailItems.length;
+
+            if (bidIdx >= 3) {
+                toast('Maksimalus 3 pasiūlymai per valandą');
+                return;
+            }
+
+            const newBid = document.createElement('div');
+            newBid.className = 'bid-detail-item';
+            newBid.id = 'bid_' + hour + '_' + bidIdx;
+            newBid.innerHTML = `
+            <span style="color:#aaa;">↳</span>
+            <span style="color:#888;">#${bidIdx + 1}</span>
+            <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" placeholder="Kaina" min="0" step="0.01" oninput="onBidInput(${hour})">
+            <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" placeholder="MW" min="0" step="1" oninput="onBidInput(${hour})">
+            <select class="bid-select" id="type_${hour}_${bidIdx}" onchange="onBidInput(${hour})">
+              <option value="buy">Pirkti</option>
+              <option value="sell">Parduoti</option>
+            </select>
+            <button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>
+          `;
+
+            container.appendChild(newBid);
+            onBidInput(hour);
+        }
+
+        function removeBidFromHour(hour, bidIdx) {
+            const bidEl = document.getElementById('bid_' + hour + '_' + bidIdx);
+            if (bidEl) bidEl.remove();
+
+            // Renumber remaining bids
+            const container = document.getElementById('hour_' + viewRound + '_' + hour);
+            if (container) {
+                const items = container.querySelectorAll('.bid-detail-item');
+                items.forEach((item, idx) => {
+                    const numSpan = item.querySelector('span:nth-child(2)');
+                    if (numSpan) numSpan.textContent = '#' + (idx + 1);
+
+                    // Update IDs
+                    const oldIdx = item.id.split('_').pop();
+                    item.id = 'bid_' + hour + '_' + idx;
+
+                    const priceInput = item.querySelector('input[type="number"]');
+                    const mwInput = item.querySelectorAll('input[type="number"]')[1];
+                    const typeSelect = item.querySelector('select');
+                    const removeBtn = item.querySelector('button');
+
+                    if (priceInput) priceInput.id = 'price_' + hour + '_' + idx;
+                    if (mwInput) mwInput.id = 'mw_' + hour + '_' + idx;
+                    if (typeSelect) typeSelect.id = 'type_' + hour + '_' + idx;
+                    if (removeBtn) removeBtn.onclick = () => removeBidFromHour(hour, idx);
+                });
+            }
+
+            onBidInput(hour);
+        }
+
+        function renderRound() {
+            const cr = session.current_round || session.currentRound || 1;
+            const isReadOnly = viewRound < cr;
+            const isFuture = viewRound > cr;
+
+            // Use session.rounds if it exists, fallback to stub
+            const backendRound = (session.rounds || []).find(h => h.round_number === viewRound);
+            const mp = backendRound ? (backendRound.clearing_price || 0) : (session.market_price || session.marketPrice || 0);
+            const demand = backendRound ? (backendRound.total_volume_cleared || 0) : (session.demand || 0);
+            const weather = session.weather || '';
+
+            // Ensure hourly prices exist for this round (fallback to flat market price)
+            if (!session.marketPrices) session.marketPrices = {};
+            if (!session.marketPrices[viewRound]) {
+                session.marketPrices[viewRound] = Array(NUM_HOURS).fill(session.market_price || 70);
+            }
+
+            const savedRows = (myTeam.bidRows || {})[viewRound] || Array(NUM_HOURS).fill(null).map(() => []);
+            const isSubmitted = (myTeam.bids || []).some(b => b.round === viewRound && b.submitted);
+            const canEdit = isSubmitted && !isReadOnly && session.roundStarted;
+            const isEditing = editingSubmitted && canEdit;
+            const disabled = isReadOnly || isFuture || (isSubmitted && !isEditing);
+
+            const betsHdr = document.getElementById('betsHdr');
+            if (session.betsOpen && !isReadOnly) {
+                betsHdr.className = 'bets-status-hdr bets-open-hdr';
+                betsHdr.textContent = 'Atidaryti';
+            } else {
+                betsHdr.className = 'bets-status-hdr bets-closed-hdr';
+                betsHdr.textContent = 'Uždaryti';
+            }
+
+            const acc = getAccumulation(viewRound);
+
+            // Try to find profit for this specific round for this team from transactions
+            let roundProfit = 0;
+            if (isReadOnly) {
+                const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.teamId === myTeam.id));
+                if (myTxs.length > 0) {
+                    let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
+                    myTxs.forEach(tx => {
+                        if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
+                        else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
+                    });
+                    const net = netBuy - netSell;
+                    roundProfit = Math.round(sellRev - buyCost + net * (session.market_price || session.marketPrice || 70));
+                } else if (myTeam.roundHistory) {
+                    const rhMatch = myTeam.roundHistory.find(r => r.round === viewRound);
+                    if (rhMatch) roundProfit = rhMatch.profit;
+                }
+            }
+            const roundResult = isReadOnly ? { profit: roundProfit } : null;
+
+            // Calculate battery state for each hour
+            let currentBattery = myTeam.batteryStored || 0;
+            const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
+            const batteryHistory = [currentBattery]; // Start with initial
+
+            for (let i = 0; i < savedRows.length; i++) {
+                const hourBids = savedRows[i];
+                let netMW = 0;
+                if (hourBids && hourBids.length) {
+                    for (const bid of hourBids) {
+                        if (bid && bid.price) {
+                            if (bid.type === 'buy') netMW += bid.mw;
+                            else if (bid.type === 'sell') netMW -= bid.mw;
+                        }
+                    }
+                }
+                currentBattery += netMW;
+                currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
+                batteryHistory.push(currentBattery);
+            }
+
+            document.getElementById('mainContent').innerHTML = `
+            <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
+              Diena ${viewRound} baigta — tik peržiūra.
+              <button class="btn btn-sec" style="padding:2px 8px;font-size:11px;margin-left:6px;" onclick="switchRound(${cr})">→ D${cr}</button>
+            </div>
+
+            <!-- CHART -->
+            <div class="chart-card">
+              <div class="chart-card-title">
+                <h3>Rinkos kainos — Diena ${viewRound}</h3>
+                <span>Spustelėkite ant valandos norėdami matyti išsamią informaciją</span>
+              </div>
+              <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+              <div class="chart-note">Žalios/raudonos apskritimai = jūsų pasiūlymai (skaičius = MW) · Punktyrinės = juodraštis</div>
+            </div>
+
+                <!-- BIDS -->
+            <div class="bid-card">
+              <div class="bid-card-header">
+                <h3>Pasiūlymai — Diena ${viewRound} (24 val.)</h3>
+                <div class="bid-actions">
+                  ${isSubmitted && !isEditing ? `<span class="bid-submitted-pill">Pateikta</span>
+                    ${canEdit ? `<button class="btn btn-warn-sm" onclick="editBids()">Redaguoti</button>` : ''}` : ''}
+                  ${isEditing ? '<span class="bid-draft-pill">Redaguojama...</span>' : ''}
+                  ${(!disabled || isEditing) && !isReadOnly && !isFuture ? `
+                    <button class="btn btn-sec" onclick="clearBids()">Išvalyti</button>
+                    <button class="btn btn-primary" onclick="submitBids()" ${session.betsOpen ? '' : 'disabled'}>
+                      ${isEditing ? 'Pateikti iš naujo' : (session.betsOpen ? 'Pateikti' : 'Uždaryti')}
+                    </button>` : ''}
+                </div>
+              </div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
+                <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
+                <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
+              </div>
+              <div class="bid-scroll">
+                <div class="bid-row header-row">
+                  <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
+                </div>
+                ${savedRows.map((hourBids, hour) => {
+                const netMW = hourBids.reduce((sum, b) => sum + (b.type === 'buy' ? b.mw : -b.mw), 0);
+                const totalMW = hourBids.reduce((sum, b) => sum + b.mw, 0);
+                const bidCount = hourBids.length;
+                const batteryBefore = batteryHistory[hour];
+                const batteryAfter = batteryHistory[hour + 1];
+                const netColor = netMW > 0 ? '#27ae60' : (netMW < 0 ? '#e74c3c' : '#888');
+                const netPrefix = netMW > 0 ? '+' : '';
+                const hourId = `hour_${viewRound}_${hour}`;
+
+                return `
+                    <div style="border-bottom:1px solid #f0ebe0;">
+                      <div class="bid-row ${hourBids.length ? 'has-bid' : ''}" onclick="toggleHourBids('${hourId}')">
+                        <span class="bid-expand-icon" id="${hourId}_icon">▶</span>
+                        <span style="font-weight:600;color:#2f4a75;">${String(hour).padStart(2, '0')}:00</span>
+                        <span style="color:${netColor};font-weight:600;">${netPrefix}${netMW} MW</span>
+                        <span style="color:#555;">${totalMW} MW</span>
+                        <span style="color:#f39c12;">${bidCount}</span>
+                        <span style="color:#888;font-weight:600;">${batteryBefore.toFixed(0)}</span>
+                        <span style="color:#f39c12;font-weight:600;">${batteryAfter.toFixed(0)}</span>
+                      </div>
+                      <div id="${hourId}" class="bid-detail-row">
+                        <div class="bid-detail-header">
+                          <span></span><span>#</span><span>Kaina $/MWh</span><span>Galia MW</span><span>Tipas</span><span></span>
+                        </div>
+                        ${hourBids.map((bid, bidIdx) => `
+                          <div class="bid-detail-item" id="bid_${hour}_${bidIdx}">
+                            <span style="color:#aaa;">↳</span>
+                            <span style="color:#888;">#${bidIdx + 1}</span>
+                            <input class="bid-input" type="number" id="price_${hour}_${bidIdx}" value="${bid.price || ''}" min="0" step="0.01" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                            <input class="bid-input" type="number" id="mw_${hour}_${bidIdx}" value="${bid.mw || ''}" min="0" step="1" ${disabled ? 'disabled' : ''} oninput="onBidInput(${hour})">
+                            <select class="bid-select" id="type_${hour}_${bidIdx}" ${disabled ? 'disabled' : ''} onchange="onBidInput(${hour})">
+                              <option value="buy" ${bid.type === 'buy' ? 'selected' : ''}>Pirkti</option>
+                              <option value="sell" ${bid.type === 'sell' ? 'selected' : ''}>Parduoti</option>
+                            </select>
+                            ${!disabled ? `<button class="bid-remove-btn" onclick="removeBidFromHour(${hour}, ${bidIdx})">×</button>` : '<span></span>'}
+                          </div>
+                        `).join('')}
+                        ${!disabled && hourBids.length < 3 ? `<div style="padding:8px;text-align:center;">
+                          <button class="btn btn-sec" style="font-size:11px;padding:4px 12px;" onclick="addBidToHour(${hour})">+ Pridėti pasiūlymą</button>
+                        </div>` : ''}
+                      </div>
+                    </div>
+                  `;
+            }).join('')}
+              </div>
+              <div class="bid-footer">
+                <span></span><span>IŠ VISO</span>
+                <span id="totalNetMW">—</span>
+                <span id="totalMW">—</span>
+                <span id="totalBids">—</span>
+                <span>${(myTeam.batteryStored || 0).toFixed(0)}</span>
+                <span id="finalBattery" style="color:#f39c12;">—</span>
+              </div>
+              <div id="bidErrors" style="margin-top:6px;"></div>
+            </div>
+
+            <!-- STATUS -->
+            <div class="status-bar">
+              <div class="stat-chip">
+                <span class="v">D${viewRound}${isReadOnly ? ' 🔒' : ''}</span>
+                <span class="l">Diena</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
+                <span class="l">Vid. kaina</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${demand}</span>
+                <span class="l">Paklausa MW</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v">${weather}</span>
+                <span class="l">Oras</span>
+              </div>
+              <div class="stat-sep"></div>
+              <div class="stat-chip">
+                <span class="v" style="color:#27ae60;">$${(myTeam.balance || 0).toLocaleString()}</span>
+                <span class="l">Balansas</span>
+              </div>
+              ${roundResult ? `<div class="stat-sep"></div><div class="stat-chip">
+                <span class="v" style="color:${roundResult.profit >= 0 ? '#27ae60' : '#e74c3c'}">${roundResult.profit >= 0 ? '+' : ''}$${Math.abs(roundResult.profit || 0).toLocaleString()}</span>
+                <span class="l">D${viewRound} pelnas</span>
+              </div>` : ''}
+            </div>
+
+            <!-- ENERGY -->
+            <div class="energy-card">
+              <h3>Energijos portfelis (iki D${viewRound})</h3>
+              <div class="energy-grid">
+                <div class="ebox highlight"><div class="v">${acc.totalBought}<small style="font-size:9px;"> MWh</small></div><div class="l">Pirkta</div></div>
+                <div class="ebox"><div class="v">${acc.totalSold}<small style="font-size:9px;"> MWh</small></div><div class="l">Parduota</div></div>
+                <div class="ebox"><div class="v">${acc.net}<small style="font-size:9px;"> MWh</small></div><div class="l">Grynasis</div></div>
+                <div class="ebox highlight"><div class="v" style="color:${acc.pnl >= 0 ? '#27ae60' : '#e74c3c'}">${acc.pnl >= 0 ? '+' : ''}$${Math.abs(acc.pnl).toLocaleString()}</div><div class="l">P&amp;L</div></div>
+              </div>
+            </div>
+
+
+          `;
+
+            // Render nav highlights
+            document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('viewing'));
+            const rb = document.getElementById('rbtn_' + viewRound);
+            if (rb) rb.classList.add('viewing');
+
+            updateTotals();
+            renderChart(viewRound);
+        }
+
+        // ══════════════════════════════════════════════
+        // BID INTERACTIONS
+        // ══════════════════════════════════════════════
+        function onBidInput(hour) {
+            updateTotals();
+            updateEnergyAccumulation();
+            // Update draft line on chart
+            if (editingSubmitted || !(myTeam.bids || []).some(b => b.round === viewRound && b.submitted)) {
+                renderChart(viewRound);
+            }
+        }
+
+        function updateTotals() {
+            let totalNetMW = 0, totalMW = 0, totalBids = 0;
+            let currentBattery = myTeam.batteryStored || 0;
+            const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
+
+            for (let h = 0; h < NUM_HOURS; h++) {
+                let bidIdx = 0;
+                let hourNetMW = 0, hourTotalMW = 0;
+
+                while (true) {
+                    const p = document.getElementById('price_' + h + '_' + bidIdx);
+                    if (!p) break;
+                    const m = document.getElementById('mw_' + h + '_' + bidIdx);
+                    const t = document.getElementById('type_' + h + '_' + bidIdx);
+
+                    const price = +p.value || 0;
+                    const mw = +m.value || 0;
+
+                    if (price && mw) {
+                        totalBids++;
+                        hourTotalMW += mw;
+                        if (t && t.value === 'buy') {
+                            hourNetMW += mw;
+                        } else {
+                            hourNetMW -= mw;
+                        }
+                    }
+                    bidIdx++;
+                }
+
+                totalNetMW += hourNetMW;
+                totalMW += hourTotalMW;
+
+                // Update the row display
+                const rowNetEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(3)');
+                const rowTotalEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(4)');
+                const rowCountEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(5)');
+                const rowBeforeEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(6)');
+                const rowAfterEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(7)');
+
+                const batteryBefore = currentBattery;
+                currentBattery += hourNetMW;
+                currentBattery = Math.min(Math.max(currentBattery, 0), batteryCapacity);
+                const batteryAfter = currentBattery;
+
+                if (rowNetEl) {
+                    const netColor = hourNetMW > 0 ? '#27ae60' : (hourNetMW < 0 ? '#e74c3c' : '#888');
+                    const netPrefix = hourNetMW > 0 ? '+' : '';
+                    rowNetEl.style.color = netColor;
+                    rowNetEl.style.fontWeight = '600';
+                    rowNetEl.textContent = netPrefix + hourNetMW + ' MW';
+                }
+                if (rowTotalEl) {
+                    rowTotalEl.textContent = hourTotalMW + ' MW';
+                }
+                if (rowCountEl) {
+                    rowCountEl.textContent = bidIdx;
+                }
+                if (rowBeforeEl) {
+                    rowBeforeEl.textContent = batteryBefore.toFixed(0);
+                }
+                if (rowAfterEl) {
+                    rowAfterEl.textContent = batteryAfter.toFixed(0);
+                }
+            }
+
+            const fb = document.getElementById('finalBattery');
+            const tnet = document.getElementById('totalNetMW');
+            const tmw = document.getElementById('totalMW');
+            const tb = document.getElementById('totalBids');
+
+            if (fb) fb.textContent = currentBattery.toFixed(0);
+            if (tnet) tnet.textContent = totalNetMW ? (totalNetMW > 0 ? '+' : '') + totalNetMW + ' MW' : '—';
+            if (tmw) tmw.textContent = totalMW ? totalMW + ' MW' : '—';
+            if (tb) tb.textContent = totalBids || '—';
+        }
+
+        async function updateEnergyAccumulation() {
+            if (!myTeam || !myTeam.id) return;
+            try {
+                const state = await API.Players.getState(myTeam.id);
+                const boxes = document.querySelectorAll('.energy-grid .ebox .v');
+                // Based on backend TeamStateResponse: {current_battery_mwh, total_profit}
+                if (boxes[3]) {
+                    boxes[3].style.color = state.total_profit >= 0 ? '#27ae60' : '#e74c3c';
+                    boxes[3].textContent = (state.total_profit >= 0 ? '+' : '') + '$' + Math.abs(Math.round(state.total_profit)).toLocaleString();
+                }
+                if (boxes[2]) boxes[2].textContent = state.current_battery_mwh.toFixed(1) + ' MW';
+            } catch (e) {
+                console.error('Failed to update stats:', e);
+            }
+        }
+
+        function editBids() {
+            editingSubmitted = true;
+            renderRound();
+            toast('Redagavimo režimas — pakeiskite ir pateikite iš naujo');
+        }
+
+        async function submitBids() {
+            if (session.status !== 'active') { toast('Sesija neaktyvi'); return; }
+
+            const errors = [], formattedBids = [];
+            let totalBidCount = 0;
+
+            for (let h = 0; h < NUM_HOURS; h++) {
+                let bidIdx = 0;
+                while (true) {
+                    const p = document.getElementById('price_' + h + '_' + bidIdx);
+                    if (!p) break;
+                    const m = document.getElementById('mw_' + h + '_' + bidIdx);
+                    const t = document.getElementById('type_' + h + '_' + bidIdx);
+
+                    const price = +p.value;
+                    const mw = +m.value;
+
+                    if (price || mw) {
+                        if (!price || price <= 0) errors.push(`${String(h).padStart(2, '0')}:00 #${bidIdx + 1} — netinkama kaina`);
+                        else if (!mw || mw <= 0) errors.push(`${String(h).padStart(2, '0')}:00 #${bidIdx + 1} — netinkamas kiekis`);
+                        else {
+                            formattedBids.push({
+                                hour: h,
+                                price: price,
+                                volume_mwh: mw,
+                                bid_type: (t ? t.value : 'buy') === 'buy'
+                            });
+                            totalBidCount++;
+                        }
+                    }
+                    bidIdx++;
+                }
+            }
+
+            if (errors.length) {
+                toast('Patikrinkite duomenis');
+                return;
+            }
+
+            if (totalBidCount === 0) { toast('Įveskite bent vieną pasiūlymą'); return; }
+
+
+            try {
+                const currentRoundObj = session.rounds?.find(r => r.status === 'bidding');
+                if (!currentRoundObj) {
+                    toast('Nėra aktyvaus raundo');
+                    return;
+                }
+
+                const rid = currentRoundObj.id;
+                const submittedBids = await API.Bids.submit(myTeam.id, rid, formattedBids);
+
+                // Update local myTeam with the submitted bids immediately
+                if (submittedBids && submittedBids.length) {
+                    const currentRound = session.currentRound;
+
+                    // Initialize bidRows for this round if needed
+                    if (!myTeam.bidRows[currentRound]) {
+                        myTeam.bidRows[currentRound] = Array(24).fill(null).map(() => []);
+                    }
+
+                    // Add each submitted bid to local bidRows
+                    submittedBids.forEach(bid => {
+                        myTeam.bidRows[currentRound][bid.hour].push({
+                            price: bid.price,
+                            mw: bid.volume_mwh,
+                            type: bid.bid_type ? 'buy' : 'sell'
+                        });
+                    });
+
+                    // Mark this round as submitted
+                    if (!myTeam.bids.some(b => b.round === currentRound)) {
+                        myTeam.bids.push({ round: currentRound, submitted: true });
+                    }
+                }
+
+                toast('Pasiūlymai sėkmingai pateikti!');
+                editingSubmitted = false;
+
+                // Re-render without reloading the session
+                renderRound();
+                renderChart(viewRound);
+
+            } catch (err) {
+                console.error('Submit error:', err);
+                toast('Klaida pateikiant: ' + err.message);
+            }
+        }
+
+        function saveTeamToSession() {
+            try {
+                const sessions = JSON.parse(sessionStorage.getItem('adminSessions')) || [];
+                const idx = sessions.findIndex(s => s.id === session.id);
+                if (idx >= 0) {
+                    if (!sessions[idx].marketPrices) sessions[idx].marketPrices = {};
+                    Object.assign(sessions[idx].marketPrices, session.marketPrices);
+                    const tIdx = sessions[idx].teams.findIndex(t => t.id === myTeam.id);
+                    if (tIdx >= 0) sessions[idx].teams[tIdx] = myTeam;
+                    else sessions[idx].teams.push(myTeam);
+                    sessionStorage.setItem('adminSessions', JSON.stringify(sessions));
+                }
+            } catch (e) { }
+        }
+        // excess function
+        function buildTxList() {
+            const txs = (session.transactions || []).filter(tx => tx.teamId === myTeam.id || tx.teamName === myTeam.name);
+            if (!txs.length) return '<p style="color:#bbb;font-size:11px;padding:6px 0;">Nėra sandorių</p>';
+            return txs.slice().reverse().map(tx => `
+            <div class="tx-row">
+              <span class="${tx.type === 'buy' ? 'tx-buy' : 'tx-sell'}">${tx.type === 'buy' ? '▲' : '▼'}</span>
+              <span class="tx-info">${tx.mw} MW @ ${tx.price} $/MWh</span>
+              <span class="tx-meta">D${tx.round}</span>
+            </div>`).join('');
+        }
+
+        function getAccumulation(upToRound) {
+            let totalBought = 0, totalSold = 0, totalCostBuy = 0, totalRevSell = 0;
+            for (let r = 1; r <= upToRound; r++) {
+                const rows = (myTeam.bidRows || {})[r] || [];
+                rows.forEach(hourBids => {
+                    if (!hourBids || !hourBids.length) return;
+                    hourBids.forEach(bid => {
+                        if (!bid.price || !bid.mw) return;
+                        if (bid.type === 'buy') {
+                            totalBought += +bid.mw;
+                            totalCostBuy += +bid.mw * +bid.price;
+                        } else {
+                            totalSold += +bid.mw;
+                            totalRevSell += +bid.mw * +bid.price;
+                        }
+                    });
+                });
+            }
+            const net = totalBought - totalSold;
+            const pnl = Math.round(totalRevSell - totalCostBuy + net * (session.marketPrice || 70));
+            return { totalBought, totalSold, net, pnl };
+        }
+
+        // ══════════════════════════════════════════════
+        // SIDEBAR / MISC
+        // ══════════════════════════════════════════════
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        menuBtn.addEventListener('click', e => { e.stopPropagation(); sidebar.classList.toggle('active'); overlay.classList.toggle('active'); });
+        overlay.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                closeHourModal();
+            }
+        });
+        document.querySelectorAll('.sb-item').forEach(i => i.addEventListener('click', () => { sidebar.classList.remove('active'); overlay.classList.remove('active'); }));
+        document.getElementById('hourModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeHourModal(); });
+
+        function nav(p) { window.location.href = p; }
+        function logout() { if (confirm('Atsijungti?')) { sessionStorage.removeItem('myTeamId'); sessionStorage.removeItem('gamePin'); window.location.href = '/pages/join.html'; } }
+        function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2800); }
+
+        async function init() {
+            await loadSession();
+
+            if (!session || !myTeam) return; // Errors handled in loadSession
+
+            viewRound = session.currentRound || 1;
+            const tb = document.getElementById('teamBadge');
+            if (tb) tb.textContent = myTeam.name;
+
+            renderRoundNav();
+            renderRound();
+
+            const sid = sessionStorage.getItem(KEYS.SESSION_ID);
+            if (sid) {
+                startPlayerWS(sid);
+            }
+
+        }
+
+        let playerWS = null;
+        function startPlayerWS(sessionId) {
+            if (playerWS) return;
+            try {
+                playerWS = window.WS.open(sessionId, {
+                    onMessage: async (data) => {
+                        console.log('[PlayerWS] Message:', data);
+                        if (['SESSION_STARTED', 'ROUND_CALCULATED', 'NEW_ROUND', 'SESSION_FINISHED'].includes(data.event)) {
+                            if (data.event === 'NEW_ROUND') {
+                                toast('Naujas raundas!');
+                            } else if (data.event === 'ROUND_CALCULATED') {
+                                toast('Raundo rezultatai apskaičiuoti!');
+                            }
+                            await loadSession();
+                            if (data.event === 'NEW_ROUND' && session && session.current_round) {
+                                viewRound = session.current_round;
+                            }
+                            renderRoundNav();
+                            renderRound();
+                        }
+                    }
+                });
+            } catch (e) {
+                console.warn('WS Init failed:', e);
+            }
+        }
+
+        init();
+    </script>
 </body>
 </html>

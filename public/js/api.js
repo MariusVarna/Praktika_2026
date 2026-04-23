@@ -1,26 +1,11 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // api.js — Frontend API Client
 // ═══════════════════════════════════════════════════════════════════════════
-// API endpoints for frontend.
-// Deploy FastAPI backend to Render/Railway/Fly.io or something else and update API_BASE.
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ── CONFIGURATION ────────────────────────────────────────────────────────────
 
-/**
- * add per-page this script:
- *   <script>window.API_BASE = 'https://your-backend.onrender.com';</script>
- *   <script src="/js/api.js"></script>
- */
-
-// For local development on Mac/Linux, 127.0.0.1 is more reliable than localhost (which might try IPv6)
-const API_BASE = (window.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
-/**
- * WebSocket Base URL (derived from API_BASE)
- * Automatically converts http:// to ws:// and https:// to wss://
- */
-const WS_BASE = API_BASE.replace(/^http/, 'ws').replace(/\/+$/, '');
-// const WS_BASE = API_BASE.replace(/^http/, 'ws');
+const API_BASE = (window.CONFIG?.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
+const WS_BASE = (window.CONFIG?.WS_BASE || API_BASE.replace(/^http/, 'ws')).replace(/\/+$/, '');
 
 console.log('[API] Configured endpoints:', { API_BASE, WS_BASE });
 
@@ -41,8 +26,69 @@ const KEYS = {
     ROUND_NUM: 'roundNum',      // Current round number (1-based)
 };
 
+// ── ERROR HANDLING ───────────────────────────────────────────────────────────
+
+/**
+ * Custom API Error class for better error handling
+ */
+class APIError extends Error {
+    constructor(message, status, code) {
+        super(message);
+        this.name = 'APIError';
+        this.status = status;
+        this.code = code;
+    }
+    
+    /**
+     * Check if error is a network/connection issue
+     */
+    isNetworkError() {
+        return this.status === 0;
+    }
+    
+    /**
+     * Check if error is authentication-related
+     */
+    isAuthError() {
+        return this.status === 401 || this.status === 403;
+    }
+    
+    /**
+     * Check if error is a validation error
+     */
+    isValidationError() {
+        return this.status === 422;
+    }
+    
+    /**
+     * Get user-friendly error message in Lithuanian
+     */
+    getUserMessage() {
+        if (this.isNetworkError()) {
+            return 'Nėra interneto ryšio. Patikrinkite savo prijungimą.';
+        }
+        
+        if (this.isAuthError()) {
+            return 'Prisijungimo sesija baigėsi. Prašome prisijungti iš naujo.';
+        }
+        
+        if (this.status === 404) {
+            return 'Nerasta. Patikrinkite įvestus duomenis.';
+        }
+        
+        if (this.status >= 500) {
+            return 'Serverio klaida. Bandykite dar kartą vėliau.';
+        }
+        
+        return this.message;
+    }
+}
+
 // ── HELPER FUNCTIONS ─────────────────────────────────────────────────────────
 
+/**
+ * IMPROVED: Enhanced error handling with APIError class
+ */
 async function apiFetch(path, options = {}) {
     const url = API_BASE + path;
     const adminId = sessionStorage.getItem(KEYS.ADMIN_ID);
@@ -64,22 +110,48 @@ async function apiFetch(path, options = {}) {
     if (merged.body && typeof merged.body !== 'string' && !(merged.body instanceof FormData)) {
         merged.body = JSON.stringify(merged.body);
     }
-// ... (log lines removed for brevity in snippet)
+
     try {
         const res = await fetch(url, merged);
+        
         if (!res.ok) {
             let detail = res.statusText;
+            let errorCode = 'UNKNOWN_ERROR';
+            
             try {
                 const errorData = await res.json();
                 detail = errorData.detail || detail;
-            } catch (_) {}
-            throw new Error(detail);
+                errorCode = errorData.code || errorCode;
+            } catch (_) {
+                // Response wasn't JSON
+            }
+            
+            throw new APIError(detail, res.status, errorCode);
         }
+        
         if (res.status === 204) return null;
         return await res.json();
+        
     } catch (error) {
-        console.error('[API] Request failed:', error);
-        throw error;
+        // If it's already an APIError, just re-throw
+        if (error instanceof APIError) {
+            console.error('[API] Request failed:', error.message, `(${error.status})`);
+            throw error;
+        }
+        
+        // Network errors (no connection, CORS, etc.)
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.error('[API] Network error:', error);
+            throw new APIError(
+                'Nepavyko prisijungti prie serverio',
+                0,
+                'NETWORK_ERROR'
+            );
+        }
+        
+        // Other errors
+        console.error('[API] Unexpected error:', error);
+        throw new APIError(error.message, 0, 'UNKNOWN_ERROR');
     }
 }
 
@@ -188,32 +260,9 @@ const Players = {
      * 
      * @param {string} name - Team name to join/create
      * @param {string} joinCode - 6-digit PIN code
+     * @param {string} password - Optional team password
      * 
      * @returns {Promise<object>} User and team information
-     * 
-     * Request body:
-     *   {
-     *     "name": "Team Alpha",
-     *     "join_code": "123456"
-     *   }
-     * 
-     * Response format:
-     *   {
-     *     userId: 42,
-     *     teamId: "team_123456789",
-     *     sessionId: 1,
-     *     teamName: "Komanda 1",
-     *     balance: 10000,
-     *     sessionStatus: "waiting"
-     *   }
-     * 
-     *   - Creates new team if name doesn't exist
-     *   - Returns existing team data if name matches
-     *   - Generates unique userId for tracking
-     * 
-     * Errors:
-     *   - 404: Invalid PIN code
-     *   - 409: Team name already taken (different password)
      */
     join(name, joinCode, password) {
         return apiFetch('/api/players/join', {
@@ -246,31 +295,8 @@ const Bids = {
      * @param {number} userId - Player's user ID
      * @param {number} roundId - Round number to submit bids for
      * @param {Array<object>} bidsArray - Array of bid objects
-     * @param {number} bidsArray[].hour - Hour of day (0-23)
-     * @param {number} bidsArray[].volume_mwh - Energy volume (MW)
-     * @param {number} bidsArray[].price - Bid price ($/MWh)
-     * @param {string} bidsArray[].bid_type - "buy" or "sell"
      * 
      * @returns {Promise<object>} Submission confirmation
-     * 
-     * Request example:
-     *   [
-     *     {hour: 0, volume_mwh: 50, price: 65, bid_type: "buy"},
-     *     {hour: 0, volume_mwh: 30, price: 70, bid_type: "buy"},
-     *     {hour: 1, volume_mwh: 40, price: 68, bid_type: "sell"}
-     *   ]
-     * 
-     * Response format:
-     *   {
-     *     success: true,
-     *     bidsSubmitted: 72,  // Total count
-     *     teamId: "team_123456789"
-     *   }
-     * 
-     *   - Frontend filters to only send bids where price > 0 AND volume > 0
-     *   - Multiple bids per hour (up to 3)
-     *   - Each bid is stored separately with timestamp
-     *   - Requires session.betsOpen = true
      */
     submit(userId, roundId, bidsArray) {
         // Filter out invalid bids before sending
@@ -291,9 +317,7 @@ const Bids = {
 // ── WEBSOCKET CLIENT ─────────────────────────────────────────────────────────
 
 /**
- * Open a WebSocket connection for real-time session updates
- * 
- * WebSocket URL: ws://backend/ws/session/{sessionId}
+ * Open a WebSocket connection with automatic reconnection
  * 
  * @param {number} sessionId - Session database ID
  * @param {object} handlers - Event handlers
@@ -301,86 +325,45 @@ const Bids = {
  * @param {function} handlers.onMessage - Called on incoming message (parsed JSON)
  * @param {function} handlers.onClose - Called when connection closes
  * @param {function} handlers.onError - Called on connection error
+ * @param {function} handlers.onMaxRetriesReached - Called when reconnection fails
+ * @param {number} retryCount - Current retry attempt (internal use)
  * 
  * @returns {WebSocket} WebSocket instance
- * 
- * Message Types (Server → Client):
- * 
- *   1. Session Update
- *      {
- *        type: "session_update",
- *        data: {
- *          status: "active",
- *          currentRound: 2,
- *          betsOpen: true,
- *          roundStarted: true
- *        }
- *      }
- * 
- *   2. Team Joined
- *      {
- *        type: "team_joined",
- *        data: {
- *          teamId: "team_123",
- *          teamName: "Komanda 1",
- *          totalTeams: 5
- *        }
- *      }
- * 
- *   3. Bids Updated
- *      {
- *        type: "bids_updated",
- *        data: {
- *          teamId: "team_123",
- *          round: 1,
- *          submitted: true
- *        }
- *      }
- * 
- *   4. Round Started
- *      {
- *        type: "round_started",
- *        data: {
- *          round: 2,
- *          day: 2
- *        }
- *      }
- * 
- *   5. Round Ended
- *      {
- *        type: "round_ended",
- *        data: {
- *          round: 1,
- *          results: { /* calculation results *\/ }
- *        }
- *      }
- * 
- * Example usage:
- *   const ws = openSessionWS(sessionId, {
- *     onOpen: () => console.log('Connected'),
- *     onMessage: (data) => {
- *       if (data.type === 'session_update') {
- *         updateUI(data.data);
- *       }
- *     },
- *     onClose: () => console.log('Disconnected'),
- *     onError: (e) => console.error('WS Error:', e)
- *   });
  */
-function openSessionWS(sessionId, handlers = {}) {
+function openSessionWS(sessionId, handlers = {}, retryCount = 0) {
     const wsUrl = `${WS_BASE}/ws/session/${sessionId}`;
-    console.log('[WebSocket] Connecting to:', wsUrl);
+    const maxRetries = 5;
+    const baseDelay = 1000; // 1 second
+    const maxDelay = 30000; // 30 seconds
+    
+    console.log(`[WebSocket] Connecting to: ${wsUrl} (attempt ${retryCount + 1})`);
 
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        console.log('[WebSocket] Connected');
+        console.log('[WebSocket] Connected successfully');
+        retryCount = 0; // Reset retry count on successful connection
         handlers.onOpen?.();
     };
 
-    ws.onclose = () => {
-        console.log('[WebSocket] Disconnected');
-        handlers.onClose?.();
+    ws.onclose = (event) => {
+        console.log('[WebSocket] Disconnected:', event.code, event.reason);
+        handlers.onClose?.(event);
+        
+        // Attempt reconnection with exponential backoff
+        if (retryCount < maxRetries) {
+            const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay);
+            console.log(`[WebSocket] Reconnecting in ${delay}ms... (${retryCount + 1}/${maxRetries})`);
+            
+            setTimeout(() => {
+                openSessionWS(sessionId, handlers, retryCount + 1);
+            }, delay);
+        } else {
+            console.error('[WebSocket] Max reconnection attempts reached');
+            if (handlers.onMaxRetriesReached) {
+                handlers.onMaxRetriesReached();
+            }
+        }
     };
 
     ws.onerror = (e) => {
@@ -395,6 +378,7 @@ function openSessionWS(sessionId, handlers = {}) {
             handlers.onMessage?.(data);
         } catch (error) {
             console.error('[WebSocket] Failed to parse message:', event.data);
+            // Still call handler with raw data
             handlers.onMessage?.(event.data);
         }
     };
@@ -475,6 +459,7 @@ window.WS = {
 
 window.AppState = State;
 window.KEYS = KEYS;
+window.APIError = APIError; // ADDED: Export APIError class
 
 // Log successful initialization
 console.log('[API] Client initialized successfully');
