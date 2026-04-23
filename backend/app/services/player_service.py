@@ -31,13 +31,11 @@ class PlayerService:
         self.db.add(db_user)
         self.db.commit()
         self.db.refresh(db_user)
-        
-        # Initialize Team State
         team_state = models.TeamState(
             user_id=db_user.id,
             session_id=session.id,
             current_battery_mwh=session.battery_initial_mwh,
-            total_profit=0.0
+            total_profit=session.start_budget  
         )
         self.db.add(team_state)
         self.db.commit()

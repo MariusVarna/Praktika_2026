@@ -155,10 +155,10 @@
 
     <div class="sidebar" id="sidebar">
         <div class="sb-head"><h2>Navigacija</h2></div>
-        <div class="sb-item" onclick="nav('/pages/game.html')">Žaidimas</div>
+        <div class="sb-item" onclick="nav('/pages/review.html')">Atsiliepimai</div>
         <div class="sb-item" onclick="nav('/pages/help.html')">Žinynas</div>
         <div class="sb-item" onclick="nav('/pages/settings.html')">Parinktys</div>
-        <div class="sb-item" onclick="logout()">Atsijungti</div>
+        <div class="sb-item" onclick="logout()">Palikti sesija</div>
     </div>
     <div class="overlay" id="overlay"></div>
 
@@ -202,7 +202,9 @@
 
             try {
                 session = await API.Sessions.get(sid);
-
+                if (!session.numRounds && session.duration_days) {
+                    session.numRounds = session.duration_days;
+                }
                 console.log('=== SESSION DATA ===');
                 console.log('Session rounds:', session.rounds);
                 console.log('Teams:', session.teams);
@@ -569,10 +571,10 @@
             const betsHdr = document.getElementById('betsHdr');
             if (session.betsOpen && !isReadOnly) {
                 betsHdr.className = 'bets-status-hdr bets-open-hdr';
-                betsHdr.textContent = 'Atidaryti';
+                betsHdr.textContent = 'Galima statyti';
             } else {
                 betsHdr.className = 'bets-status-hdr bets-closed-hdr';
-                betsHdr.textContent = 'Uždaryti';
+                betsHdr.textContent = 'Negalima statyti';
             }
 
             const acc = getAccumulation(viewRound);
@@ -592,8 +594,41 @@
             }
             const roundResult = isReadOnly ? { profit: roundProfit } : null;
 
-            // Calculate battery state for each hour locally for preview
-            let currentBattery = myTeam.batteryStored || 0;
+            // Calculate battery state for each hour using the correct starting point
+            let currentBattery;
+
+            // For the current round or any round, we need the starting battery
+            if (viewRound === 1) {
+                // Day 1 starts with the initial battery amount
+                currentBattery = myTeam.batteryStored || 0;
+            } else {
+                // For day > 1, we need to calculate the battery level from the previous day's trading
+                // First, get the previous round's ending battery
+                const prevRound = viewRound - 1;
+                const prevRoundBids = (myTeam.bidRows || {})[prevRound] || [];
+
+                // Calculate the net effect of previous day's bids to find ending battery
+                let prevBattery = myTeam.batteryStored || 0;
+                const batteryCapacity = myTeam.batteryCapacity || 100;
+
+                for (let i = 0; i < prevRoundBids.length; i++) {
+                    const hourBids = prevRoundBids[i];
+                    let netMW = 0;
+                    if (hourBids && hourBids.length) {
+                        for (const bid of hourBids) {
+                            if (bid && bid.price) {
+                                if (bid.type === 'buy') netMW += bid.mw;
+                                else if (bid.type === 'sell') netMW -= bid.mw;
+                            }
+                        }
+                    }
+                    prevBattery += netMW;
+                    prevBattery = Math.min(Math.max(prevBattery, 0), batteryCapacity);
+                }
+
+                currentBattery = prevBattery;
+            }
+
             const batteryCapacity = myTeam.batteryCapacity || 100;
             const batteryHistory = [currentBattery];
 
@@ -643,7 +678,7 @@
                 </div>
               </div>
               <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
-                <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
+                <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${batteryHistory[0].toFixed(0)} MWh</span>
                 <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
               </div>
               <div class="bid-scroll">
@@ -1098,20 +1133,41 @@
         // ══════════════════════════════════════════════
         function renderRoundNav() {
             const nav = document.getElementById('roundNav');
-            const cr = session.currentRound, nr = session.numRounds;
-            let html = '<span class="rnav-label">Diena:</span>';
+            if (!nav) {
+                console.error('Round nav element not found');
+                return;
+            }
+
+            const cr = session.currentRound;
+            const nr = session.numRounds;
+
+            console.log('Rendering round nav. Current round:', cr, 'Total rounds:', nr);
+
+            let html = '<span class="rnav-label">Dienos:</span>';
             for (let r = 1; r <= nr; r++) {
-                const cls = r === cr ? 'rbtn current' : r < cr ? 'rbtn past' : 'rbtn';
+                let cls = 'rbtn';
+                if (r === cr) {
+                    cls += ' current';
+                } else if (r < cr) {
+                    cls += ' past';
+                }
                 const lock = r < cr ? '🔒 ' : '';
-                html += `<button class="${cls}${r === viewRound ? ' viewing' : ''}" onclick="switchRound(${r})" id="rbtn_${r}">${lock}D${r}</button>`;
+                const viewingClass = (r === viewRound) ? ' viewing' : '';
+                html += `<button class="${cls}${viewingClass}" onclick="switchRound(${r})" id="rbtn_${r}">${lock} D${r}</button>`;
             }
             nav.innerHTML = html;
+            console.log('Round nav HTML set:', html);
         }
 
         function switchRound(r) {
-            if (viewRound === session.currentRound) saveDraftRows(viewRound);
+            // Save current draft bids before switching
+            if (viewRound === session.currentRound && !editingSubmitted) {
+                saveDraftRows(viewRound);
+            }
             viewRound = r;
             editingSubmitted = false;
+
+            // Force reload market prices for the selected round
             renderRound();
         }
 
@@ -1241,10 +1297,10 @@
             const betsHdr = document.getElementById('betsHdr');
             if (session.betsOpen && !isReadOnly) {
                 betsHdr.className = 'bets-status-hdr bets-open-hdr';
-                betsHdr.textContent = 'Atidaryti';
+                betsHdr.textContent = 'Galima statyti';
             } else {
                 betsHdr.className = 'bets-status-hdr bets-closed-hdr';
-                betsHdr.textContent = 'Uždaryti';
+                betsHdr.textContent = 'Negalima statyti';
             }
 
             const acc = getAccumulation(viewRound);
@@ -1289,6 +1345,49 @@
                 batteryHistory.push(currentBattery);
             }
 
+            // Calculate average market price for the selected round
+            const selectedRoundPrices = session.marketPrices[viewRound] || Array(24).fill(session.market_price || 70);
+            const avgPrice = selectedRoundPrices.reduce((a, b) => a + b, 0) / 24;
+
+            // Calculate total demand for the selected round (if available from backend)
+            let totalDemand = 0;
+            if (backendRound && backendRound.total_volume_cleared) {
+                totalDemand = backendRound.total_volume_cleared;
+            } else if (session.marketPrices[viewRound]) {
+                // Estimate demand from prices (rough approximation)
+                totalDemand = Math.round(session.base_demand_mw || 500);
+            } else {
+                totalDemand = session.demand || 0;
+            }
+
+            // Calculate round profit for the selected round
+            let roundProfitDisplay = null;
+            if (isReadOnly) {
+                let profit = 0;
+                const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.teamId === myTeam.id));
+                if (myTxs.length > 0) {
+                    let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
+                    myTxs.forEach(tx => {
+                        if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
+                        else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
+                    });
+                    const net = netBuy - netSell;
+                    profit = Math.round(sellRev - buyCost + net * avgPrice);
+                } else if (myTeam.roundHistory) {
+                    const rhMatch = myTeam.roundHistory.find(r => r.round === viewRound);
+                    if (rhMatch) profit = rhMatch.profit;
+                }
+
+                if (profit !== 0) {
+                    roundProfitDisplay = {
+                        profit: Math.abs(profit),
+                        sign: profit >= 0 ? '+' : '-',
+                        color: profit >= 0 ? '#27ae60' : '#e74c3c'
+                    };
+                }
+            }
+
+
             document.getElementById('mainContent').innerHTML = `
             <div class="readonly-banner ${isReadOnly ? '' : 'hidden'}">
               Diena ${viewRound} baigta — tik peržiūra.
@@ -1320,10 +1419,17 @@
                     </button>` : ''}
                 </div>
               </div>
+
+
               <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;padding:0 4px;">
-                <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${(myTeam.batteryStored || 0).toFixed(0)} MWh</span>
-                <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
-              </div>
+                  <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${batteryHistory[0].toFixed(0)} MWh</span>
+                  <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
+                  <span style="font-size:10px;background:#eaf2ff;color:#2f4a75;padding:2px 7px;border-radius:12px;">Dabartinė vid. kaina: ${avgPrice.toFixed(2)} $/MWh</span>
+                  <span style="font-size:10px;background:#e8f8f0;color:#27ae60;padding:2px 7px;border-radius:12px;">Balansas: $${(myTeam.balance || 0).toLocaleString()}</span>
+                  ${roundProfitDisplay ? `<span style="font-size:10px;background:${roundProfitDisplay.color === '#27ae60' ? '#e8f8f0' : '#fef5e8'};color:${roundProfitDisplay.color};padding:2px 7px;border-radius:12px;">📈 D${viewRound} pelnas: ${roundProfitDisplay.sign}$${Math.abs(roundProfitDisplay.profit).toLocaleString()}</span>` : ''}
+                </div>
+
+
               <div class="bid-scroll">
                 <div class="bid-row header-row">
                   <span></span><span>Val.</span><span>Net MW</span><span>Iš viso MW</span><span>Statymų #</span><span>Talpa Prieš</span><span>Po</span>
@@ -1384,39 +1490,6 @@
               </div>
               <div id="bidErrors" style="margin-top:6px;"></div>
             </div>
-
-            <!-- STATUS -->
-            <div class="status-bar">
-              <div class="stat-chip">
-                <span class="v">D${viewRound}${isReadOnly ? ' 🔒' : ''}</span>
-                <span class="l">Diena</span>
-              </div>
-              <div class="stat-sep"></div>
-              <div class="stat-chip">
-                <span class="v">${mp}<small style="font-size:9px;"> $/MWh</small></span>
-                <span class="l">Vid. kaina</span>
-              </div>
-              <div class="stat-sep"></div>
-              <div class="stat-chip">
-                <span class="v">${demand}</span>
-                <span class="l">Paklausa MW</span>
-              </div>
-              <div class="stat-sep"></div>
-              <div class="stat-chip">
-                <span class="v">${weather}</span>
-                <span class="l">Oras</span>
-              </div>
-              <div class="stat-sep"></div>
-              <div class="stat-chip">
-                <span class="v" style="color:#27ae60;">$${(myTeam.balance || 0).toLocaleString()}</span>
-                <span class="l">Balansas</span>
-              </div>
-              ${roundResult ? `<div class="stat-sep"></div><div class="stat-chip">
-                <span class="v" style="color:${roundResult.profit >= 0 ? '#27ae60' : '#e74c3c'}">${roundResult.profit >= 0 ? '+' : ''}$${Math.abs(roundResult.profit || 0).toLocaleString()}</span>
-                <span class="l">D${viewRound} pelnas</span>
-              </div>` : ''}
-            </div>
-
             <!-- ENERGY -->
             <div class="energy-card">
               <h3>Energijos portfelis (iki D${viewRound})</h3>
@@ -1454,7 +1527,35 @@
 
         function updateTotals() {
             let totalNetMW = 0, totalMW = 0, totalBids = 0;
-            let currentBattery = myTeam.batteryStored || 0;
+
+            // Calculate starting battery based on previous days
+            let currentBattery;
+            if (viewRound === 1) {
+                currentBattery = myTeam.batteryStored || 0;
+            } else {
+                // Calculate previous day's ending battery
+                const prevRound = viewRound - 1;
+                const prevRoundBids = (myTeam.bidRows || {})[prevRound] || [];
+                let prevBattery = myTeam.batteryStored || 0;
+                const batteryCapacity = myTeam.batteryCapacity || 100;
+
+                for (let i = 0; i < prevRoundBids.length; i++) {
+                    const hourBids = prevRoundBids[i];
+                    let netMW = 0;
+                    if (hourBids && hourBids.length) {
+                        for (const bid of hourBids) {
+                            if (bid && bid.price) {
+                                if (bid.type === 'buy') netMW += bid.mw;
+                                else if (bid.type === 'sell') netMW -= bid.mw;
+                            }
+                        }
+                    }
+                    prevBattery += netMW;
+                    prevBattery = Math.min(Math.max(prevBattery, 0), batteryCapacity);
+                }
+                currentBattery = prevBattery;
+            }
+
             const batteryCapacity = myTeam.batteryCapacity || session.maxPower || 100;
 
             for (let h = 0; h < NUM_HOURS; h++) {
@@ -1714,20 +1815,23 @@
         async function init() {
             await loadSession();
 
-            if (!session || !myTeam) return; // Errors handled in loadSession
+            if (!session || !myTeam) {
+                console.error('Session or team not loaded');
+                return;
+            }
 
             viewRound = session.currentRound || 1;
             const tb = document.getElementById('teamBadge');
             if (tb) tb.textContent = myTeam.name;
 
             renderRoundNav();
+
             renderRound();
 
             const sid = sessionStorage.getItem(KEYS.SESSION_ID);
             if (sid) {
                 startPlayerWS(sid);
             }
-
         }
 
         let playerWS = null;
