@@ -14,8 +14,7 @@
  */
 
 // For local development on Mac/Linux, 127.0.0.1 is more reliable than localhost (which might try IPv6)
-const API_BASE = (window.API_BASE || 'http://127.0.0.1:8000').replace(/\/$/, '');
-
+const API_BASE = (window.API_BASE || 'http://localhost:8000').replace(/\/$/, '');
 /**
  * WebSocket Base URL (derived from API_BASE)
  * Automatically converts http:// to ws:// and https:// to wss://

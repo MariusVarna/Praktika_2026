@@ -1091,24 +1091,55 @@
 
     <main>
         <!-- CREATE -->
-        <div id="create" class="tab-content active">
-            <div class="card">
-                <h2>Sukurti naują sesiją</h2>
-                <div class="fg full"><div><label>Žaidimo pavadinimas</label><input type="text" id="gameName" placeholder="pvz. Elektros rinka 2026"></div></div>
-                <div class="fg">
-                    <div><label>Pradžios diena</label><input type="number" id="startDay" value="1" min="1"></div>
-                    <div><label>Raundų skaičius</label><input type="number" id="numRounds" value="5" min="1" max="20"></div>
-                </div>
-                <div class="fg">
-                    <div><label>Maks. galia (MW)</label><input type="number" id="maxPower" value="100" min="1"></div>
-                    <div><label>Pralaidumas (MW)</label><input type="number" id="bandwidth" value="50" min="1"></div>
-                </div>
-                <div class="fg">
-                    <div><label>Efektyvumas (%)</label><input type="number" id="efficiency" value="85" min="1" max="100"></div>
-                    <div><label>Bauda ($/MWh)</label><input type="number" id="penaltyPrice" value="150" min="1"></div>
-                </div>
-                <button class="btn btn-primary btn-full" onclick="createSession()">Sukurti sesiją</button>
+        <div class="card">
+            <h2>Sukurti naują sesiją</h2>
+            <div class="fg full"><div><label>Žaidimo pavadinimas</label><input type="text" id="gameName" placeholder="pvz. Lithuanian Market 2026"></div></div>
+            <div class="fg">
+                <div><label>Pradžios diena</label><input type="number" id="startDay" value="1" min="1"></div>
+                <div><label>Trukmė dienomis</label><input type="number" id="numRounds" value="5" min="1" max="20"></div>
             </div>
+
+            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Rinkos botų parametrai</h3>
+            <div class="fg">
+                <div><label>Bazinė paklausa (MW)</label><input type="number" id="baseDemandMw" value="400" min="0" step="10"></div>
+                <div><label>Maksimali paklausa (MW)</label><input type="number" id="maxDemandMw" value="800" min="0" step="10"></div>
+            </div>
+            <div class="fg">
+                <div><label>Maks. vėjo galia (MW)</label><input type="number" id="maxWindMw" value="500" min="0" step="10"></div>
+                <div><label>Maks. saulės galia (MW)</label><input type="number" id="maxSolarMw" value="400" min="0" step="10"></div>
+            </div>
+            <div class="fg">
+                <div><label>Prognozės paklaida (0.00-1.00)</label><input type="number" id="forecastErrorMargin" value="0.15" min="0" max="1" step="0.01"></div>
+                <div></div>
+            </div>
+
+            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Komandų pradinės pozicijos</h3>
+            <div class="fg">
+                <div><label>Pradinis biudžetas (€)</label><input type="number" id="startBudget" value="10000" min="0" step="100"></div>
+                <div><label>Pradinė baterijos energija (MWh)</label><input type="number" id="batteryInitialMwh" value="50" min="0" step="5"></div>
+            </div>
+
+            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baterijos ir fiziniai apribojimai</h3>
+            <div class="fg">
+                <div><label>Maks. baterijos talpa (MWh)</label><input type="number" id="batteryMaxMwh" value="200" min="1" step="10"></div>
+                <div><label>Pralaidumas (MW/h)</label><input type="number" id="bandwidth" value="50" min="1" step="5"></div>
+            </div>
+            <div class="fg">
+                <div><label>Įkrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyCharge" value="0.9" min="0.01" max="1" step="0.01"></div>
+                <div><label>Iškrovimo efektyvumas (0.01-1.00)</label><input type="number" id="batteryEfficiencyDischarge" value="0.9" min="0.01" max="1" step="0.01"></div>
+            </div>
+
+            <h3 style="font-size:13px; margin-top:12px; margin-bottom:8px;">Baudos ir taisyklės</h3>
+            <div class="fg">
+                <div><label>Baudos kaina ($/MWh)</label><input type="number" id="penaltyPrice" value="150" min="0" step="10"></div>
+                <div><label>Baudos koeficientas k</label><input type="number" id="penaltyK" value="0.5" min="0" step="0.1"></div>
+            </div>
+            <div class="fg">
+                <div><label>Baudos koeficientas b</label><input type="number" id="penaltyB" value="5" min="0" step="1"></div>
+                <div><label><input type="checkbox" id="proRataEnabled" style="width:auto; margin-right:6px;"> Pro-Rata įjungta</label></div>
+            </div>
+
+            <button class="btn btn-primary btn-full" onclick="createSession()">Sukurti sesiją</button>
         </div>
 
         <!-- ACTIVE LIST -->
@@ -1185,6 +1216,8 @@
                         round_id: latestRound ? latestRound.id : null
                     };
                 };
+                /*
+                */
                 sessions = results.filter(s => s.status !== 'finished').map(mapSession);
                 prevSessions = results.filter(s => s.status === 'finished').map(mapSession);
 
@@ -1206,6 +1239,7 @@
                         console.log('[AdminWS] Message:', data);
                         if (data.event === 'TEAM_JOINED' || data.event === 'BID_SUBMITTED') {
                             loadState(); // Refresh everything
+                            renderManage(); 
                         }
                     }
                 });
@@ -1231,30 +1265,39 @@
         async function createSession() {
             const gn = document.getElementById('gameName').value.trim();
             if (!gn) { toast('Įveskite žaidimo pavadinimą'); return; }
-            
+
             const payload = {
                 gameName: gn,
                 startDay: +document.getElementById('startDay').value || 1,
-                numRounds: +document.getElementById('numRounds').value || 5,
-                maxPower: +document.getElementById('maxPower').value || 100,
+                duration_days: +document.getElementById('numRounds').value || 5,
+                base_demand_mw: +document.getElementById('baseDemandMw').value || 400,
+                max_demand_mw: +document.getElementById('maxDemandMw').value || 800,
+                max_wind_mw: +document.getElementById('maxWindMw').value || 500,
+                max_solar_mw: +document.getElementById('maxSolarMw').value || 400,
+                forecast_error_margin: +document.getElementById('forecastErrorMargin').value || 0.15,
+                start_budget: +document.getElementById('startBudget').value || 10000,
+                battery_initial_mwh: +document.getElementById('batteryInitialMwh').value || 50,
+                battery_max_mwh: +document.getElementById('batteryMaxMwh').value || 200,
                 bandwidth: +document.getElementById('bandwidth').value || 50,
-                efficiency: +document.getElementById('efficiency').value || 85,
-                penaltyPrice: +document.getElementById('penaltyPrice').value || 150,
-                startBudget: +document.getElementById('startBudget')?.value || 10000,
-                penaltyK: 0.5,
-                penaltyB: 5.0
+                battery_efficiency_charge: +document.getElementById('batteryEfficiencyCharge').value || 0.9,
+                battery_efficiency_discharge: +document.getElementById('batteryEfficiencyDischarge').value || 0.9,
+                penalty_price: +document.getElementById('penaltyPrice').value || 150,
+                penalty_k: +document.getElementById('penaltyK').value || 0.5,
+                penalty_b: +document.getElementById('penaltyB').value || 5,
+                pro_rata_enabled: document.getElementById('proRataEnabled').checked
             };
 
             try {
                 const newSession = await API.Sessions.create(payload);
                 toast('Sesija sukurta! PIN: ' + newSession.join_code);
-                document.getElementById('gameName').value = '';
+                // Clear form or keep as is? Optional reset
+                // document.getElementById('gameName').value = '';
                 await loadState();
                 switchTab('active', document.querySelectorAll('.tbtn')[1]);
             } catch (err) {
                 toast('Klaida kūrant sesiją: ' + err.message);
             }
-        }
+        }/
         // ── ACTIVE LIST ────────────────────────────────
         function renderActiveSessions() {
             const el = document.getElementById('activeList');
@@ -1408,14 +1451,14 @@
             if (!rid) { toast('Nerastas raundo ID'); return; }
 
             try {
-                toast('🧮 Skaičiuojami rezultatai...');
+                toast('Skaičiuojami rezultatai...');
                 const result = await API.Admin.calculateRound(id, rid);
-                toast('✅ Raundas baigtas');
+                toast('Raundas baigtas');
                 await loadState();
                 renderManage();
                 
                 if (result.session_finished) {
-                    toast('🏁 Sesija baigta!');
+                    toast('Sesija baigta!');
                 } else {
                     // Auto-advance to next round in state (optional, or wait for explicit click)
                     // await API.Admin.nextRound(id);

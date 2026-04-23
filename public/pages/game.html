@@ -234,8 +234,8 @@ async function loadSession() {
                 }
                 myTeam.bidRows[rNum][b.hour].push({
                     price: b.price,
-                    mw: b.mw,
-                    type: b.type
+                    mw: b.volume_mwh,
+                    type: b.bid_type ? 'buy' : 'sell'
                 });
                 
                 if (!myTeam.bids.some(x => x.round === rNum)) {
@@ -1448,7 +1448,8 @@ async function submitBids() {
   try {
     const rid = session.round_id || (session.rounds && session.rounds.length ? session.rounds[session.rounds.length-1].id : null);
     await API.Bids.submit(myTeam.id, rid, formattedBids);
-    toast('Pasiūlymai sėkmingai pateikti!');
+      toast('Pasiūlymai sėkmingai pateikti!');
+      await API.Sessions.get(session.id);
     if (!myTeam.bids) myTeam.bids = [];
     myTeam.bids.push({ round: session.currentRound, submitted: true });
     editingSubmitted = false;
