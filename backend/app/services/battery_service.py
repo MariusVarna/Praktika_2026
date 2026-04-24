@@ -11,62 +11,87 @@ class BatteryService:
     """
     
     @staticmethod
-    def apply_charge(current_battery_mwh: float, charge_needed: float, battery_max_mwh: float, bandwidth_mw: float = 1e9, efficiency: float = 1.0) -> tuple[float, bool, float]:
+    def apply_charge(current_battery_mwh: float, charge_needed_grid: float, battery_max_mwh: float, bandwidth_mw: float = 1e9, efficiency: float = 1.0) -> tuple[float, bool, float]:
         """Apply charging with efficiency factor and bandwidth constraint.
         
         Args:
-            current_battery_mwh: Current battery level (MWh)
-            charge_needed: Energy to charge (already efficiency-adjusted via calculate_charge_needed, MWh)
+            current_battery_mwh: Current battery level (MWh in battery)
+            charge_needed_grid: Energy to charge from grid (MWh, already efficiency-adjusted via calculate_charge_needed)
             battery_max_mwh: Battery capacity limit (MWh)
             bandwidth_mw: Max charge rate allowed (MW/h)
             efficiency: Charging efficiency (0-1)
             
         Returns:
-            (new_battery_level, charge_succeeded, actual_delivered_mwh) - 
+            (new_battery_level, charge_succeeded, actual_delivered_market_mwh) - 
             succeeded=False if over-capacity or over-bandwidth
-            actual_delivered_mwh is the actual amount that was charged (may be less than requested)
+            actual_delivered_market_mwh is the actual amount that was charged in MARKET units (MWh bought)
         """
-        effective_bandwidth = min(charge_needed, bandwidth_mw)
-        
-        if effective_bandwidth <= 0:
+        # Input validation
+        if efficiency <= 0 or efficiency > 1.0:
+            raise ValueError(f"Invalid efficiency: {efficiency}")
+        if bandwidth_mw <= 0:
             return current_battery_mwh, True, 0.0
-
-        new_level = current_battery_mwh + effective_bandwidth
-        if new_level <= battery_max_mwh:
-            return round(new_level, 4), True, round(effective_bandwidth, 4)
+        
+        # Limit by bandwidth (in grid units)
+        effective_grid_mwh = min(charge_needed_grid, bandwidth_mw)
+        
+        if effective_grid_mwh <= 0:
+            return current_battery_mwh, True, 0.0
+        
+        # Convert to battery units for capacity check
+        effective_battery_mwh = effective_grid_mwh * efficiency
+        
+        if current_battery_mwh + effective_battery_mwh <= battery_max_mwh:
+            # All fits
+            new_level = current_battery_mwh + effective_battery_mwh
+            # Return in MARKET units (MWh bought/sold)
+            return round(new_level, 4), True, round(effective_battery_mwh, 4)
         else:
+            # Partial - only what fits in battery
             space_available = battery_max_mwh - current_battery_mwh
-            actual_charged = min(space_available, effective_bandwidth)
-            new_level = current_battery_mwh + actual_charged
-            return round(new_level, 4), False, round(actual_charged, 4)
+            actual_battery = min(space_available, effective_battery_mwh)
+            new_level = current_battery_mwh + actual_battery
+            # Return in MARKET units
+            return round(new_level, 4), False, round(actual_battery, 4)
 
     @staticmethod
-    def apply_discharge(current_battery_mwh: float, discharge_needed: float, bandwidth_mw: float = 1e9, efficiency: float = 1.0) -> tuple[float, bool, float]:
+    def apply_discharge(current_battery_mwh: float, discharge_needed_battery: float, bandwidth_mw: float = 1e9, efficiency: float = 1.0) -> tuple[float, bool, float]:
         """Apply discharging with constraint and bandwidth validation.
         
         Args:
-            current_battery_mwh: Current battery level (MWh)
-            discharge_needed: Energy to discharge (already efficiency-adjusted via calculate_discharge_available, MWh)
+            current_battery_mwh: Current battery level (MWh in battery)
+            discharge_needed_battery: Energy to discharge from battery (MWh, already efficiency-adjusted via calculate_discharge_available)
             bandwidth_mw: Max discharge rate allowed (MW/h)
             efficiency: Discharging efficiency (0-1)
             
         Returns:
-            (new_battery_level, discharge_succeeded, actual_delivered_mwh) -
+            (new_battery_level, discharge_succeeded, actual_delivered_market_mwh) -
             succeeded=False if insufficient battery or over-bandwidth
-            actual_delivered_mwh is the actual amount that was discharged (may be less than requested)
+            actual_delivered_market_mwh is the actual amount that was discharged in MARKET units (MWh sold)
         """
-        effective_bandwidth = min(discharge_needed, bandwidth_mw)
-        
-        if effective_bandwidth <= 0:
+        # Input validation
+        if efficiency <= 0 or efficiency > 1.0:
+            raise ValueError(f"Invalid efficiency: {efficiency}")
+        if bandwidth_mw <= 0:
             return current_battery_mwh, True, 0.0
-
-        if current_battery_mwh >= effective_bandwidth:
-            new_level = current_battery_mwh - effective_bandwidth
-            return round(new_level, 4), True, round(effective_bandwidth, 4)
+        
+        # Limit by bandwidth (in battery units)
+        effective_battery_mwh = min(discharge_needed_battery, bandwidth_mw)
+        
+        if effective_battery_mwh <= 0:
+            return current_battery_mwh, True, 0.0
+        
+        if current_battery_mwh >= effective_battery_mwh:
+            # All can be discharged
+            new_level = current_battery_mwh - effective_battery_mwh
+            # Convert to MARKET units (multiply by efficiency)
+            return round(new_level, 4), True, round(effective_battery_mwh * efficiency, 4)
         else:
-            actual_discharged = current_battery_mwh
+            # Only part can be discharged
+            actual_battery = current_battery_mwh
             new_level = 0.0
-            return round(new_level, 4), False, round(actual_discharged, 4)
+            # Convert to MARKET units
+            return round(new_level, 4), False, round(actual_battery * efficiency, 4)
 
     @staticmethod
     def calculate_charge_needed(filled_volume_mwh: float, efficiency_charge: float) -> float:
@@ -77,7 +102,7 @@ class BatteryService:
             efficiency_charge: Battery charging efficiency (0-1)
             
         Returns:
-            Energy needed from grid (accounting for efficiency loss)
+            Energy needed from grid (MWh, accounting for efficiency loss)
         """
         if efficiency_charge <= 0:
             return filled_volume_mwh
@@ -92,7 +117,7 @@ class BatteryService:
             efficiency_discharge: Battery discharging efficiency (0-1)
             
         Returns:
-            Required battery depletion (accounting for efficiency loss)
+            Required battery depletion (MWh from battery, accounting for efficiency loss)
         """
         if efficiency_discharge <= 0:
             return filled_volume_mwh
