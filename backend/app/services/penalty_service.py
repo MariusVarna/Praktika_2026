@@ -10,21 +10,26 @@ class PenaltyService:
     """
     
     @staticmethod
-    def calculate_total_penalty(charge_success: bool, discharge_success: bool, 
-                               filled_volume_mwh: float, penalty_k: float, penalty_b: float) -> float:
-        """Calculate total penalty using physical violation linear model (k*v + b).
+    def calculate_penalty(unfilled_volume_mwh: float, clearing_price: float,
+                          penalty_price: float, penalty_k: float, penalty_b: float) -> float:
+        """Calculate penalty using unfilled volume with fixed and dynamic components.
+        
+        Formula: penalty = (unfilled * penalty_price) + (unfilled * (clearing_price * k + b))
         
         Args:
-            charge_success: Whether charge operation succeeded
-            discharge_success: Whether discharge operation succeeded
-            filled_volume_mwh: Volume that was filled in market (MWh)
-            penalty_k: Slope coefficient for violation volume (€/MWh)
-            penalty_b: Base penalty floor for any violation (€)
+            unfilled_volume_mwh: Volume that could not be physically delivered (MWh)
+            clearing_price: Market clearing price (€/MWh)
+            penalty_price: Fixed penalty per unfilled MWh (€/MWh)
+            penalty_k: Slope coefficient for dynamic penalty (€/MWh per €/MWh)
+            penalty_b: Base penalty for any violation (€)
             
         Returns:
-            Total penalty amount (€), 0 if no violation
+            Total penalty amount (€)
         """
-        if (not charge_success) or (not discharge_success):
-            # Physics violation: battery hit limit (SOC 0 or 100)
-            return round((penalty_k * filled_volume_mwh) + penalty_b, 2)
-        return 0.0
+        if unfilled_volume_mwh <= 0:
+            return 0.0
+        
+        fixed_penalty = unfilled_volume_mwh * penalty_price
+        dynamic_penalty = unfilled_volume_mwh * (clearing_price * penalty_k + penalty_b)
+        
+        return round(fixed_penalty + dynamic_penalty, 2)

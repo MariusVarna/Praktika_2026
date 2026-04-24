@@ -190,6 +190,13 @@ class RoundService:
         
         Uses extracted services: BatteryService (physics), PenaltyService (penalties)
         This maintains Single Responsibility Principle - this method coordinates, services execute.
+        
+        Flow:
+        1. Get fill_volume from market
+        2. Apply battery physics (capacity + bandwidth)
+        3. Calculate profit on actual_delivered (always, regardless of physics success)
+        4. Calculate penalty on unfilled = fill_volume - actual_delivered
+        5. Update total_profit = previous + profit - penalty
         """
         for bid in bids:
             ts = team_states.get(bid.user_id)
@@ -199,37 +206,44 @@ class RoundService:
             if fill_volume <= 1e-12: continue
 
             profit = 0.0
-            charge_success = True
-            discharge_success = True
+            actual_delivered = 0.0
 
             if bid.bid_type:
                 # Battery Charging Physics using BatteryService
                 charge_needed = self.battery_service.calculate_charge_needed(fill_volume, session.battery_efficiency_charge)
-                ts.current_battery_mwh, charge_success = self.battery_service.apply_charge(
+                ts.current_battery_mwh, charge_success, actual_delivered = self.battery_service.apply_charge(
                     ts.current_battery_mwh, 
                     charge_needed, 
                     session.battery_max_mwh,
-                    session.bandwidth
+                    session.bandwidth,
+                    session.battery_efficiency_charge
                 )
-                if charge_success:
-                    profit = round(-(fill_volume * result.clearing_price), 2)
+                # Calculate profit on actual delivered (always, regardless of physics success)
+                profit = round(-(actual_delivered * result.clearing_price), 2)
             
             elif not bid.bid_type:
                 # Battery Discharging Physics using BatteryService
                 discharge_needed = self.battery_service.calculate_discharge_available(fill_volume, session.battery_efficiency_discharge)
-                ts.current_battery_mwh, discharge_success = self.battery_service.apply_discharge(
+                ts.current_battery_mwh, discharge_success, actual_delivered = self.battery_service.apply_discharge(
                     ts.current_battery_mwh, 
                     discharge_needed,
-                    session.bandwidth
+                    session.bandwidth,
+                    session.battery_efficiency_discharge
                 )
-                if discharge_success:
-                    profit = round(fill_volume * result.clearing_price, 2)
+                # Calculate profit on actual delivered (always, regardless of physics success)
+                profit = round(actual_delivered * result.clearing_price, 2)
 
-            # Calculate total penalty (Physical violation linear model: k*v + b)
-            total_penalty = self.penalty_service.calculate_total_penalty(
-                charge_success, discharge_success, fill_volume, session.penalty_k, session.penalty_b
+            # Calculate unfilled volume and penalty
+            unfilled_volume = fill_volume - actual_delivered
+            total_penalty = self.penalty_service.calculate_penalty(
+                unfilled_volume,
+                result.clearing_price,
+                session.penalty_price,
+                session.penalty_k,
+                session.penalty_b
             )
 
+            # Update total profit: previous + profit - penalty
             ts.total_profit = round(float(ts.total_profit) + profit - total_penalty, 2)
             self.db.add(ts)
 
