@@ -15,3 +15,24 @@ def register_admin(admin_in: schemas.AdminCreate, db: Session = Depends(get_db))
 def login_admin(login_in: schemas.AdminLogin, db: Session = Depends(get_db)):
     service = AdminService(db)
     return service.login_admin(login_in)
+
+@router.post("/setup-first-admin")
+async def setup_first_admin(
+    username: str,
+    password: str,
+    db: Session = Depends(get_db)
+):
+    """Create first admin (only works if no admins exist)"""
+    # Check if any admin exists
+    existing = db.query(Admin).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Admin already exists")
+    
+    # Hash password and create admin
+    hashed = pwd_context.hash(password)
+    admin = Admin(username=username, hashed_password=hashed)
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+    
+    return {"message": "Admin created successfully", "username": admin.username}
