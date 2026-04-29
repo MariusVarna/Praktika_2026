@@ -3,7 +3,7 @@ services:
     name: energy-trading-backend
     runtime: python
     region: frankfurt
-    plan: starter
+    plan: free
     buildCommand: cd backend && pip install -r requirements.txt
     startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -20,6 +20,6 @@ services:
 
 databases:
   - name: energy-trading-db
-    plan: starter
+    plan: free
     databaseName: energy_trading
     user: energy_user
