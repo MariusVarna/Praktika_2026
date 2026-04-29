@@ -184,12 +184,6 @@
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script>
-        // ══════════════════════════════════════════════
-        // DATA MODEL
-        // round = one full day
-        // bidRows[round] = array of 24 arrays of objects: [[{price, mw, type}, ...], ...]
-        // marketPrices[round] = array of 24 numbers (market price per hour)
-        // ══════════════════════════════════════════════
         const NUM_HOURS = 24;
 
         let session = null, myTeam = null, viewRound = 1, editingSubmitted = false;
@@ -226,31 +220,38 @@
                 console.log('Team bids:', teamData?.bids);
                 console.log('Team bidRows from backend:', teamData?.bidRows);
 
+                const storedInitialBattery = 20;
                 // Create myTeam object
                 myTeam = {
                     id: uid,
                     name: teamData ? teamData.name : sessionStorage.getItem(KEYS.TEAM_NAME),
                     balance: state.total_profit,
+                    initialBalance: myTeam?.initialBalance || (session.initial_balance || 10000),
+                    initialBattery: parseFloat(storedInitialBattery),
                     batteryStored: state.current_battery_mwh,
                     batteryCapacity: session.battery_max_mwh || 100,
                     bids: [],
                     bidRows: {},
                     roundHistory: []
                 };
+                console.log('myTeam.batteryStored:', myTeam.batteryStored);
+
+                if (state.round_history && Array.isArray(state.round_history)) {
+                    myTeam.roundHistory = state.round_history;
+                } else {
+                    myTeam.roundHistory = [];
+                }
 
                 // Use bidRows directly if available
                 if (teamData && teamData.bidRows) {
                     console.log('Using bidRows directly from backend');
-                    // Deep copy the bidRows structure
                     myTeam.bidRows = JSON.parse(JSON.stringify(teamData.bidRows));
 
-                    // Also mark rounds as submitted
                     Object.keys(myTeam.bidRows).forEach(roundNum => {
                         if (!myTeam.bids.some(b => b.round === parseInt(roundNum))) {
                             myTeam.bids.push({ round: parseInt(roundNum), submitted: true });
                         }
                     });
-
                     console.log('Loaded bidRows:', myTeam.bidRows);
                 }
                 // Fallback Build bidRows from bids if bidRows not available
@@ -276,116 +277,321 @@
                 }
 
                 // Load market prices for all rounds
+                console.log('Loading market prices for rounds:', session.rounds);
                 for (const rObj of (session.rounds || [])) {
                     try {
                         let prices = null;
+                        console.log(`Processing round ${rObj.round_number} with status: ${rObj.status}`);
 
                         if (rObj.status === 'calculated') {
                             const res = await API.Admin.getResults(sid, rObj.id);
+                            console.log(`Results for round ${rObj.round_number}:`, res);
                             if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
-                                prices = res.market_clearing.map(mc => mc.clearing_price || mc.price);
-                                console.log(`Loaded REAL prices for round ${rObj.round_number}`);
-                            }
-                        } else if (rObj.status === 'bidding') {
-                            const res = await API.Sessions.getForecast(sid, rObj.id);
-                            if (res && res.forecast && Array.isArray(res.forecast)) {
-                                prices = res.forecast.map(f => f.predicted_price || f.price);
-                                console.log(`Loaded FORECAST prices for round ${rObj.round_number}`);
+                                const priceMap = new Array(24).fill(null);
+                                res.market_clearing.forEach(mc => {
+                                    if (mc.hour !== undefined && mc.clearing_price !== undefined) {
+                                        priceMap[mc.hour] = mc.clearing_price;
+                                    }
+                                });
+                                const defaultPrice = session.market_price || session.marketPrice || 70;
+                                for (let i = 0; i < 24; i++) {
+                                    if (priceMap[i] === null) priceMap[i] = defaultPrice;
+                                }
+                                prices = priceMap;
+                                console.log(`Loaded REAL prices for round ${rObj.round_number}:`, prices.slice(0, 5));
                             }
                         }
 
-                        if (prices && prices.length === 24) {
-                            session.marketPrices[rObj.round_number] = prices;
-                        } else {
-                            const defaultPrice = session.market_price || session.marketPrice || 70;
-                            session.marketPrices[rObj.round_number] = Array(24).fill(defaultPrice);
+                        if (!prices && (rObj.status === 'bidding' || rObj.status === 'pending')) {
+                            try {
+                                const res = await API.Sessions.getForecast(sid, rObj.id);
+                                console.log(`Forecast for round ${rObj.round_number}:`, res);
+                                if (res && res.forecast && Array.isArray(res.forecast) && res.forecast.length > 0) {
+                                    prices = res.forecast.map(f => f.predicted_price || f.price || session.market_price || 70);
+                                    console.log(`Loaded FORECAST prices for round ${rObj.round_number}:`, prices.slice(0, 5));
+                                } else if (res && res.prices && Array.isArray(res.prices)) {
+                                    prices = res.prices;
+                                    console.log(`Loaded prices from alternative format for round ${rObj.round_number}`);
+                                }
+                            } catch (forecastErr) {
+                                console.warn(`Forecast API failed for round ${rObj.round_number}:`, forecastErr);
+                            }
                         }
+
+                        if (!prices || prices.length !== 24) {
+                            const defaultPrice = session.market_price || session.marketPrice || 70;
+                            prices = Array(24).fill(defaultPrice);
+                            console.log(`Using DEFAULT prices for round ${rObj.round_number}: all ${defaultPrice}`);
+                        }
+
+                        prices = prices.map(p => (typeof p === 'number' && !isNaN(p)) ? p : (session.market_price || 70));
+                        session.marketPrices[rObj.round_number] = prices;
+
                     } catch (err) {
-                        console.warn(`Failed to load prices for round ${rObj.round_number}:`, err);
+                        console.error(`Failed to load prices for round ${rObj.round_number}:`, err);
                         const defaultPrice = session.market_price || session.marketPrice || 70;
                         session.marketPrices[rObj.round_number] = Array(24).fill(defaultPrice);
                     }
                 }
 
                 // Ensure current round has prices
-                if (latestRound && !session.marketPrices[latestRound.round_number]) {
+                if (latestRound && (!session.marketPrices[latestRound.round_number] ||
+                    session.marketPrices[latestRound.round_number].every(p => p === (session.market_price || 70)))) {
                     try {
                         const res = await API.Sessions.getForecast(sid, latestRound.id);
-                        if (res && res.forecast) {
-                            session.marketPrices[latestRound.round_number] = res.forecast.map(f => f.predicted_price);
+                        if (res && res.forecast && Array.isArray(res.forecast)) {
+                            const prices = res.forecast.map(f => f.predicted_price || f.price || session.market_price || 70);
+                            session.marketPrices[latestRound.round_number] = prices;
+                            console.log(`Loaded current round ${latestRound.round_number} forecast prices`);
                         }
                     } catch (err) {
                         console.warn('Failed to load current round forecast:', err);
                     }
                 }
 
+                console.log('Final market prices loaded:', session.marketPrices);
+
             } catch (e) {
                 console.error('Failed to load session/state:', e);
                 toast('Klaida užkraunant duomenis');
             }
         }
+        /*
+        function getRoundProfit(round) {
+            if (myTeam.roundHistory) {
+                const rhMatch = myTeam.roundHistory.find(r => r.round === round);
+                if (rhMatch && rhMatch.profit !== undefined) {
+                    return rhMatch.profit;
+                }
+            }
+            console.error(`No profit data available for round ${round} from backend`);
+            return null;
+        }
+        */
+        function calculateHourlyProfitFromBids(round, hour, bids, marketPrice) {
+            let hourProfit = 0;
+            let hourVolume = 0;
+
+            for (const bid of bids) {
+                if (bid.type === 'buy') {
+                    hourProfit -= bid.mw * bid.price;
+                    hourVolume += bid.mw;
+                } else {
+                    hourProfit += bid.mw * bid.price;
+                    hourVolume -= bid.mw;
+                }
+            }
+
+            // Add market settlement for net position
+            hourProfit += hourVolume * marketPrice;
+            
+            return hourProfit;
+        }
+
+        function calculatePenalty(round, hourlyNetPositions, marketPrices) {
+            // Get penalty parameters from session
+            const penaltyPrice = session.penalty_price || 0;
+            const penaltyK = session.penalty_k || 0;
+            const penaltyB = session.penalty_b || 0;
+
+            console.log(`=== PENALTY CALCULATION FOR ROUND ${round} ===`);
+            console.log(`Penalty params: price=${penaltyPrice}, k=${penaltyK}, b=${penaltyB}`);
+            console.log(`Hourly net positions:`, hourlyNetPositions);
+
+            if (penaltyPrice === 0 && penaltyK === 0 && penaltyB === 0) {
+                console.log('No penalty parameters set, returning 0');
+                return 0;
+            }
+
+            let totalPenalty = 0;
+            const batteryCapacity = myTeam.batteryCapacity || 100;
+            let currentBattery = getStartingBatteryForRound(round);
+
+            console.log(`Battery capacity: ${batteryCapacity}`);
+            console.log(`Starting battery for round ${round}: ${currentBattery}`);
+
+            for (let hour = 0; hour < 24; hour++) {
+                const netMW = hourlyNetPositions[hour];
+                let batteryAfter = currentBattery + netMW;
+                let unfilledVolume = 0;
+
+                //console.log(`\nHour ${hour}:`);
+                //console.log(`  Battery before: ${currentBattery}`);
+                //console.log(`  Net MW: ${netMW}`);
+               // console.log(`  Battery would become: ${batteryAfter}`);
+
+               /*
+                if (batteryAfter < 0) {
+                    unfilledVolume = -batteryAfter;
+                    batteryAfter = 0;
+                    console.log(`  Below 0! Unfilled volume: ${unfilledVolume}`);
+                } else if (batteryAfter > batteryCapacity) {
+                    unfilledVolume = batteryAfter - batteryCapacity;
+                    batteryAfter = batteryCapacity;
+                    console.log(`  Above capacity! Unfilled volume: ${unfilledVolume}`);
+                } else {
+                    console.log(`  Within bounds (0-${batteryCapacity})`);
+                }
+                */
+               /*
+                if (unfilledVolume > 0) {
+                    const penaltyRate = penaltyPrice + (penaltyK * marketPrices[hour] + penaltyB);
+                    const hourPenalty = unfilledVolume * penaltyRate;
+                    totalPenalty += hourPenalty;
+                    console.log(`  Penalty this hour: ${unfilledVolume} × ${penaltyRate} = ${hourPenalty}`);
+                    console.log(`  Total penalty so far: ${totalPenalty}`);
+                }
+                */
+                currentBattery = batteryAfter;
+                //console.log(`  Battery after hour ${hour}: ${currentBattery}`);
+            }
+
+            console.log(`\n=== TOTAL PENALTY FOR ROUND ${round}: ${totalPenalty} ===`);
+            return totalPenalty;
+        }
+
+        function getStartingBatteryForRound(round) {
+            if (round === 1) {
+                return myTeam.initialBattery || 20;
+            }
+
+            let battery = myTeam.initialBattery || 20;
+            const batteryCapacity = myTeam.batteryCapacity || 100;
+
+            for (let r = 1; r < round; r++) {
+                const bids = (myTeam.bidRows || {})[r] || [];
+                for (let hour = 0; hour < 24; hour++) {
+                    const hourBids = bids[hour] || [];
+                    let netMW = 0;
+                    for (const bid of hourBids) {
+                        if (bid.type === 'buy') netMW += bid.mw;
+                        else if (bid.type === 'sell') netMW -= bid.mw;
+                    }
+                    battery += netMW;
+                    battery = Math.min(Math.max(battery, 0), batteryCapacity);
+                }
+            }
+
+            console.log(`Starting battery for round ${round}: ${battery}`);
+            return battery;
+        }
+
+
+        function calculateRoundProfitFrontend(round) {
+            const bids = (myTeam.bidRows || {})[round] || [];
+            const marketPrices = session.marketPrices[round] || Array(24).fill(70);
+
+            let totalProfit = 0;
+            const hourlyNetPositions = [];
+
+            for (let hour = 0; hour < 24; hour++) {
+                const hourBids = bids[hour] || [];
+                let netMW = 0;
+                let hourProfit = 0;
+                const clearingPrice = marketPrices[hour];
+
+                for (const bid of hourBids) {
+                    if (bid.type === 'buy') {
+                        hourProfit -= bid.mw * clearingPrice;
+                        netMW += bid.mw;
+                        console.log(`Hour ${hour}: BUY ${bid.mw}MW executed at ${clearingPrice} -> profit: -${bid.mw * clearingPrice}, netMW: ${netMW}`);
+                    } else {
+                        hourProfit += bid.mw * clearingPrice;
+                        netMW -= bid.mw;
+                        console.log(`Hour ${hour}: SELL ${bid.mw}MW executed at ${clearingPrice} -> profit: +${bid.mw * clearingPrice}, netMW: ${netMW}`);
+                    }
+                }
+                totalProfit += hourProfit;
+                hourlyNetPositions.push(netMW);
+            }
+
+            const penalty = calculatePenalty(round, hourlyNetPositions, marketPrices);
+            totalProfit -= penalty;
+
+            return Math.round(totalProfit);
+        }
+        
+        function getRoundProfit(round) {
+            // Try backend first
+            if (myTeam.roundHistory) {
+                const rhMatch = myTeam.roundHistory.find(r => r.round === round);
+                if (rhMatch && rhMatch.profit !== undefined && rhMatch.profit !== null) {
+                    return rhMatch.profit;
+                }
+            }
+
+            // Fallback to frontend calculation
+            console.warn(`Using frontend calculation for round ${round} profit`);
+            return calculateRoundProfitFrontend(round);
+        }
+        
+        function getBalanceBeforeDay(round) {
+            if (round === 1) {
+                return myTeam.initialBalance || 0;
+            }
+
+            let balance = myTeam.initialBalance || 0;
+            for (let r = 1; r < round; r++) {
+                const roundProfit = getRoundProfit(r);
+                if (roundProfit !== null && roundProfit !== undefined) {
+                    balance += roundProfit;
+                }
+            }
+            return balance;
+        }
+
+        function getBalanceAfterDay(round) {
+            const beforeBalance = getBalanceBeforeDay(round);
+            const roundProfit = getRoundProfit(round);
+            if (roundProfit === null || roundProfit === undefined) {
+                return beforeBalance;
+            }
+            return beforeBalance + roundProfit;
+        }
         async function getMarketPricesForRound(round) {
             if (!session.marketPrices) session.marketPrices = {};
 
-            // Return cached
-            if (session.marketPrices[round]) {
+            if (session.marketPrices[round] && session.marketPrices[round].some(p => p !== (session.market_price || 70))) {
                 return session.marketPrices[round];
             }
 
-            // Find round object
             const roundObj = (session.rounds || []).find(r => r.round_number === round);
-            let prices = Array(24).fill(null);
-            const defaultPrice = session.market_price || session.marketPrice || 70;
-
-            if (roundObj && roundObj.id) {
-                try {
-                    if (roundObj.status === 'calculated') {
-                        const res = await API.Admin.getResults(session.id, roundObj.id);
-                        console.log(`[Player] Results for round ${round}:`, res);
-
-                        if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
-                            const priceMap = {};
-                            res.market_clearing.forEach(mc => {
-                                if (mc.hour !== undefined && mc.clearing_price !== undefined) {
-                                    priceMap[mc.hour] = mc.clearing_price;
-                                }
-                            });
-
-                            for (let i = 0; i < 24; i++) {
-                                if (priceMap[i] !== undefined) {
-                                    prices[i] = priceMap[i];
-                                }
-                            }
-                        }
-                    } else if (roundObj.status === 'bidding') {
-                        const res = await API.Sessions.getForecast(session.id, roundObj.id);
-                        console.log(`[Player] Forecast for round ${round}:`, res);
-
-                        if (res && res.forecast && Array.isArray(res.forecast)) {
-                            prices = res.forecast.map(f => f.predicted_price || f.price || defaultPrice);
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`Failed to get prices for round ${round}:`, e);
-                }
+            if (!roundObj || !roundObj.id) {
+                const defaultPrice = session.market_price || session.marketPrice || 70;
+                return Array(24).fill(defaultPrice);
             }
 
-            // Fill missing values
-            const hasValidPrices = prices.some(p => p !== null && p !== undefined && !isNaN(p));
-            if (!hasValidPrices) {
-                prices = Array(24).fill(defaultPrice);
-            } else {
-                for (let i = 0; i < prices.length; i++) {
-                    if (prices[i] === null || prices[i] === undefined || isNaN(prices[i])) {
-                        if (i > 0 && prices[i - 1] !== null) {
-                            prices[i] = prices[i - 1];
-                        } else if (i < prices.length - 1 && prices[i + 1] !== null) {
-                            prices[i] = prices[i + 1];
-                        } else {
-                            prices[i] = defaultPrice;
+            let prices = null;
+            const defaultPrice = session.market_price || session.marketPrice || 70;
+
+            try {
+                if (roundObj.status === 'calculated') {
+                    const res = await API.Admin.getResults(session.id, roundObj.id);
+                    if (res && res.market_clearing && Array.isArray(res.market_clearing)) {
+                        prices = new Array(24);
+                        res.market_clearing.forEach(mc => {
+                            if (mc.hour !== undefined && mc.clearing_price !== undefined) {
+                                prices[mc.hour] = mc.clearing_price;
+                            }
+                        });
+                        for (let i = 0; i < 24; i++) {
+                            if (prices[i] === undefined || prices[i] === null) {
+                                prices[i] = defaultPrice;
+                            }
                         }
                     }
+                } else if (roundObj.status === 'bidding') {
+                    const res = await API.Sessions.getForecast(session.id, roundObj.id);
+                    if (res && res.forecast && Array.isArray(res.forecast)) {
+                        prices = res.forecast.map(f => f.predicted_price || f.price || defaultPrice);
+                    }
                 }
+            } catch (e) {
+                console.warn(`Failed to get prices for round ${round}:`, e);
+            }
+
+            if (!prices || prices.length !== 24) {
+                prices = Array(24).fill(defaultPrice);
             }
 
             session.marketPrices[round] = prices;
@@ -592,18 +798,12 @@
                     roundProfit = Math.round(sellRev - buyCost + net * (session.market_price || 70));
                 }
             }
+
             const roundResult = isReadOnly ? { profit: roundProfit } : null;
-
-            // Calculate battery state for each hour using the correct starting point
             let currentBattery;
-
-            // For the current round or any round, we need the starting battery
             if (viewRound === 1) {
-                // Day 1 starts with the initial battery amount
                 currentBattery = myTeam.batteryStored || 0;
             } else {
-                // For day > 1, we need to calculate the battery level from the previous day's trading
-                // First, get the previous round's ending battery
                 const prevRound = viewRound - 1;
                 const prevRoundBids = (myTeam.bidRows || {})[prevRound] || [];
 
@@ -1360,29 +1560,25 @@
                 totalDemand = session.demand || 0;
             }
 
-            // Calculate round profit for the selected round
             let roundProfitDisplay = null;
-            if (isReadOnly) {
-                let profit = 0;
-                const myTxs = (session.transactions || []).filter(tx => tx.round === viewRound && (tx.teamName === myTeam.name || tx.teamId === myTeam.id));
-                if (myTxs.length > 0) {
-                    let buyCost = 0, sellRev = 0, netBuy = 0, netSell = 0;
-                    myTxs.forEach(tx => {
-                        if (tx.type === 'buy') { buyCost += tx.mw * tx.price; netBuy += tx.mw; }
-                        else { sellRev += tx.mw * tx.price; netSell += tx.mw; }
-                    });
-                    const net = netBuy - netSell;
-                    profit = Math.round(sellRev - buyCost + net * avgPrice);
-                } else if (myTeam.roundHistory) {
-                    const rhMatch = myTeam.roundHistory.find(r => r.round === viewRound);
-                    if (rhMatch) profit = rhMatch.profit;
-                }
+            
+            if (isReadOnly || (viewRound < session.currentRound)) {
+                let profit = getRoundProfit(viewRound);
 
-                if (profit !== 0) {
+                if (profit !== null && profit !== undefined && profit !== 0) {
                     roundProfitDisplay = {
                         profit: Math.abs(profit),
                         sign: profit >= 0 ? '+' : '-',
                         color: profit >= 0 ? '#27ae60' : '#e74c3c'
+                    };
+                }
+            } else if (viewRound === session.currentRound && !isReadOnly) {
+                const estimatedProfit = calculateRoundProfitFrontend(viewRound);
+                if (estimatedProfit !== 0) {
+                    roundProfitDisplay = {
+                        profit: Math.abs(estimatedProfit),
+                        sign: estimatedProfit >= 0 ? '+' : '-',
+                        color: estimatedProfit >= 0 ? '#27ae60' : '#e74c3c'
                     };
                 }
             }
@@ -1425,7 +1621,8 @@
                   <span style="font-size:10px;background:#fef5e8;color:#e67e22;padding:2px 7px;border-radius:12px;">Pradinė: ${batteryHistory[0].toFixed(0)} MWh</span>
                   <span style="font-size:10px;background:#e8f0fb;color:#2f4a75;padding:2px 7px;border-radius:12px;">Talpa: ${batteryCapacity} MWh</span>
                   <span style="font-size:10px;background:#eaf2ff;color:#2f4a75;padding:2px 7px;border-radius:12px;">Dabartinė vid. kaina: ${avgPrice.toFixed(2)} $/MWh</span>
-                  <span style="font-size:10px;background:#e8f8f0;color:#27ae60;padding:2px 7px;border-radius:12px;">Balansas: $${(myTeam.balance || 0).toLocaleString()}</span>
+                  <span style="font-size:10px;background:#e8f8f0;color:#27ae60;padding:2px 7px;border-radius:12px;" id="balance-before-day">Balansas prieš: $${getBalanceBeforeDay(viewRound).toLocaleString()}</span>
+                  <span style="font-size:10px;background:#e8f8f0;color:#27ae60;padding:2px 7px;border-radius:12px;" id="balance-after-day">Balansas po: $${getBalanceAfterDay(viewRound) !== null ? getBalanceAfterDay(viewRound).toLocaleString() : 'Klaida'}</span>
                   ${roundProfitDisplay ? `<span style="font-size:10px;background:${roundProfitDisplay.color === '#27ae60' ? '#e8f8f0' : '#fef5e8'};color:${roundProfitDisplay.color};padding:2px 7px;border-radius:12px;">D${viewRound} pelnas: ${roundProfitDisplay.sign}$${Math.abs(roundProfitDisplay.profit).toLocaleString()}</span>` : ''}
                 </div>
 
@@ -1585,8 +1782,6 @@
 
                 totalNetMW += hourNetMW;
                 totalMW += hourTotalMW;
-
-                // Update the row display
                 const rowNetEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(3)');
                 const rowTotalEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(4)');
                 const rowCountEl = document.querySelector(`#hour_${viewRound}_${h}`)?.parentElement?.querySelector('.bid-row span:nth-child(5)');
@@ -1693,7 +1888,6 @@
 
             if (totalBidCount === 0) { toast('Įveskite bent vieną pasiūlymą'); return; }
 
-
             try {
                 const currentRoundObj = session.rounds?.find(r => r.status === 'bidding');
                 if (!currentRoundObj) {
@@ -1703,35 +1897,30 @@
 
                 const rid = currentRoundObj.id;
                 const submittedBids = await API.Bids.submit(myTeam.id, rid, formattedBids);
-
-                // Update local myTeam with the submitted bids immediately
                 if (submittedBids && submittedBids.length) {
                     const currentRound = session.currentRound;
 
-                    // Initialize bidRows for this round if needed
-                    if (!myTeam.bidRows[currentRound]) {
-                        myTeam.bidRows[currentRound] = Array(24).fill(null).map(() => []);
-                    }
-
-                    // Add each submitted bid to local bidRows
+                    // Create fresh bidRows array for this round
+                    const newBidRows = Array(24).fill(null).map(() => []);
                     submittedBids.forEach(bid => {
-                        myTeam.bidRows[currentRound][bid.hour].push({
+                        newBidRows[bid.hour].push({
                             price: bid.price,
                             mw: bid.volume_mwh,
                             type: bid.bid_type ? 'buy' : 'sell'
                         });
                     });
-
-                    // Mark this round as submitted
+                    myTeam.bidRows[currentRound] = newBidRows;
                     if (!myTeam.bids.some(b => b.round === currentRound)) {
                         myTeam.bids.push({ round: currentRound, submitted: true });
+                    } else {
+                        const existingBid = myTeam.bids.find(b => b.round === currentRound);
+                        if (existingBid) existingBid.submitted = true;
                     }
                 }
 
                 toast('Pasiūlymai sėkmingai pateikti!');
                 editingSubmitted = false;
 
-                // Re-render without reloading the session
                 renderRound();
                 renderChart(viewRound);
 
@@ -1739,6 +1928,20 @@
                 console.error('Submit error:', err);
                 toast('Klaida pateikiant: ' + err.message);
             }
+        }
+        function clearBids() {
+            if (!confirm('Ar tikrai norite išvalyti visus pasiūlymus šiai dienai?')) return;
+
+            if (myTeam.bidRows && myTeam.bidRows[viewRound]) {
+                myTeam.bidRows[viewRound] = Array(24).fill(null).map(() => []);
+            }
+
+            if (editingSubmitted) {
+                editingSubmitted = false;
+            }
+
+            renderRound();
+            toast('Visi pasiūlymai išvalyti');
         }
 
         function saveTeamToSession() {
@@ -1769,24 +1972,30 @@
 
         function getAccumulation(upToRound) {
             let totalBought = 0, totalSold = 0, totalCostBuy = 0, totalRevSell = 0;
+
             for (let r = 1; r <= upToRound; r++) {
                 const rows = (myTeam.bidRows || {})[r] || [];
-                rows.forEach(hourBids => {
+                const marketPrices = session.marketPrices[r] || Array(24).fill(session.marketPrice || 70);
+
+                rows.forEach((hourBids, hour) => {
                     if (!hourBids || !hourBids.length) return;
+                    const clearingPrice = marketPrices[hour];
+
                     hourBids.forEach(bid => {
                         if (!bid.price || !bid.mw) return;
                         if (bid.type === 'buy') {
                             totalBought += +bid.mw;
-                            totalCostBuy += +bid.mw * +bid.price;
+                            totalCostBuy += +bid.mw * clearingPrice;  
                         } else {
                             totalSold += +bid.mw;
-                            totalRevSell += +bid.mw * +bid.price;
+                            totalRevSell += +bid.mw * clearingPrice;  
                         }
                     });
                 });
             }
+
             const net = totalBought - totalSold;
-            const pnl = Math.round(totalRevSell - totalCostBuy + net * (session.marketPrice || 70));
+            const pnl = Math.round(totalRevSell - totalCostBuy); 
             return { totalBought, totalSold, net, pnl };
         }
 
@@ -1841,7 +2050,25 @@
                 if (state && state.total_profit !== undefined) {
                     myTeam.balance = state.total_profit;
 
-                    // Update balance display in the UI
+                    // Refresh round history
+                    if (state.round_history && Array.isArray(state.round_history)) {
+                        myTeam.roundHistory = state.round_history;
+                    }
+
+                    // Update balance displays
+                    const balanceBeforeEl = document.getElementById('balance-before-day');
+                    const balanceAfterEl = document.getElementById('balance-after-day');
+
+                    if (balanceBeforeEl && viewRound) {
+                        balanceBeforeEl.textContent = `Balansas prieš: $${getBalanceBeforeDay(viewRound).toLocaleString()}`;
+                    }
+
+                    if (balanceAfterEl && viewRound) {
+                        const afterBalance = getBalanceAfterDay(viewRound);
+                        balanceAfterEl.textContent = `Balansas po: $${afterBalance !== null ? afterBalance.toLocaleString() : 'Klaida'}`;
+                    }
+
+                    // Update status bar balance
                     const balanceElements = document.querySelectorAll('.stat-chip .v');
                     balanceElements.forEach(el => {
                         if (el.textContent.includes('$')) {
@@ -1849,15 +2076,6 @@
                             el.style.color = '#27ae60';
                         }
                     });
-
-                    // Update the bids card header balance
-                    const balanceChip = document.querySelector('.bid-card .bid-card-header + div span:last-child');
-                    if (balanceChip && balanceChip.textContent.includes('Balansas')) {
-                        const balanceSpan = balanceChip.parentElement;
-                        if (balanceSpan) {
-                            balanceSpan.innerHTML = `Balansas: $${myTeam.balance.toLocaleString()}`;
-                        }
-                    }
                 }
             } catch (e) {
                 console.warn('Failed to refresh balance:', e);
@@ -1875,6 +2093,7 @@
                                 toast('Naujas raundas!');
                             } else if (data.event === 'ROUND_CALCULATED') {
                                 toast('Raundo rezultatai apskaičiuoti!');
+                                toast('Raundo rezultatai apskaičiuoti!');
                                 await refreshBalance();
                             }
                             await loadSession();
@@ -1890,7 +2109,6 @@
                 console.warn('WS Init failed:', e);
             }
         }
-
         init();
     </script>
 </body>

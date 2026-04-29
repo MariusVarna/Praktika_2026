@@ -1,110 +1,576 @@
 <!DOCTYPE html>
 <html lang="lt">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lobby — Pavadinimas</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{width:100%;height:100%;}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);background-attachment:fixed;color:#333;display:flex;flex-direction:column;overflow:hidden;position:relative;}
-    body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");background-size:50px 50px;pointer-events:none;z-index:0;}
-    body>*{position:relative;z-index:1;}
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lobby — Pavadinimas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    header{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;box-shadow:0 2px 8px rgba(0,0,0,.15);flex-shrink:0;z-index:50;}
-    .hl{display:flex;align-items:center;gap:10px;}
-    .menu-btn{background:none;border:none;color:white;font-size:22px;cursor:pointer;padding:6px;border-radius:7px;transition:background .2s;line-height:1;}
-    .menu-btn:hover{background:rgba(255,255,255,.1);}
-    .logo{color:white;font-size:15px;font-weight:700;}
-    .pin-hdr{font-family:'Courier New',monospace;font-size:13px;color:#a8d8ff;font-weight:700;letter-spacing:3px;}
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
 
-    .sidebar{position:fixed;left:0;top:56px;width:240px;height:calc(100vh - 56px);background:white;border-right:1px solid #e0d9cc;z-index:100;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:2px 0 8px rgba(0,0,0,.1);}
-    .sidebar.active{transform:translateX(0);}
-    .sb-head{padding:14px 18px;border-bottom:1px solid #e0d9cc;background:#fafaf8;}
-    .sb-head h2{font-size:14px;font-weight:700;color:#2f4a75;}
-    .sb-item{padding:12px 18px;cursor:pointer;transition:all .18s;color:#555;font-weight:500;font-size:13px;border-left:3px solid transparent;}
-    .sb-item:hover{background:#f5f1e8;color:#2f4a75;border-left-color:#2f4a75;padding-left:22px;}
-    .overlay{position:fixed;top:56px;left:0;width:100%;height:calc(100vh - 56px);background:rgba(0,0,0,0);z-index:99;opacity:0;pointer-events:none;transition:all .3s;}
-    .overlay.active{background:rgba(0,0,0,.4);opacity:1;pointer-events:all;}
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+            background: linear-gradient(135deg,#f5f1e8 0%,#f0ebe0 100%);
+            background-attachment: fixed;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
 
-    main{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 2L41.5 11V29L25 38L8.5 29V11Z' fill='none' stroke='%23d4cec2' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
+                background-size: 50px 50px;
+                pointer-events: none;
+                z-index: 0;
+            }
 
-    /* ── CARDS ── */
-    .card{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e8dfd4;}
-    .card h2{font-size:16px;font-weight:700;color:#2f4a75;margin-bottom:4px;}
-    .card h3{font-size:13px;font-weight:700;color:#2f4a75;margin-bottom:10px;}
-    .card-sub{font-size:11px;color:#999;margin-bottom:12px;}
+            body > * {
+                position: relative;
+                z-index: 1;
+            }
 
-    /* ── SESSION INFO ── */
-    .sess-pin{font-family:'Courier New',monospace;font-size:28px;font-weight:700;color:#2f4a75;letter-spacing:7px;text-align:center;padding:12px;background:#e8f0fb;border-radius:10px;margin:10px 0;}
-    .sess-stats{display:flex;gap:0;border:1px solid #e8dfd4;border-radius:9px;overflow:hidden;margin-bottom:4px;}
-    .s-stat{flex:1;text-align:center;padding:8px 6px;border-right:1px solid #e8dfd4;}
-    .s-stat:last-child{border-right:none;}
-    .s-stat .v{font-size:14px;font-weight:700;color:#2f4a75;}
-    .s-stat .l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-top:1px;}
+        header {
+            background: linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.15);
+            flex-shrink: 0;
+            z-index: 50;
+        }
 
-    /* ── TABS inside card ── */
-    .ctabs{display:flex;border-bottom:2px solid #e8dfd4;margin-bottom:14px;}
-    .ctab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:600;color:#999;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
-    .ctab.active{color:#2f4a75;border-bottom-color:#2f4a75;}
+        .hl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    /* ── FORMS ── */
-    label{display:block;font-size:11px;font-weight:600;color:#666;margin-bottom:3px;}
-    input[type=text],input[type=password]{width:100%;padding:9px 12px;border:1.5px solid #d4cec2;border-radius:8px;background:#fafaf8;color:#333;font-size:13px;transition:all .18s;}
-    input:focus{outline:none;border-color:#2f4a75;background:white;box-shadow:0 0 0 2px rgba(47,74,117,.1);}
-    .form-row{margin-bottom:10px;}
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 7px;
+            transition: background .2s;
+            line-height: 1;
+        }
 
-    /* ── BUTTONS ── */
-    .btn{padding:9px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;transition:all .18s;width:100%;margin-top:4px;}
-    .btn-primary{background:linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);color:white;}
-    .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(47,74,117,.3);}
-    .btn-sec{background:#e8dfd4;color:#555;}
-    .btn-sec:hover{background:#ddd5c8;}
+            .menu-btn:hover {
+                background: rgba(255,255,255,.1);
+            }
 
-    /* ── BID MODE TOGGLE ── */
-    .bid-mode-box{border:1.5px solid #e0d9cc;border-radius:10px;padding:12px;margin-top:4px;}
-    .bid-mode-box h4{font-size:11px;font-weight:700;color:#2f4a75;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;}
-    .mode-option{display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:8px;border:1.5px solid #e0d9cc;margin-bottom:6px;cursor:pointer;transition:all .15s;}
-    .mode-option:last-child{margin-bottom:0;}
-    .mode-option.selected{border-color:#2f4a75;background:#eef4ff;}
-    .mode-option input[type=radio]{margin-top:2px;flex-shrink:0;accent-color:#2f4a75;}
-    .mode-option .m-title{font-size:12px;font-weight:700;color:#2f4a75;}
-    .mode-option .m-desc{font-size:10px;color:#888;margin-top:2px;}
+        .logo {
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+        }
 
-    /* ── PASSWORD REVEAL ── */
-    .pw-generated{background:#e8f8f0;border:1px solid #a9dfbf;border-radius:8px;padding:10px 12px;margin-top:8px;display:none;}
-    .pw-generated.visible{display:block;}
-    .pw-label{font-size:10px;font-weight:700;color:#1e8449;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-    .pw-value{font-family:'Courier New',monospace;font-size:20px;font-weight:700;color:#1e8449;letter-spacing:3px;}
-    .pw-note{font-size:10px;color:#555;margin-top:4px;}
+        .pin-hdr {
+            font-family: 'Courier New',monospace;
+            font-size: 13px;
+            color: #a8d8ff;
+            font-weight: 700;
+            letter-spacing: 3px;
+        }
 
-    /* ── TEAM LIST ── */
-    .team-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-top:6px;}
-    .team-list::-webkit-scrollbar{width:4px;}
-    .team-list::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
-    .team-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fafaf8;border:1px solid #e8dfd4;border-radius:8px;}
-    .team-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#2f4a75,#1f3a55);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700;flex-shrink:0;}
-    .team-name{font-size:13px;font-weight:600;color:#333;flex:1;}
-    .team-mode{font-size:10px;color:#888;}
-    .team-members{font-size:10px;color:#2f4a75;font-weight:600;}
-    .team-badge-joined{background:#e8f8f0;color:#1e8449;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;border:1px solid #a9dfbf;}
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 56px;
+            width: 240px;
+            height: calc(100vh - 56px);
+            background: white;
+            border-right: 1px solid #e0d9cc;
+            z-index: 100;
+            transform: translateX(-100%);
+            transition: transform .35s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,.1);
+        }
 
-    /* ── WAITING STATE ── */
-    .waiting-pulse{display:flex;align-items:center;gap:8px;padding:10px;background:#f9f7f3;border-radius:8px;border:1px solid #e0d9cc;}
-    .pulse-dot{width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 1.4s ease-in-out infinite;}
-    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
-    .waiting-text{font-size:12px;color:#555;}
+            .sidebar.active {
+                transform: translateX(0);
+            }
 
-    /* ── ERROR ── */
-    .field-error{font-size:11px;color:#e74c3c;margin-top:3px;}
+        .sb-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e0d9cc;
+            background: #fafaf8;
+        }
 
-    /* ── TOAST ── */
-    .toast{position:fixed;bottom:14px;right:14px;background:#2f4a75;color:white;padding:8px 13px;border-radius:8px;font-size:12px;font-weight:600;z-index:500;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;}
-    .toast.show{opacity:1;transform:translateY(0);}
+            .sb-head h2 {
+                font-size: 14px;
+                font-weight: 700;
+                color: #2f4a75;
+            }
 
-    ::-webkit-scrollbar{width:5px;height:5px;}
-    ::-webkit-scrollbar-thumb{background:#d4cec2;border-radius:3px;}
-  </style>
+        .sb-item {
+            padding: 12px 18px;
+            cursor: pointer;
+            transition: all .18s;
+            color: #555;
+            font-weight: 500;
+            font-size: 13px;
+            border-left: 3px solid transparent;
+        }
+
+            .sb-item:hover {
+                background: #f5f1e8;
+                color: #2f4a75;
+                border-left-color: #2f4a75;
+                padding-left: 22px;
+            }
+
+        .overlay {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 56px);
+            background: rgba(0,0,0,0);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: all .3s;
+        }
+
+            .overlay.active {
+                background: rgba(0,0,0,.4);
+                opacity: 1;
+                pointer-events: all;
+            }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.07);
+            border: 1px solid #e8dfd4;
+        }
+
+            .card h2 {
+                font-size: 16px;
+                font-weight: 700;
+                color: #2f4a75;
+                margin-bottom: 4px;
+            }
+
+            .card h3 {
+                font-size: 13px;
+                font-weight: 700;
+                color: #2f4a75;
+                margin-bottom: 10px;
+            }
+
+        .card-sub {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        /* ── SESSION INFO ── */
+        .sess-pin {
+            font-family: 'Courier New',monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: #2f4a75;
+            letter-spacing: 7px;
+            text-align: center;
+            padding: 12px;
+            background: #e8f0fb;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .sess-stats {
+            display: flex;
+            gap: 0;
+            border: 1px solid #e8dfd4;
+            border-radius: 9px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .s-stat {
+            flex: 1;
+            text-align: center;
+            padding: 8px 6px;
+            border-right: 1px solid #e8dfd4;
+        }
+
+            .s-stat:last-child {
+                border-right: none;
+            }
+
+            .s-stat .v {
+                font-size: 14px;
+                font-weight: 700;
+                color: #2f4a75;
+            }
+
+            .s-stat .l {
+                font-size: 9px;
+                color: #888;
+                text-transform: uppercase;
+                letter-spacing: .3px;
+                margin-top: 1px;
+            }
+
+        /* ── TABS inside card ── */
+        .ctabs {
+            display: flex;
+            border-bottom: 2px solid #e8dfd4;
+            margin-bottom: 14px;
+        }
+
+        .ctab {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all .15s;
+        }
+
+            .ctab.active {
+                color: #2f4a75;
+                border-bottom-color: #2f4a75;
+            }
+
+        /* ── FORMS ── */
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid #d4cec2;
+            border-radius: 8px;
+            background: #fafaf8;
+            color: #333;
+            font-size: 13px;
+            transition: all .18s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2f4a75;
+            background: white;
+            box-shadow: 0 0 0 2px rgba(47,74,117,.1);
+        }
+
+        .form-row {
+            margin-bottom: 10px;
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all .18s;
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg,#2f4a75 0%,#1f3a55 100%);
+            color: white;
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(47,74,117,.3);
+            }
+
+        .btn-sec {
+            background: #e8dfd4;
+            color: #555;
+        }
+
+            .btn-sec:hover {
+                background: #ddd5c8;
+            }
+
+        /* ── BID MODE TOGGLE ── */
+        .bid-mode-box {
+            border: 1.5px solid #e0d9cc;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 4px;
+        }
+
+            .bid-mode-box h4 {
+                font-size: 11px;
+                font-weight: 700;
+                color: #2f4a75;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: .4px;
+            }
+
+        .mode-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1.5px solid #e0d9cc;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+            .mode-option:last-child {
+                margin-bottom: 0;
+            }
+
+            .mode-option.selected {
+                border-color: #2f4a75;
+                background: #eef4ff;
+            }
+
+            .mode-option input[type=radio] {
+                margin-top: 2px;
+                flex-shrink: 0;
+                accent-color: #2f4a75;
+            }
+
+            .mode-option .m-title {
+                font-size: 12px;
+                font-weight: 700;
+                color: #2f4a75;
+            }
+
+            .mode-option .m-desc {
+                font-size: 10px;
+                color: #888;
+                margin-top: 2px;
+            }
+
+        /* ── PASSWORD REVEAL ── */
+        .pw-generated {
+            background: #e8f8f0;
+            border: 1px solid #a9dfbf;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-top: 8px;
+            display: none;
+        }
+
+            .pw-generated.visible {
+                display: block;
+            }
+
+        .pw-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #1e8449;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            margin-bottom: 4px;
+        }
+
+        .pw-value {
+            font-family: 'Courier New',monospace;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e8449;
+            letter-spacing: 3px;
+        }
+
+        .pw-note {
+            font-size: 10px;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        /* ── TEAM LIST ── */
+        .team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 6px;
+        }
+
+            .team-list::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .team-list::-webkit-scrollbar-thumb {
+                background: #d4cec2;
+                border-radius: 3px;
+            }
+
+        .team-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #fafaf8;
+            border: 1px solid #e8dfd4;
+            border-radius: 8px;
+        }
+
+        .team-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#2f4a75,#1f3a55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .team-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .team-mode {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .team-members {
+            font-size: 10px;
+            color: #2f4a75;
+            font-weight: 600;
+        }
+
+        .team-badge-joined {
+            background: #e8f8f0;
+            color: #1e8449;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            border: 1px solid #a9dfbf;
+        }
+
+        /* ── WAITING STATE ── */
+        .waiting-pulse {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #f9f7f3;
+            border-radius: 8px;
+            border: 1px solid #e0d9cc;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%,100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .4;
+                transform: scale(.7);
+            }
+        }
+
+        .waiting-text {
+            font-size: 12px;
+            color: #555;
+        }
+
+        /* ── ERROR ── */
+        .field-error {
+            font-size: 11px;
+            color: #e74c3c;
+            margin-top: 3px;
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 14px;
+            right: 14px;
+            background: #2f4a75;
+            color: white;
+            padding: 8px 13px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 500;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: all .22s;
+            pointer-events: none;
+        }
+
+            .toast.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d4cec2;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
 
@@ -136,42 +602,50 @@
         // ══════════════════════════════════════════════
         // STATE
         // ══════════════════════════════════════════════
+
         let session = null;
         let myTeam = null;
-        const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
         let ws = null;
-
         async function loadSession() {
+            const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
+
             if (!pin) { nav('/pages/join.html'); return; }
+
+            const savedPin = sessionStorage.getItem('gamePin');
+            if (savedPin && savedPin !== pin) {
+                console.log('PIN changed, clearing old session data');
+                sessionStorage.removeItem(KEYS.USER_ID);
+                sessionStorage.removeItem(KEYS.SESSION_ID);
+                sessionStorage.removeItem(KEYS.TEAM_NAME);
+                myTeam = null;
+            }
+            sessionStorage.setItem('gamePin', pin);
+
             try {
                 const savedUserId = sessionStorage.getItem(KEYS.USER_ID);
                 const savedSessionId = sessionStorage.getItem(KEYS.SESSION_ID);
 
-                if (savedUserId && savedSessionId) {
-                    try {
-                        session = await API.Sessions.get(savedSessionId);
-                        myTeam = {
-                            id: savedUserId,
-                            name: sessionStorage.getItem(KEYS.TEAM_NAME),
-                            password: '****'
-                        };
-                        startWS(savedSessionId);
-                    } catch (staleErr) {
-                        // Session was deleted/archived — clear stale data and fall through
-                        console.warn('Saved session no longer exists, clearing:', staleErr.message);
-                        sessionStorage.removeItem(KEYS.USER_ID);
-                        sessionStorage.removeItem(KEYS.SESSION_ID);
-                        sessionStorage.removeItem(KEYS.TEAM_NAME);
-                        myTeam = null;
-                        session = await API.Sessions.getByPin(pin);
-                    }
-                } else {
-                    // Fetch session info by PIN to show game name/status before joining
-                    session = await API.Sessions.getByPin(pin);
+                session = await API.Sessions.getByPin(pin);
+
+                document.getElementById('pinHdr').textContent = pin;
+
+                if (savedUserId && savedSessionId && savedSessionId === session.id) {
+                    myTeam = {
+                        id: savedUserId,
+                        name: sessionStorage.getItem(KEYS.TEAM_NAME),
+                        password: '****'
+                    };
+                    startWS(savedSessionId);
+                } else if (savedUserId && savedSessionId) {
+                    console.log('Saved session mismatch, clearing');
+                    sessionStorage.removeItem(KEYS.USER_ID);
+                    sessionStorage.removeItem(KEYS.SESSION_ID);
+                    sessionStorage.removeItem(KEYS.TEAM_NAME);
+                    myTeam = null;
                 }
+
             } catch (e) {
                 console.error('Initial load failed:', e);
-                // If PIN is invalid, send back to join
                 if (e.message && e.message.includes('not found')) {
                     toast('Neteisingas PIN kodas');
                     setTimeout(() => nav('/pages/join.html'), 2000);
@@ -204,6 +678,7 @@
         // RENDER
         // ══════════════════════════════════════════════
         function render() {
+            const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
             document.getElementById('pinHdr').textContent = pin;
             if (myTeam) {
                 renderWaiting();
@@ -213,83 +688,87 @@
         }
 
         function renderWaiting() {
+            const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
             const main = document.getElementById('mainArea');
             main.innerHTML = `
-            <div class="card">
-              <h2>${session.game_name || 'Sesija'}</h2>
-              <p class="card-sub">Sesija · PIN ${pin}</p>
-              <div class="sess-pin">${pin}</div>
-              <div class="sess-stats">
-                <div class="s-stat"><div class="v">${session.status === 'active' ? 'Aktyvi' : 'Laukiama'}</div><div class="l">Statusas</div></div>
-              </div>
-            </div>
+                <div class="card">
+                  <h2>${session.game_name || 'Sesija'}</h2>
+                  <p class="card-sub">Sesija · PIN ${pin}</p>
+                  <div class="sess-pin">${pin}</div>
+                  <div class="sess-stats">
+                    <div class="s-stat"><div class="v">${session.status === 'active' ? 'Aktyvi' : 'Laukiama'}</div><div class="l">Statusas</div></div>
+                  </div>
+                </div>
 
-            <div class="card">
-              <h3>Prisijungta: <span style="color:#2f4a75;">${myTeam.name}</span></h3>
-              <div class="waiting-pulse">
-                <div class="pulse-dot"></div>
-                <span class="waiting-text">${session.status === 'active' ? 'Žaidimas pradėtas!' : 'Laukiama, kol administratorius pradės žaidimą...'}</span>
-              </div>
-              ${session.status === 'active' ?
+                <div class="card">
+                  <h3>Prisijungta: <span style="color:#2f4a75;">${myTeam.name}</span></h3>
+                  <div class="waiting-pulse">
+                    <div class="pulse-dot"></div>
+                    <span class="waiting-text">${session.status === 'active' ? 'Žaidimas pradėtas!' : 'Laukiama, kol administratorius pradės žaidimą...'}</span>
+                  </div>
+                  ${session.status === 'active' ?
                     `<button class="btn btn-primary" style="margin-top:12px;" onclick="nav('/pages/game.html')">▶ Į žaidimą</button>` :
                     ''}
-              <button class="btn btn-sec" style="margin-top:8px;" onclick="leaveTeam()">Atsijungti</button>
-            </div>
-          `;
+                  <button class="btn btn-sec" style="margin-top:8px;" onclick="leaveTeam()">Atsijungti</button>
+                </div>
+              `;
         }
 
         let activeTab = 'create';
         function renderJoinCreate() {
+            const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
             const main = document.getElementById('mainArea');
             main.innerHTML = `
-            <div class="card">
-               <h2>Prisijungti prie sesijos</h2>
-               <p class="card-sub">PIN: ${pin}</p>
-            </div>
+                <div class="card">
+                   <h2>Prisijungti prie sesijos</h2>
+                   <p class="card-sub">PIN: ${pin}</p>
+                </div>
 
-            <div class="card">
-              <div class="ctabs">
-                <div class="ctab ${activeTab === 'create' ? 'active' : ''}" onclick="setTab('create')">Sukurti komandą</div>
-                <div class="ctab ${activeTab === 'join' ? 'active' : ''}" onclick="setTab('join')">Prisijungti</div>
-              </div>
-              ${activeTab === 'create' ? renderCreateForm() : renderJoinForm()}
-            </div>
-          `;
+                <div class="card">
+                  <div class="ctabs">
+                    <div class="ctab ${activeTab === 'create' ? 'active' : ''}" onclick="setTab('create')">Sukurti komandą</div>
+                    <div class="ctab ${activeTab === 'join' ? 'active' : ''}" onclick="setTab('join')">Prisijungti</div>
+                  </div>
+                  ${activeTab === 'create' ? renderCreateForm() : renderJoinForm()}
+                </div>
+              `;
         }
 
         function renderCreateForm() {
             // Simplified: in backend 'create' and 'join' use the same endpoint
             return `
-            <div class="form-row">
-              <label>Komandos pavadinimas</label>
-              <input type="text" id="createName" placeholder="pvz. Greitieji elektronai" maxlength="30">
-              <div class="field-error" id="createNameErr"></div>
-            </div>
-            <div class="form-row">
-              <label>Slaptažodis (kitiems nariams)</label>
-              <input type="text" id="createPw" placeholder="Sugalvokite slaptažodį" maxlength="20">
-            </div>
-            <button class="btn btn-primary" onclick="performJoin('create')" style="margin-top:10px;">Sukurti ir prisijungti</button>
-          `;
+                <div class="form-row">
+                  <label>Komandos pavadinimas</label>
+                  <input type="text" id="createName" placeholder="pvz. Greitieji elektronai" maxlength="30">
+                  <div class="field-error" id="createNameErr"></div>
+                </div>
+                <div class="form-row">
+                  <label>Slaptažodis (kitiems nariams)</label>
+                  <input type="text" id="createPw" placeholder="Sugalvokite slaptažodį" maxlength="20">
+                </div>
+                <button class="btn btn-primary" onclick="performJoin('create')" style="margin-top:10px;">Sukurti ir prisijungti</button>
+              `;
         }
 
         function renderJoinForm() {
             return `
-            <div class="form-row">
-              <label>Komandos pavadinimas</label>
-              <input type="text" id="joinName" placeholder="Tiksliai kaip sukurta">
-              <div class="field-error" id="joinNameErr"></div>
-            </div>
-            <div class="form-row">
-              <label>Komandos slaptažodis</label>
-              <input type="password" id="joinPw" placeholder="••••••">
-              <div class="field-error" id="joinPwErr"></div>
-            </div>
-            <button class="btn btn-primary" onclick="performJoin('join')">Prisijungti</button>
-          `;
+                <div class="form-row">
+                  <label>Komandos pavadinimas</label>
+                  <input type="text" id="joinName" placeholder="Tiksliai kaip sukurta">
+                  <div class="field-error" id="joinNameErr"></div>
+                </div>
+                <div class="form-row">
+                  <label>Komandos slaptažodis</label>
+                  <input type="password" id="joinPw" placeholder="••••••">
+                  <div class="field-error" id="joinPwErr"></div>
+                </div>
+                <button class="btn btn-primary" onclick="performJoin('join')">Prisijungti</button>
+              `;
         }
 
         async function performJoin(mode) {
+            const pin = new URLSearchParams(location.search).get('pin') || sessionStorage.getItem('gamePin');
+
             const name = document.getElementById(mode === 'create' ? 'createName' : 'joinName').value.trim();
             const pw = document.getElementById(mode === 'create' ? 'createPw' : 'joinPw').value.trim();
 

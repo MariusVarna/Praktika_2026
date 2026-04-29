@@ -11,8 +11,6 @@ class PlayerService:
         session = self.db.query(models.Session).filter(models.Session.join_code == user_in.join_code).first()
         if not session:
             raise HTTPException(status_code=404, detail="Invalid join code or session not found")
-        
-        # FIX: Prevent joining finished sessions
         from app.models.session import SessionStatus
         if session.status == SessionStatus.FINISHED:
             raise HTTPException(status_code=400, detail="Session has finished")

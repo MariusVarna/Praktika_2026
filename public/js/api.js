@@ -218,7 +218,7 @@ const Sessions = {
         return apiFetch(`/api/sessions/${id}`);
     },
     getByPin(pin) {
-        return apiFetch(`/api/sessions/pin/${pin}`);
+        return apiFetch(`/api/sessions/pin/${pin.toUpperCase()}`);
     },
     getForecast(sessionId, roundId) {
         return apiFetch(`/api/sessions/${sessionId}/round/${roundId}/forecast`);
