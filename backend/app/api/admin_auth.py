@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 from app.database import get_db
 from app import models, schemas
 from app.services.admin_service import AdminService
 
 router = APIRouter()
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/register", response_model=schemas.AdminResponse)
 def register_admin(admin_in: schemas.AdminCreate, db: Session = Depends(get_db)):
@@ -23,6 +27,9 @@ async def setup_first_admin(
     db: Session = Depends(get_db)
 ):
     """Create first admin (only works if no admins exist)"""
+    # Import Admin model if needed
+    from app.models import Admin
+    
     # Check if any admin exists
     existing = db.query(Admin).first()
     if existing:
