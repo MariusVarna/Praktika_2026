@@ -16,11 +16,35 @@ for sheet_name, sheet_dict in SEED_DATA.items():
             continue
 
 def get_day_seed(day: int) -> List[Dict]:
-    """Returns the profile for a given day (1-365) in O(1) time."""
-    return INDEXED_SEED_DATA.get(day, [])
+    """Returns the profile for a given day (1-365) with hour 23 synthesized from hour 22 * 0.9."""
+    data = INDEXED_SEED_DATA.get(day, [])
+    
+    if not data:
+        return []
+    
+    # Check if hour 23 already exists, if not synthesize it from hour 22
+    hour_22 = None
+    for h in data:
+        if h.get('hour') == 22:
+            hour_22 = h
+            break
+    
+    # Add hour 23 if it doesn't exist (use hour 22 * 0.9)
+    has_hour_23 = any(h.get('hour') == 23 for h in data)
+    if not has_hour_23 and hour_22:
+        hour_23 = {
+            'hour': 23,
+            'wind_planned_profile': hour_22.get('wind_planned_profile', 0) * 0.9,
+            'solar_planned_profile': hour_22.get('solar_planned_profile', 0) * 0.9,
+            'solar_actual_profile': hour_22.get('solar_actual_profile', 0) * 0.9,
+            'demand_forecast_profile': hour_22.get('demand_forecast_profile', 0.6) * 0.9
+        }
+        data = data + [hour_23]
+    
+    return data
 
 def generate_supply_curve(hour_data: dict, session) -> List[dict]:
-    """Generates a granular supply curve with realistic volatility (Steeper steps)."""
+    """Generates a granular continuous supply curve."""
     wind = hour_data.get('wind_planned_profile', 0)
     solar = hour_data.get('solar_planned_profile', 0)
     
@@ -29,39 +53,58 @@ def generate_supply_curve(hour_data: dict, session) -> List[dict]:
     
     curve = []
     
-    # 1. Baseload (Small but cheap, 500MW)
+    # 1. Baseload (800 bids) - €15 to €22 (lower for night prices)
     baseload_mw = 500.0
-    for i in range(10):
-        curve.append({"volume": baseload_mw/10, "price": 10.0 + i, "bid_id": f"base_{i}"})
+    num_base = 800
+    for i in range(num_base):
+        price = 15.0 + (i / num_base) * 7.0
+        curve.append({"volume": baseload_mw/num_base, "price": round(price, 2), "bid_id": f"base_{i}"})
 
-    # 2. Renewables (The price-setters when weather is good)
+    # 2. Renewables (800 bids) - €0 to €15 (CAPPED!)
     total_renew_mw = (wind * max_wind) + (solar * max_solar)
-    num_renew = 100
+    num_renew = 800
     if total_renew_mw > 0:
         v_per_bot = total_renew_mw / num_renew
         for i in range(num_renew):
-            # Prices can go negative or stay low
-            price = -20.0 + (i / num_renew) * 70.0
-            curve.append({"volume": v_per_bot, "price": round(price + random.uniform(-0.1, 0.1), 2), "bid_id": f"renew_{i}"})
+            normalized = (i / num_renew) ** 1.3
+            price = normalized * 15.0
+            curve.append({"volume": v_per_bot, "price": round(price, 2), "bid_id": f"renew_{i}"})
 
-    # 3. Peak Plants (Gas, expensive, 2000MW)
-    # These set the price when renewables are low
+    # 3. Mid-tier (800 bids) - €15 to €40
+    mid_mw = 1500.0
+    num_mid = 800
+    for i in range(num_mid):
+        normalized = (i / num_mid) ** 1.8
+        price = 15.0 + normalized * 25.0
+        curve.append({"volume": mid_mw/num_mid, "price": round(price, 2), "bid_id": f"mid_{i}"})
+
+    # 4. Peak (3000 bids) - €40 to €450
     peak_mw = 2500.0
-    num_peak = 100
-    v_per_peak = peak_mw / num_peak
+    num_peak = 3000
     for i in range(num_peak):
-        # Steep curve from 60 to 400
-        price = 60.0 + (i / num_peak)**2 * 350.0  # Exponential increase for peaks
-        curve.append({"volume": v_per_peak, "price": round(price + random.uniform(-0.1, 0.1), 2), "bid_id": f"peak_{i}"})
+        normalized = (i / num_peak) ** 2.0
+        price = 40.0 + normalized * 410.0
+        curve.append({"volume": peak_mw/num_peak, "price": round(price, 2), "bid_id": f"peak_{i}"})
     
     return curve
 
-def calculate_clearing_price(supply_curve: List[Dict], demand_curve: List[Dict], base_demand_mw: float):
+def calculate_clearing_price(supply_curve: List[Dict], demand_curve: List[Dict], base_demand_mw: float, hour_data: dict = None):
     """
     Calculates the intersection of supply and demand and returns fill volumes.
     Returns: (clearing_price, clearing_volume, fill_map)
     fill_map: {bid_id: filled_volume}
+    
+    Args:
+        supply_curve: List of supply bids
+        demand_curve: List of player demand bids
+        base_demand_mw: Base demand in MW
+        hour_data: Optional dict with demand_forecast_profile for hour-specific demand
     """
+    # Get demand multiplier from hour_data (use 1.0 as default if not provided)
+    demand_multiplier = 1.0
+    if hour_data and 'demand_forecast_profile' in hour_data:
+        demand_multiplier = hour_data.get('demand_forecast_profile', 1.0)
+    
     # 1. Prepare supply and demand with unique markers if not present
     # We assume player bids have 'bid_id'. Bots might not.
     prepared_supply = []
@@ -74,16 +117,18 @@ def calculate_clearing_price(supply_curve: List[Dict], demand_curve: List[Dict],
     
     prepared_demand = []
     # 80% is inelastic (critical demand), price at infinity
-    inelastic_vol = base_demand_mw * 0.8
+    # Apply hour-specific demand multiplier
+    inelastic_vol = base_demand_mw * 0.8 * demand_multiplier
     prepared_demand.append({"volume": inelastic_vol, "price": 9999.0, "bid_id": "base_demand_critical"})
     
     # 20% is elastic (smart demand), split into 50 small bots with decreasing prices
-    elastic_vol_total = base_demand_mw * 0.2
+    # Apply hour-specific demand multiplier AND increase max price to 300
+    elastic_vol_total = base_demand_mw * 0.2 * demand_multiplier
     num_demand_bots = 50
     v_per_d_bot = elastic_vol_total / num_demand_bots
     for i in range(num_demand_bots):
-        # Price drops from 200 down to 30
-        price = 200 - (i / num_demand_bots) * 170 + random.uniform(-0.1, 0.1)
+        # Price drops from 300 down to 30 (increased from 200→30)
+        price = 300 - (i / num_demand_bots) * 270 + random.uniform(-0.1, 0.1)
         prepared_demand.append({
             "volume": v_per_d_bot,
             "price": round(price, 2),

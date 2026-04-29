@@ -19,6 +19,7 @@ class HourlyMarketInput(BaseModel):
     supply_curve: List[MarketBid]
     demand_curve: List[MarketBid]
     inelastic_demand: float = 0.0
+    hour_data: Optional[Dict] = None  # Optional hour-specific data (e.g., demand_forecast_profile)
 
 class BatteryConfig(BaseModel):
     max_mwh: float

@@ -54,13 +54,42 @@ class ProRataClearingStrategy(ClearingStrategy):
     def calculate_clearing(self, market_input: HourlyMarketInput) -> MarketResult:
         from app.schemas.market_models import MarketBid
         
+        # Get demand multiplier from hour_data if available
+        demand_multiplier = 1.0
+        if market_input.hour_data and 'demand_forecast_profile' in market_input.hour_data:
+            demand_multiplier = market_input.hour_data.get('demand_forecast_profile', 1.0)
+        
         # Pre-process curves
         prepared_demand = sorted(market_input.demand_curve, key=lambda x: x.price, reverse=True)
+        
+# Add inelastic demand (50% - reduced from 70% to allow elastic bots to smooth price swings)
         if market_input.inelastic_demand > 0:
+            inelastic_vol = market_input.inelastic_demand * 0.5
             prepared_demand.insert(0, MarketBid(
                 bid_id="system_demand_inelastic",
-                volume=market_input.inelastic_demand,
+                volume=inelastic_vol,
                 price=9999.0,
+                bid_type=True
+            ))
+        
+        # Add elastic demand bots (50% - increased from 30%)
+        # Use more bots with square-root distribution for smooth price curve
+        elastic_vol_total = market_input.inelastic_demand * 0.5
+        num_elastic_bots = 150
+        
+        max_bot_price = 400 * demand_multiplier
+        min_bot_price = 20 * demand_multiplier
+        price_range = max_bot_price - min_bot_price
+        
+        v_per_bot = elastic_vol_total / num_elastic_bots if num_elastic_bots > 0 else 0
+        
+        for i in range(num_elastic_bots):
+            normalized = (i / num_elastic_bots) ** 0.7
+            price = max_bot_price - normalized * price_range
+            prepared_demand.append(MarketBid(
+                bid_id=f"system_demand_{i}",
+                volume=v_per_bot,
+                price=round(price, 2),
                 bid_type=True
             ))
 

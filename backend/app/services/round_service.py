@@ -120,15 +120,16 @@ class RoundService:
                     else:
                         supply_curve.append(bid)
 
-                # System Demand Configuration
+                # System Demand Configuration (already uses demand_forecast_profile)
                 inelastic_demand = game_session.base_demand_mw * hour_data.get("demand_forecast_profile", 1.0)
                 
-                # Run Market Engine
+                # Run Market Engine (pass hour_data for hour-specific demand)
                 market_input = HourlyMarketInput(
                     hour=hour,
                     supply_curve=supply_curve,
                     demand_curve=demand_curve,
-                    inelastic_demand=inelastic_demand
+                    inelastic_demand=inelastic_demand,
+                    hour_data=hour_data  # Pass hour data for demand_forecast_profile
                 )
                 result: MarketResult = self.market_engine.calculate_clearing(market_input)
 

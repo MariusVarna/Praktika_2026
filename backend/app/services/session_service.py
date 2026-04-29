@@ -240,7 +240,8 @@ class SessionService:
                 hour=hour_info["hour"],
                 supply_curve=supply_curve,
                 demand_curve=[],
-                inelastic_demand=base_demand
+                inelastic_demand=base_demand,
+                hour_data=hour_info  # Pass hour data for demand_forecast_profile
             )
 
             result = self.market_engine.calculate_clearing(market_input)
