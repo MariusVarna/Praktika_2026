@@ -1252,18 +1252,19 @@
                             // Update bids without full refresh
                             if (activeSessionId === sessionId) {
                                 updateBidStatus(data.user_id, data.bids);
-                                refreshBidsList();
                             }
                         }
                         else if (data.event === 'ROUND_CALCULATED') {
-                            // Round completed - update prices and balances
+                            console.log('[AdminWS] Round calculated:', data);
                             if (activeSessionId === sessionId) {
                                 await refreshRoundData(data.round_id);
-                                // Also refresh all team balances
-                                await refreshAllTeamBalances(sessionId);
+                                await refreshTeamBalancesAfterRound(sessionId);
                                 toast(`Raundas ${data.round_id} apskaičiuotas!`);
                             }
                             await loadState();
+                            if (activeSessionId === sessionId) {
+                                renderManage();
+                            }
                         }
                         else if (data.event === 'NEW_ROUND') {
                             toast(`Prasideda naujas raundas!`);
@@ -1277,6 +1278,7 @@
         }
         async function refreshAllTeamBalances(sessionId) {
             try {
+                // Get fresh standings from backend
                 const standings = await API.Sessions.getStandings(sessionId);
                 if (standings && standings.standings) {
                     const s = sessions.find(x => x.id === sessionId);
@@ -1285,9 +1287,13 @@
                             const team = s.teams.find(t => t.id === standing.user_id);
                             if (team) {
                                 team.balance = standing.total_profit;
+                                if (standing.round_history) {
+                                    team.roundHistory = standing.round_history;
+                                }
                             }
                         }
-                        refreshTeamsList();
+                        // Force full refresh of manage view to show updated balances
+                        renderManage();
                     }
                 }
             } catch (e) {
@@ -1313,108 +1319,152 @@
                     const detail = bid ? `${bid.price.toFixed(2)}€ · ${bid.mw}MW` : '—';
 
                     return `
-                <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')" style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; background:#fafaf8; border-radius:8px; border:1px solid #e8dfd4; cursor:pointer;">
-                    <div class="ua" style="flex-shrink:0;">${t.name.slice(0, 2).toUpperCase()}</div>
-                    <div style="flex:2; min-width:0;">
-                        <div style="font-weight:700; color:#2f4a75; font-size:13px;">${escapeHtml(t.name)}</div>
-                        <div style="font-size:10px; color:#888;">Balansas: $${(t.balance || 0).toLocaleString()}</div>
-                    </div>
-                    <div style="flex:1; text-align:right;">
-                        <div style="font-size:11px; font-weight:600; color:${statusColor};">${statusIcon} ${statusText}</div>
-                        <div style="font-size:10px; color:#2f4a75;">${detail}</div>
-                    </div>
-                    <div style="flex-shrink:0; width:8px; height:8px; border-radius:50%; background:${statusColor};"></div>
-                </div>
-            `;
+        <div class="up" onclick="openPlayerModal(${s.id},'${t.id}')" style="display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px; background:#fafaf8; border-radius:8px; border:1px solid #e8dfd4; cursor:pointer;">
+            <div class="ua" style="flex-shrink:0;">${t.name.slice(0, 2).toUpperCase()}</div>
+            <div style="flex:2; min-width:0;">
+                <div style="font-weight:700; color:#2f4a75; font-size:13px;">${escapeHtml(t.name)}</div>
+                <div style="font-size:10px; color:#888;">Balansas: €${(t.balance || 0).toLocaleString()}</div>
+            </div>
+            <div style="flex:1; text-align:right;">
+                <div style="font-size:11px; font-weight:600; color:${statusColor};">${statusIcon} ${statusText}</div>
+                <div style="font-size:10px; color:#2f4a75;">${detail}</div>
+            </div>
+            <div style="flex-shrink:0; width:8px; height:8px; border-radius:50%; background:${statusColor};"></div>
+        </div>
+    `;
                 }).join('');
 
                 const summaryHtml = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h3 style="margin-bottom:0;">👥 Komandos ir statymų būsena</h3>
-                <div class="bid-summary" style="margin-bottom:0;">
-                    <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
-                    <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
-                    <span class="bid-chip bc-non">— Laukia: ${bs.none}</span>
-                </div>
-            </div>
-            <div class="scroll-panel" style="max-height:300px;">
-                ${teamsHtml}
-            </div>
-        `;
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin-bottom:0;">👥 Komandos ir statymų būsena</h3>
+        <div class="bid-summary" style="margin-bottom:0;">
+            <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
+            <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
+        </div>
+    </div>
+    <div class="scroll-panel" style="max-height:300px;">
+        ${teamsHtml}
+    </div>
+`;
 
                 teamsCard.innerHTML = summaryHtml;
             }
         }
 
         function updateBidStatus(userId, newBids) {
-            // Find and update the specific team's bid status
             const s = sessions.find(x => x.id === activeSessionId);
             if (!s) return;
 
             const team = s.teams.find(t => t.id === userId);
             if (team) {
-                // Update team's bids
-                team.bids = newBids;
-                // Recalculate bid status
-                const bs = calcBidStatus(s);
-                // Update the summary numbers
-                const summaryDiv = document.querySelector('#manageContent .bid-summary');
-                if (summaryDiv) {
-                    summaryDiv.innerHTML = `
-                <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
-                <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
-                <span class="bid-chip bc-non">— Laukia: ${bs.none}</span>
-            `;
-                }
-                // Update the specific team row
-                const teamRow = document.querySelector(`#manageContent .up[onclick*="${userId}"]`);
-                if (teamRow) {
-                    const bid = getCurrentBid(team, s.currentRound);
-                    const st = bid ? (bid.submitted ? 'submitted' : 'draft') : 'none';
-                    const statusIcon = { submitted: '✅', draft: '✏️', none: '⏳' }[st];
-                    const statusText = { submitted: 'Pateikta', draft: 'Redaguoja', none: 'Laukia' }[st];
-                    const statusColor = { submitted: '#27ae60', draft: '#f39c12', none: '#999' }[st];
-                    const detail = bid ? `${bid.price.toFixed(2)}€ · ${bid.mw}MW` : '—';
+                if (!team.bids) team.bids = [];
 
-                    const statusDiv = teamRow.querySelector('div[style*="text-align:right"]');
-                    if (statusDiv) {
-                        statusDiv.innerHTML = `
-                    <div style="font-size:11px; font-weight:600; color:${statusColor};">${statusIcon} ${statusText}</div>
-                    <div style="font-size:10px; color:#2f4a75;">${detail}</div>
-                `;
-                    }
+                // Remove old bids for current round
+                team.bids = team.bids.filter(b => b.round !== s.currentRound);
+
+                // Add new bids - these are submitted bids
+                if (newBids && newBids.length) {
+                    newBids.forEach(bid => {
+                        team.bids.push({
+                            round: s.currentRound,
+                            hour: bid.hour,
+                            price: bid.price,
+                            volume_mwh: bid.volume_mwh,
+                            bid_type: bid.bid_type,
+                            submitted: true
+                        });
+                    });
+                } else {
+                }
+                team.bidRows = team.bidRows || {};
+                const newBidRows = Array(24).fill(null).map(() => []);
+                if (newBids && newBids.length) {
+                    newBids.forEach(bid => {
+                        if (bid.hour !== undefined && bid.price && bid.volume_mwh) {
+                            newBidRows[bid.hour].push({
+                                price: bid.price,
+                                mw: bid.volume_mwh,
+                                type: bid.bid_type ? 'buy' : 'sell'
+                            });
+                        }
+                    });
+                }
+                team.bidRows[s.currentRound] = newBidRows;
+
+                // Force refresh the manage view
+                renderManage();
+
+                if (newBids && newBids.length) {
+                    toast(`${team.name} pateikė pasiūlymus!`);
                 }
             }
         }
+        async function refreshTeamBalancesAfterRound(sessionId) {
+            try {
+                // Reload the entire session to get fresh data
+                const freshResults = await API.Sessions.getMy();
+                const freshSession = freshResults.find(s => s.id === sessionId);
 
+                if (freshSession) {
+                    // Update the teams in our sessions array
+                    const s = sessions.find(x => x.id === sessionId);
+                    if (s) {
+                        // Update team balances from fresh data
+                        if (freshSession.teams) {
+                            s.teams = freshSession.teams.map(freshTeam => {
+                                const existingTeam = s.teams.find(t => t.id === freshTeam.id);
+                                return {
+                                    ...existingTeam,
+                                    ...freshTeam,
+                                    balance: freshTeam.balance || existingTeam?.balance || 0,
+                                    roundHistory: freshTeam.round_history || existingTeam?.roundHistory || []
+                                };
+                            });
+                        }
+                    }
+                }
+                renderManage();
+            } catch (e) {
+                console.warn('Failed to refresh team balances after round:', e);
+            }
+        }
+        function refreshBidsList() {
+            const s = sessions.find(x => x.id === activeSessionId);
+            if (!s) return;
+
+            const recentBidsDiv = document.querySelector('#manageContent .card:last-child .scroll-panel');
+            if (recentBidsDiv) {
+                recentBidsDiv.innerHTML = buildRecentBidsList(s);
+            }
+        }
         async function refreshRoundData(roundId) {
-            // Refresh only the chart and market prices for the specific round
             const s = sessions.find(x => x.id === activeSessionId);
             if (!s) return;
 
             try {
                 const results = await API.Admin.getResults(s.id, roundId);
                 if (results && results.market_clearing) {
-                    // Update market prices for this round
                     if (!s.marketPrices) s.marketPrices = {};
                     s.marketPrices[results.round_number] = results.market_clearing.map(mc => mc.clearing_price);
 
-                    // Refresh the chart
                     if (selectedRound === results.round_number || (!selectedRound && s.currentRound === results.round_number)) {
                         renderAdminChart(s);
                     }
 
-                    // Update team balances
-                    for (const playerResult of results.player_results) {
-                        const team = s.teams.find(t => t.id === playerResult.player_id);
-                        if (team) {
-                            team.balance = playerResult.round_profit;
+                    // Update team balances from player_results
+                    if (results.player_results && results.player_results.length) {
+                        for (const playerResult of results.player_results) {
+                            const team = s.teams.find(t => t.id === playerResult.player_id);
+                            if (team) {
+                                team.balance = playerResult.cumulative_profit || playerResult.round_profit;
+                                if (playerResult.round_history) {
+                                    team.roundHistory = playerResult.round_history;
+                                }
+                            }
                         }
                     }
 
-                    // Update the teams list display
                     refreshTeamsList();
-
                     toast(`Raundas ${results.round_number} rezultatai atnaujinti!`);
                 }
             } catch (e) {
@@ -1544,10 +1594,10 @@
                               <div class="sr"><span class="sl">Komandos</span><span class="sv">${s.teams.length}</span></div>
                               <div class="sr"><span class="sl">Diena</span><span class="sv">${s.currentDay}</span></div>
                               <div class="btn-grp">
-                                ${s.status === 'waiting' ? `<button class="btn btn-success btn-sm" onclick="startSession(${s.id})">▶ Pradėti</button>` : ''}
-                                ${s.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="openManage(${s.id})">🎛 Valdyti</button>` : ''}
-                                <button class="btn btn-sec btn-sm" onclick="openManage(${s.id})">👁 Peržiūrėti</button>
-                                <button class="btn btn-danger btn-sm" onclick="archiveSession(${s.id})">📁 Archyvuoti</button>
+                                ${s.status === 'waiting' ? `<button class="btn btn-success btn-sm" onclick="startSession(${s.id})">Pradėti</button>` : ''}
+                                ${s.status === 'active' ? `<button class="btn btn-primary btn-sm" onclick="openManage(${s.id})">Valdyti</button>` : ''}
+                                <button class="btn btn-sec btn-sm" onclick="openManage(${s.id})">Peržiūrėti</button>
+                                <button class="btn btn-danger btn-sm" onclick="archiveSession(${s.id})">Archyvuoti</button>
                               </div>
                             </div>`).join('');
         }
@@ -1659,7 +1709,7 @@
             <div style="flex:3; display:flex; gap:12px; justify-content:flex-end;">
                 <div style="text-align:center;">
                     <div style="font-size:9px; color:#888;">Kaina</div>
-                    <div style="font-weight:700; color:#2f4a75; font-size:13px;">${bid.price.toFixed(2)} $</div>
+                    <div style="font-weight:700; color:#2f4a75; font-size:13px;">${bid.price.toFixed(2)} €</div>
                 </div>
                 <div style="text-align:center;">
                     <div style="font-size:9px; color:#888;">Kiekis</div>
@@ -1705,8 +1755,7 @@
                             <div class="card">
                               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;">
                                 <div>
-                                  <h2 style="margin-bottom:2px;">${escapeHtml(s.gameName)}</h2>
-                                  <div style="font-size:11px;color:#888;">PIN: <strong style="font-family:monospace;letter-spacing:2px;">${s.pin}</strong> · ${statusLabel(s.status)}</div>
+                                  <h2 style="margin-bottom:2px;">${escapeHtml(s.gameName)}<strong style="font-family:monospace;letter-spacing:2px;">  ${s.pin}</strong></h2> 
                                 </div>
                                 <button class="btn btn-warn btn-sm" style="flex-shrink:0;align-self:flex-start;" onclick="addExtraRound(${s.id})" title="Pridėti papildomą raundą">➕ Papild. raundas</button>
                               </div>
@@ -1734,13 +1783,13 @@
                                 </div>
                               </div>
                             </div>
+                           
                             <div class="card">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                                     <h3 style="margin-bottom:0;">👥 Komandos ir statymų būsena</h3>
                                     <div class="bid-summary" style="margin-bottom:0;">
                                         <span class="bid-chip bc-sub">✅ Pateikė: ${bs.submitted}</span>
                                         <span class="bid-chip bc-dft">✏️ Redaguoja: ${bs.draft}</span>
-                                        <span class="bid-chip bc-non">— Laukia: ${bs.none}</span>
                                     </div>
                                 </div>
                                 <div class="scroll-panel" style="max-height:300px;">
@@ -1769,6 +1818,7 @@
                                     }).join('') : '<p style="color:#bbb;font-size:12px;text-align:center;padding:10px;">Nėra komandų</p>'}
                                 </div>
                             </div>
+
                             <div class="card">
                               <h3> Neseni pasiūlymai</h3>
                               <div class="scroll-panel" style="height:210px; overflow-y: auto;">
@@ -3079,7 +3129,7 @@
                                     const price = context.raw;
                                     if (price === null) return null;
                                     const direction = netMW > 0 ? 'pirkimas' : (netMW < 0 ? 'pardavimas' : '');
-                                    return `${dataset.label}: ${price.toFixed(2)} $/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
+                                    return `${dataset.label}: ${price.toFixed(2)} €/MWh · Net: ${Math.abs(netMW)} MW ${direction}`;
                                 }
                             }
                         }
@@ -3089,7 +3139,7 @@
                             beginAtZero: false,
                             min: yAxisMin,
                             max: yAxisMax,
-                            ticks: { font: { size: 10 }, callback: v => v + '$' },
+                            ticks: { font: { size: 10 }, callback: v => v + '€' },
                             grid: { color: '#f0ebe0' }
                         },
                         x: {
@@ -3123,11 +3173,8 @@
                 }
             }, 100);
         }
-
-        // Also add a function to manually toggle team visibility with persistence
         function toggleTeamVisibility(teamName) {
             if (!adminChartInstance) return;
-
             // Find the dataset index for this team
             const datasetIndex = adminChartInstance.data.datasets.findIndex(ds => ds.label === teamName);
             if (datasetIndex === -1) return;
@@ -3162,64 +3209,62 @@
         let hourSupplyChartInstance = null;
         function renderSupplyChart(canvas, supplyData, demand, demandPoints, round, hour) {
             if (hourSupplyChartInstance) {
-                try {
-                    hourSupplyChartInstance.destroy();
-                } catch (e) { }
+                try { hourSupplyChartInstance.destroy(); } catch (e) { }
                 hourSupplyChartInstance = null;
             }
+            const s = sessions.find(x => x.id === activeSessionId);
+            const actualClearingPrice = (s && s.marketPrices && s.marketPrices[round] && s.marketPrices[round][hour])
+                ? s.marketPrices[round][hour]
+                : (supplyData.prices && supplyData.prices.length > 0 ? supplyData.prices[supplyData.prices.length - 1] : (s?.marketPrice || 70));
+            const sortedIndices = supplyData.prices
+                .map((p, idx) => ({ price: p, idx, label: supplyData.labels[idx], color: supplyData.colors[idx] }))
+                .sort((a, b) => a.price - b.price);
 
-            // Calculate cumulative sum
-            let cumulative = 0;
-            const cumulativeSums = [];
+            const sortedPrices = sortedIndices.map(item => item.price);
+            const sortedLabels = sortedIndices.map(item => item.label);
+            const sortedColors = sortedIndices.map(item => item.color);
             let clearingIndex = -1;
-            let clearingPrice = null;
-            let clearingQuantity = null;
-
-            for (let i = 0; i < supplyData.values.length; i++) {
-                cumulative += supplyData.values[i];
-                cumulativeSums.push(cumulative);
+            for (let i = 0; i < sortedPrices.length; i++) {
+                if (sortedPrices[i] >= actualClearingPrice - 0.01) {
+                    clearingIndex = i;
+                    break;
+                }
             }
 
-            // Find intersection between cumulative supply and demand curve
-            for (let i = 0; i < cumulativeSums.length; i++) {
-                const supplyQty = cumulativeSums[i];
-                for (let j = 0; j < demandPoints.length; j++) {
-                    if (demandPoints[j].x >= supplyQty) {
-                        clearingIndex = i;
-                        clearingQuantity = supplyQty;
-                        clearingPrice = demandPoints[j].y;
-                        break;
-                    }
-                }
-                if (clearingIndex !== -1) break;
+            if (clearingIndex === -1 && sortedPrices.length > 0) {
+                clearingIndex = sortedPrices.length;
             }
+            let scaleFactor = 1.0;
+            if (clearingIndex !== -1 && clearingIndex < sortedPrices.length && clearingIndex >= 0) {
+                const priceAtClearing = sortedPrices[clearingIndex];
+                const targetIntersectionPercent = 0.5;
 
-            // Create bar colors
-            const barColors = supplyData.values.map((_, idx) => {
-                if (clearingIndex !== -1 && idx <= clearingIndex) {
-                    return 'rgba(46, 204, 113, 0.7)';
+                if (priceAtClearing > 0) {
+                    const targetScaledPrice = actualClearingPrice / targetIntersectionPercent;
+                    scaleFactor = targetScaledPrice / priceAtClearing;
+                    scaleFactor = Math.min(2.5, Math.max(0.3, scaleFactor));
                 }
-                return supplyData.colors[idx];
-            });
-            const cumulativeLabels = supplyData.labels.map((label, idx) => {
-                let cumulative = 0;
-                for (let i = 0; i <= idx; i++) {
-                    cumulative += supplyData.values[i];
-                }
-                return `${cumulative} MW`;
-            });
+            }
+            const scaledPrices = sortedPrices.map(p => p * scaleFactor);
+
+            const yAxisMax = Math.max(scaledPrices, actualClearingPrice * 2) * 1.05;
 
             hourSupplyChartInstance = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: cumulativeLabels,
-                    datasets: [{
-                        data: supplyData.values,
-                        backgroundColor: barColors,
-                        borderRadius: 3,
-                        borderWidth: 0.5,
-                        borderColor: 'rgba(0,0,0,.1)'
-                    }]
+                    labels: sortedLabels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Tiekėjai',
+                            data: scaledPrices,
+                            backgroundColor: sortedColors,
+                            borderRadius: 4,
+                            borderWidth: 0.5,
+                            borderColor: 'rgba(0,0,0,.1)',
+                            order: 2
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
@@ -3228,19 +3273,13 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                title: (items) => supplyData.labels[items[0].dataIndex],
+                                title: (items) => sortedLabels[items[0].dataIndex],
                                 label: (item) => {
                                     const idx = item.dataIndex;
-                                    return [
-                                        `Gamyba: ${item.raw} MW`,
-                                        `Kumuliacinė: ${cumulativeSums[idx]} MW`
-                                    ];
+                                    return `Kaina: ${sortedPrices[idx].toFixed(2)} €/MWh`;
                                 },
                                 footer: () => {
-                                    if (clearingPrice !== null) {
-                                        return `Kliringo kaina: ${clearingPrice.toFixed(2)} €/MWh, Kiekis: ${clearingQuantity} MW`;
-                                    }
-                                    return `Paklausa: ${demand} MW - Nepasiekta`;
+                                    return `Kliringo kaina: ${actualClearingPrice.toFixed(2)} €/MWh`;
                                 }
                             }
                         }
@@ -3248,31 +3287,41 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: { display: true, text: 'MW / Kaina (€)', font: { size: 10 }, color: '#888' },
-                            ticks: { font: { size: 9 }, color: '#888' },
+                            max: yAxisMax,
+                            title: { display: true, text: 'Kaina (€/MWh)', font: { size: 10 }, color: '#888' },
+                            ticks: {
+                                font: { size: 9 },
+                                color: '#888',
+                                callback: function (value) {
+                                    return value.toFixed(0) + ' €';
+                                }
+                            },
                             grid: { color: '#f0ebe0' }
                         },
                         x: {
+                            title: { display: true, text: 'Tiekėjai ', font: { size: 9 }, color: '#888' },
                             ticks: {
                                 font: { size: 8 },
                                 maxRotation: 45,
                                 minRotation: 45,
                                 autoSkip: true,
-                                maxTicksLimit: 15
+                                maxTicksLimit: 12
                             },
                             grid: { display: false }
                         }
                     },
                     animation: {
-                        duration: 200,
-                        onComplete: function () {
-                            drawDemandCurveOnSupplyChart(hourSupplyChartInstance, demandPoints, clearingQuantity, clearingPrice, clearingIndex, supplyData.values);
-                        }
+                        duration: 200
                     }
                 }
             });
 
-            return { clearingIndex, clearingPrice, clearingQuantity, cumulativeSums };
+            // Draw demand curve and horizontal line after chart is rendered
+            setTimeout(() => {
+                drawDemandCurveOnSupplyChart(hourSupplyChartInstance, demandPoints, actualClearingPrice);
+            }, 50);
+
+            return { clearingIndex, clearingPrice: actualClearingPrice };
         }
         function generateDemandCurve(maxQuantity, basePrice, round, hour) {
             const points = [];
@@ -3404,7 +3453,7 @@
                 }
             }, 50);
         }
-        function generateSupplyStackForHour(round, hour) {
+        function generateSupplyStackForHour(round, hour, clearingPrice) {
             let seed = round * 31 + hour * 7;
             const rng = () => {
                 seed = (seed * 16807) % 2147483647;
@@ -3412,11 +3461,11 @@
             };
 
             const groups = [
-                { name: 'Vėjas', color: '#4A90E2', base: 200 },
-                { name: 'Saulė', color: '#F5A623', base: 150 },
-                { name: 'Dujos', color: '#7B8D8E', base: 175 },
-                { name: 'Vanduo', color: '#2ECC71', base: 120 },
-                { name: 'Kita', color: '#9B59B6', base: 165 }
+                { name: 'Vėjas', color: '#4A90E2', base: 200, priceRange: { min: -5, max: 15 } },
+                { name: 'Saulė', color: '#F5A623', base: 150, priceRange: { min: 0, max: 25 } },
+                { name: 'Vanduo', color: '#2ECC71', base: 120, priceRange: { min: 20, max: 55 } },
+                { name: 'Dujos', color: '#7B8D8E', base: 175, priceRange: { min: 45, max: 85 } },
+                { name: 'Kita', color: '#9B59B6', base: 165, priceRange: { min: 60, max: 120 } }
             ];
 
             const dayMults = [
@@ -3428,27 +3477,49 @@
             ];
             const mult = dayMults[(round - 1) % dayMults.length];
 
-            const labels = [];
-            const values = [];
-            const colors = [];
+            const items = [];
 
             groups.forEach((g, gi) => {
-                for (let i = 0; i < 6; i++) {
-                    labels.push(`${g.name} ${i + 1}`);
-                    const hourFactor = 0.7 + (hour / 24) * 0.6;
+                for (let i = 0; i < 5; i++) {
+                    const hourFactor = 0.6 + (hour / 24) * 0.8;
                     const value = Math.round(g.base * mult[gi] * hourFactor * (0.7 + rng() * 0.6));
-                    values.push(Math.max(10, value));
-                    colors.push(g.color);
+                    const finalValue = Math.max(15, Math.min(300, value));
+
+                    let price = g.priceRange.min + rng() * (g.priceRange.max - g.priceRange.min);
+                    price = Math.round(price * 10) / 10;
+
+                    items.push({
+                        label: `${g.name} ${i + 1}`,
+                        value: finalValue,
+                        color: g.color,
+                        price: price
+                    });
                 }
             });
 
-            const combined = labels.map((label, idx) => ({ label, value: values[idx], color: colors[idx] }));
-            combined.sort((a, b) => a.value - b.value);
+            // Sort by price ascending (supply curve)
+            items.sort((a, b) => a.price - b.price);
+
+            // Ensure the clearing price is within range
+            const minPrice = Math.min(...items.map(i => i.price));
+            const maxPrice = Math.max(...items.map(i => i.price));
+
+            if (clearingPrice < minPrice) {
+                const shift = minPrice - clearingPrice + 5;
+                items.forEach(i => i.price -= shift);
+            } else if (clearingPrice > maxPrice) {
+                const shift = clearingPrice - maxPrice + 5;
+                items.forEach(i => i.price += shift);
+            }
+
+            // Re-sort after adjustments
+            items.sort((a, b) => a.price - b.price);
 
             return {
-                labels: combined.map(c => c.label),
-                values: combined.map(c => c.value),
-                colors: combined.map(c => c.color)
+                labels: items.map(i => i.label),
+                values: items.map(i => i.value),
+                colors: items.map(i => i.color),
+                prices: items.map(i => i.price)
             };
         }
         // Render chart into interim result canvas
@@ -3488,7 +3559,7 @@
                     responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: true, position: 'top', labels: { color: '#ccc', font: { size: 11 }, boxWidth: 14, padding: 10 } } },
                     scales: {
-                        y: { beginAtZero: false, ticks: { color: '#aaa', font: { size: 10 }, callback: v => v + '$' }, grid: { color: 'rgba(255,255,255,.08)' } },
+                        y: { beginAtZero: false, ticks: { color: '#aaa', font: { size: 10 }, callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,.08)' } },
                         x: { ticks: { color: '#aaa', font: { size: 9 }, maxRotation: 45 }, grid: { display: false } }
                     },
                     animation: { duration: 500 }
@@ -3512,24 +3583,23 @@
         }
         // Draw demand curve overlay on the supply chart
         let demandCurveDrawn = false;
-        function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingQuantity, clearingPrice, clearingIndex, values) {
+        function drawDemandCurveOnSupplyChart(chart, demandPoints, clearingPrice) {
             if (!chart || !chart.scales || !chart.scales.x || !chart.scales.y) return;
 
             const ctx = chart.ctx;
-            const xScale = chart.scales.x;
             const yScale = chart.scales.y;
 
             ctx.save();
 
-            // Draw the demand curve line (top-left to bottom-right)
+            // Draw demand curve (price vs quantity relationship)
             ctx.beginPath();
             ctx.strokeStyle = '#E74C3C';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2.5;
             ctx.setLineDash([]);
 
             let firstPoint = true;
             for (let i = 0; i < demandPoints.length; i++) {
-                const x = xScale.getPixelForValue(demandPoints[i].x);
+                const x = chart.scales.x.getPixelForValue(demandPoints[i].x);
                 const y = yScale.getPixelForValue(demandPoints[i].y);
 
                 if (x >= chart.chartArea.left && x <= chart.chartArea.right &&
@@ -3544,48 +3614,28 @@
             }
             ctx.stroke();
 
-            // Draw clearing point markers if found
-            if (clearingQuantity && clearingPrice && clearingIndex !== -1) {
-                const clearingX = xScale.getPixelForValue(clearingQuantity);
+            // Draw horizontal dashed line at clearing price
+            if (clearingPrice !== null && clearingPrice !== undefined) {
                 const clearingY = yScale.getPixelForValue(clearingPrice);
 
-                // Vertical line from clearing point to x-axis
-                ctx.beginPath();
-                ctx.moveTo(clearingX, chart.chartArea.top);
-                ctx.lineTo(clearingX, clearingY);
-                ctx.strokeStyle = '#F39C12';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([6, 6]);
-                ctx.stroke();
-
-                // Horizontal line from clearing point to y-axis
-                ctx.beginPath();
-                ctx.moveTo(chart.chartArea.left, clearingY);
-                ctx.lineTo(clearingX, clearingY);
-                ctx.stroke();
-
-                // Orange marker at clearing point
-                ctx.beginPath();
-                ctx.arc(clearingX, clearingY, 7, 0, 2 * Math.PI);
-                ctx.fillStyle = '#F39C12';
-                ctx.fill();
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.fillText('K', clearingX - 3, clearingY + 4);
-
-                // Connect to the supply bar
-                const barMeta = chart.getDatasetMeta(0);
-                if (barMeta && barMeta.data[clearingIndex]) {
-                    const barX = barMeta.data[clearingIndex].x;
+                if (clearingY >= chart.chartArea.top && clearingY <= chart.chartArea.bottom) {
                     ctx.beginPath();
-                    ctx.moveTo(barX, clearingY);
-                    ctx.lineTo(clearingX, clearingY);
+                    ctx.moveTo(chart.chartArea.left, clearingY);
+                    ctx.lineTo(chart.chartArea.right, clearingY);
                     ctx.strokeStyle = '#F39C12';
-                    ctx.lineWidth = 1.5;
-                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([8, 6]);
                     ctx.stroke();
+
+                    // Add price label
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillStyle = '#F39C12';
+                    ctx.shadowBlur = 0;
+                    ctx.setLineDash([]);
+                    ctx.fillText(`${clearingPrice.toFixed(2)} €/MWh`, chart.chartArea.right - 85, clearingY - 4);
                 }
             }
+
             ctx.restore();
         }
         // excess function
@@ -3595,8 +3645,64 @@
             div.textContent = text;
             return div.innerHTML;
         }
-        function getCurrentBid(t, r) { return (t.bids || []).find(b => b.round === r) || null; }
-        function calcBidStatus(s) { let sub = 0, dft = 0, non = 0; s.teams.forEach(t => { const b = getCurrentBid(t, s.currentRound); if (!b) non++; else if (b.submitted) sub++; else dft++; }); return { submitted: sub, draft: dft, none: non }; }
+        function getCurrentBid(t, r) {
+            // First check bidRows for the current round
+            if (t.bidRows && t.bidRows[r]) {
+                // Check if there are any bids in bidRows for this round
+                const hasBids = t.bidRows[r].some(hourBids => hourBids && hourBids.length > 0);
+                if (hasBids) {
+                    // Find the first bid to display as "current bid"
+                    for (let hour = 0; hour < 24; hour++) {
+                        if (t.bidRows[r][hour] && t.bidRows[r][hour].length > 0) {
+                            const firstBid = t.bidRows[r][hour][0];
+                            return {
+                                price: firstBid.price,
+                                mw: firstBid.mw,
+                                type: firstBid.type,
+                                submitted: true
+                            };
+                        }
+                    }
+                }
+            }
+
+            // Fallback to bids array - check if any bid exists for this round
+            const roundBids = (t.bids || []).filter(b => b.round === r);
+            if (roundBids.length > 0) {
+                // Check if any bid is marked as submitted
+                const hasSubmitted = roundBids.some(b => b.submitted === true);
+                const firstBid = roundBids[0];
+                return {
+                    price: firstBid.price,
+                    mw: firstBid.volume_mwh || firstBid.mw,
+                    type: firstBid.bid_type ? 'buy' : 'sell',
+                    submitted: hasSubmitted
+                };
+            }
+
+            return null;
+        }
+        function calcBidStatus(s) {
+            let sub = 0, dft = 0;
+            s.teams.forEach(t => {
+                // Check if team has submitted bids for current round in bidRows
+                const hasBidsInRows = (t.bidRows && t.bidRows[s.currentRound] &&
+                    t.bidRows[s.currentRound].some(hourBids => hourBids && hourBids.length > 0));
+
+                // Check bids array
+                const roundBids = (t.bids || []).filter(b => b.round === s.currentRound);
+                const hasBidsInArray = roundBids.length > 0;
+                const isSubmitted = roundBids.some(b => b.submitted === true);
+
+                if (hasBidsInRows || (hasBidsInArray && isSubmitted)) {
+                    sub++;
+                } else if (hasBidsInArray && !isSubmitted) {
+                    dft++;
+                }
+                // Note: Teams with no bids are simply not counted in either category
+            });
+            return { submitted: sub, draft: dft };
+        }
         function statusLabel(st) { return { waiting: 'Laukiama', active: 'Aktyvi', finished: 'Baigta' }[st] || st; }
 
         function closeModal(id) {

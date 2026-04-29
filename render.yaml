@@ -1,11 +1,11 @@
 services:
   - type: web
     name: energy-trading-backend
-    env: python
-    region: frankfurt 
-    plan: starter 
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -16,10 +16,10 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: CORS_ORIGINS
-        value: prak2026-eb951.web.app,prak2026-eb951.firebaseapp.com
-    
+        value: https://prak2026-eb951.web.app,https://prak2026-eb951.firebaseapp.com,https://your-vercel-app.vercel.app
+
 databases:
   - name: energy-trading-db
-    plan: starter  # Free tier PostgreSQL
+    plan: starter
     databaseName: energy_trading
     user: energy_user
